@@ -66,7 +66,12 @@ export default async function ModulePage({
           >
             <div>
               <h2 className="font-semibold">
-                {l.title}
+                <Link
+                  href={`/lecture/${l.slug}`}
+                  className="transition-colors hover:text-primary"
+                >
+                  {l.title}
+                </Link>
                 {l.completed ? (
                   <span className="ms-2 text-xs font-medium text-emerald-600">✓ مكتملة</span>
                 ) : null}

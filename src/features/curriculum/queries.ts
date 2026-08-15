@@ -1,6 +1,13 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/shared/db";
-import { lectureProgress } from "./schema";
+import { lecture, lectureProgress } from "./schema";
+
+export async function getLectureBySlug(slug: string) {
+  return db.query.lecture.findFirst({
+    where: eq(lecture.slug, slug),
+    with: { module: true },
+  });
+}
 
 export async function getCurriculum(userId: string) {
   const modules = await db.query.curriculumModule.findMany({

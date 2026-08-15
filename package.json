@@ -19,7 +19,9 @@
     "db:seed:quiz": "tsx scripts/seed-quiz.ts"
   },
   "dependencies": {
+    "@ai-sdk/openai-compatible": "^3.0.30",
     "@base-ui/react": "^1.7.0",
+    "ai": "^7.0.66",
     "better-auth": "^1.6.29",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
