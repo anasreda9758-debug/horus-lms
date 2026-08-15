@@ -60,6 +60,9 @@ export default async function DashboardPage() {
         <Link href="/curriculum" className={buttonVariants({ size: "lg" })}>
           تصفح المنهج
         </Link>
+        <Link href="/ospe" className={buttonVariants({ variant: "secondary", size: "lg" })}>
+          🔬 محاكي OSPE
+        </Link>
         <Link href="/" className={buttonVariants({ variant: "outline" })}>
           الرئيسية
         </Link>

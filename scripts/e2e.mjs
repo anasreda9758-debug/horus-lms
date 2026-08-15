@@ -168,6 +168,35 @@ try {
     check("admin API 401 anon", r.status === 401, `status=${r.status}`);
   }
 
+  // ---- OSPE simulator ----
+  const ospeModules = await (await getPage("/api/content/ospe", studentCookie)).json();
+  const freeOspe = ospeModules?.modules?.find((m) => m.isFree);
+  const premOspe = ospeModules?.modules?.find((m) => !m.isFree);
+  check("ospe lists modules", !!freeOspe && !!premOspe);
+  if (freeOspe && premOspe) {
+    check("ospe free module unlocked", freeOspe.locked === false && freeOspe.count > 0);
+    check("ospe premium module locked for free user", premOspe.locked === true);
+
+    const station = await (await getPage("/api/content/ospe/station", studentCookie)).json();
+    check("ospe station returns image url", !!station?.url && !!station?.folder);
+
+    r = await getPage(`/api/content/ospe/station?folder=${encodeURIComponent(premOspe.folder)}`, studentCookie);
+    check("ospe premium station 403 for free user", r.status === 403, `status=${r.status}`);
+
+    if (station?.url) {
+      r = await getPage(station.url, studentCookie);
+      check(
+        "ospe image serves 200",
+        r.status === 200 && (r.headers.get("content-type") ?? "").startsWith("image/"),
+        `status=${r.status} ct=${r.headers.get("content-type")}`,
+      );
+      r = await getPage(station.url);
+      check("ospe image anon 401", r.status === 401, `status=${r.status}`);
+    }
+    r = await getPage(`/api/content/ospe/image?folder=${encodeURIComponent(freeOspe.folder)}&file=../../app.py`, studentCookie);
+    check("ospe image path traversal rejected", r.status === 400, `status=${r.status}`);
+  }
+
   // ---- AI tutor (optional, needs GROQ_API_KEY) ----
   if (process.env.GROQ_API_KEY) {
     const freeLectures = await sql`select l.id from lecture l join module m on m.id=l.module_id where m.is_free=true limit 1`;

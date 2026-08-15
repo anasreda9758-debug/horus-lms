@@ -25,6 +25,9 @@ export default async function Home() {
             <Link href="/dashboard" className={buttonVariants({ size: "lg" })}>
               لوحة الطالب
             </Link>
+            <Link href="/ospe" className={buttonVariants({ variant: "secondary", size: "lg" })}>
+              🔬 محاكي OSPE
+            </Link>
             {user.role === "admin" ? (
               <Link
                 href="/admin"
