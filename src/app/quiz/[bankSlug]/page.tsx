@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/shared/session";
+import { hasModuleAccess } from "@/shared/entitlements";
 import { getBankBySlug, getQuizQuestions } from "@/features/practice/queries";
 import { buttonVariants } from "@/components/ui/button";
 import { QuizRunner } from "@/components/quiz-runner";
@@ -11,12 +12,13 @@ export default async function QuizPage({
   params: Promise<{ bankSlug: string }>;
 }) {
   const { bankSlug } = await params;
-  await requireUser();
+  const session = await requireUser();
   const bank = await getBankBySlug(bankSlug);
   if (!bank) notFound();
 
   const moduleName = bank.module?.name ?? "هذا الموديول";
   const isFree = bank.module?.isFree ?? true;
+  const access = await hasModuleAccess(session.user.id, isFree);
 
   const questions = await getQuizQuestions(bank.id);
 
@@ -39,11 +41,13 @@ export default async function QuizPage({
         <p className="mt-2 text-muted-foreground">{moduleName}</p>
       </div>
 
-      {!isFree ? (
-        <p className="rounded-xl bg-muted p-4 text-sm text-muted-foreground">
-          هذا الاختبار بريميوم. سيُفتح تلقائيًا عند تفعيل اشتراكك (التفعيل اليدوي
-          يبدأ في المرحلة القادمة).
-        </p>
+      {!access ? (
+        <div className="rounded-xl bg-amber-500/10 p-4 text-sm">
+          <p className="font-semibold text-amber-700">هذا الاختبار بريميوم</p>
+          <p className="mt-1 text-muted-foreground">
+            فعّل اشتراكك (يدويًا من فريق الدعم حاليًا) لفتح اختبارات هذا الموديول.
+          </p>
+        </div>
       ) : questions.length === 0 ? (
         <p className="text-muted-foreground">لا توجد أسئلة في هذا الاختبار بعد.</p>
       ) : (

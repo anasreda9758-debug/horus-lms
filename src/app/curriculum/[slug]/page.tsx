@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/shared/session";
+import { hasModuleAccess } from "@/shared/entitlements";
 import { getModuleBySlug } from "@/features/curriculum/queries";
 import { getBankForModule } from "@/features/practice/queries";
 import { buttonVariants } from "@/components/ui/button";
@@ -17,6 +18,7 @@ export default async function ModulePage({
   const mod = await getModuleBySlug(session.user.id, slug);
   if (!mod) notFound();
   const bank = await getBankForModule(mod.id);
+  const access = await hasModuleAccess(session.user.id, mod.isFree);
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 p-8">
@@ -45,48 +47,57 @@ export default async function ModulePage({
         </span>
       </div>
 
-      {!mod.isFree ? (
-        <p className="rounded-xl bg-muted p-4 text-sm text-muted-foreground">
-          هذا الموديول بريميوم. سيُفتح تلقائيًا عند تفعيل اشتراكك (التفعيل اليدوي
-          يبدأ في المرحلة القادمة).
-        </p>
-      ) : null}
+      {!access ? (
+        <div className="rounded-xl bg-amber-500/10 p-4 text-sm">
+          <p className="font-semibold text-amber-700">هذا الموديول بريميوم</p>
+          <p className="mt-1 text-muted-foreground">
+            فعّل اشتراكك (يدويًا من فريق الدعم حاليًا) لفتح المحاضرات والاختبارات
+            والمعلم الذكي غير المحدود.
+          </p>
+        </div>
+      ) : (
+        <>
+          {bank ? (
+            <Link href={`/quiz/${bank.slug}`} className={buttonVariants({ size: "sm" })}>
+              اختبار الموديول
+            </Link>
+          ) : null}
 
-      {mod.isFree && bank ? (
-        <Link href={`/quiz/${bank.slug}`} className={buttonVariants({ size: "sm" })}>
-          اختبار الموديول
-        </Link>
-      ) : null}
-
-      <ul className="grid gap-3">
-        {mod.lectures.map((l) => (
-          <li
-            key={l.id}
-            className="flex items-center justify-between gap-4 rounded-xl bg-card p-5 ring-1 ring-foreground/10"
-          >
-            <div>
-              <h2 className="font-semibold">
-                <Link
-                  href={`/lecture/${l.slug}`}
-                  className="transition-colors hover:text-primary"
-                >
-                  {l.title}
-                </Link>
-                {l.completed ? (
-                  <span className="ms-2 text-xs font-medium text-emerald-600">✓ مكتملة</span>
-                ) : null}
-              </h2>
-              {l.summary ? (
-                <p className="mt-1 text-sm text-muted-foreground">{l.summary}</p>
-              ) : null}
-              {l.durationMin ? (
-                <p className="mt-1 text-xs text-muted-foreground">{l.durationMin} دقيقة</p>
-              ) : null}
-            </div>
-            <CompleteButton lectureId={l.id} moduleSlug={mod.slug} completed={l.completed} />
-          </li>
-        ))}
-      </ul>
+          <ul className="grid gap-3">
+            {mod.lectures.map((l) => (
+              <li
+                key={l.id}
+                className="flex items-center justify-between gap-4 rounded-xl bg-card p-5 ring-1 ring-foreground/10"
+              >
+                <div>
+                  <h2 className="font-semibold">
+                    <Link
+                      href={`/lecture/${l.slug}`}
+                      className="transition-colors hover:text-primary"
+                    >
+                      {l.title}
+                    </Link>
+                    {l.completed ? (
+                      <span className="ms-2 text-xs font-medium text-emerald-600">✓ مكتملة</span>
+                    ) : null}
+                  </h2>
+                  {l.summary ? (
+                    <p className="mt-1 text-sm text-muted-foreground">{l.summary}</p>
+                  ) : null}
+                  {l.durationMin ? (
+                    <p className="mt-1 text-xs text-muted-foreground">{l.durationMin} دقيقة</p>
+                  ) : null}
+                </div>
+                <CompleteButton
+                  lectureId={l.id}
+                  moduleSlug={mod.slug}
+                  completed={l.completed}
+                />
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
     </main>
   );
 }

@@ -6,6 +6,10 @@ import { question, questionBank, questionOption } from "../src/features/practice
 const BANK_SLUG = "anatomy-module-1";
 const BANK_TITLE = "تشريح عام — اختبار الموديول 1";
 
+const PREMIUM_BANK_SLUG = "respiratory-module-2";
+const PREMIUM_BANK_TITLE = "الجهاز التنفسي — اختبار الموديول 2";
+const PREMIUM_MODULE_SLUG = "respiratory-overview";
+
 type SeedQuestion = {
   prompt: string;
   explanation: string;
@@ -136,32 +140,76 @@ const questions: SeedQuestion[] = [
   },
 ];
 
-async function main() {
+const premiumQuestions: SeedQuestion[] = [
+  {
+    prompt: "التبادل الغازي في الرئتين يحدث في:",
+    explanation: "التبادل الغازي يحدث عبر الحويصلات الهوائية (Alveoli) التي تحيطها شبكة شعرية كثيفة.",
+    options: ["الحويصلات الهوائية", "القصبة الهوائية", "البلعوم", "الأنف"],
+    answer: 0,
+  },
+  {
+    prompt: "الجزء المشترك بين الجهاز التنفسي والجهاز الهضمي هو:",
+    explanation: "البلعوم (Pharynx) يمر عبره كل من الهواء والطعام.",
+    options: ["البلعوم", "الحنجرة", "الرغامى", "المريء"],
+    answer: 0,
+  },
+  {
+    prompt: "عدد فصوص الرئة اليمنى عند البالغ:",
+    explanation: "الرئة اليمنى لها ثلاثة فصوص، واليسرى فصان بسبب وجود القلب.",
+    options: ["3 فصوص", "فصان", "4 فصوص", "فص واحد"],
+    answer: 0,
+  },
+  {
+    prompt: "العضلة الرئيسية للتنفس في حالة الراحة:",
+    explanation: "الحجاب الحاجز (Diaphragm) هو العضلة الأساسية للتنفس الهادئ.",
+    options: ["الحجاب الحاجز", "العضلات الوربية", "العضلة القصية الترقوية الحلمية", "عضلات البطن"],
+    answer: 0,
+  },
+  {
+    prompt: "الضغط داخل التجويف الجنبي مقارنةً بالضغط الجوي:",
+    explanation: "الضغط الجنبي سالب (أقل من الجوي) وهو ما يبقي الرئة منتصبةً على جدار الصدر.",
+    options: ["أقل من الضغط الجوي", "أعلى من الضغط الجوي", "مساوٍ للضغط الجوي", "يتغير دون قاعدة"],
+    answer: 0,
+  },
+  {
+    prompt: "الغضروف الذي يغلق مدخل الحنجرة أثناء البلع:",
+    explanation: "لسان المزمار (Epiglottis) يمنع دخول الطعام إلى مجرى الهواء أثناء البلع.",
+    options: ["لسان المزمار", "الغضروف الدرقي", "الغضروف الحلقي", "الغضاريف الهرمية"],
+    answer: 0,
+  },
+];
+
+async function seedBank(opts: {
+  moduleSlug: string;
+  bankSlug: string;
+  bankTitle: string;
+  questions: SeedQuestion[];
+}) {
   const mod = await db.query.curriculumModule.findFirst({
-    where: (m, { eq }) => eq(m.slug, "anatomy-module-1"),
+    where: (m, { eq }) => eq(m.slug, opts.moduleSlug),
   });
   if (!mod) {
-    console.error("[seed-quiz] module 'anatomy-module-1' not found — run db:seed:curriculum first");
-    process.exit(1);
+    console.error(`[seed-quiz] module '${opts.moduleSlug}' not found — run db:seed:curriculum first`);
+    return false;
   }
 
   const existing = await db.query.questionBank.findFirst({
-    where: (b, { eq }) => eq(b.slug, BANK_SLUG),
+    where: (b, { eq }) => eq(b.slug, opts.bankSlug),
   });
   if (existing) {
-    console.log("[seed-quiz] bank already present — skipping");
-    process.exit(0);
+    console.log(`[seed-quiz] bank '${opts.bankSlug}' already present — skipping`);
+    return true;
   }
 
   const bankId = randomUUID();
   await db.insert(questionBank).values({
     id: bankId,
     moduleId: mod.id,
-    slug: BANK_SLUG,
-    title: BANK_TITLE,
+    slug: opts.bankSlug,
+    title: opts.bankTitle,
   });
 
-  for (const [qi, q] of questions.entries()) {
+  for (const [qi, q] of opts.questions.entries()) {
     const questionId = randomUUID();
     await db.insert(question).values({
       id: questionId,
@@ -181,7 +229,27 @@ async function main() {
     }
   }
 
-  console.log(`[seed-quiz] done — bank '${BANK_SLUG}' with ${questions.length} questions`);
+  console.log(`[seed-quiz] done — bank '${opts.bankSlug}' with ${opts.questions.length} questions`);
+  return true;
+}
+
+async function main() {
+  const okFree = await seedBank({
+    moduleSlug: "anatomy-module-1",
+    bankSlug: BANK_SLUG,
+    bankTitle: BANK_TITLE,
+    questions,
+  });
+  if (!okFree) process.exit(1);
+
+  const okPremium = await seedBank({
+    moduleSlug: PREMIUM_MODULE_SLUG,
+    bankSlug: PREMIUM_BANK_SLUG,
+    bankTitle: PREMIUM_BANK_TITLE,
+    questions: premiumQuestions,
+  });
+  if (!okPremium) process.exit(1);
+
   process.exit(0);
 }
 

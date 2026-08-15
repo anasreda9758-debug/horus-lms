@@ -1,21 +1,64 @@
 import Link from "next/link";
 import { requireAdmin } from "@/shared/session";
 import { buttonVariants } from "@/components/ui/button";
+import {
+  getPlans,
+  getSubscriptionForUsers,
+  listStudents,
+} from "@/features/billing/queries";
+import { AdminSubscriptionButtons } from "@/components/admin-subscription-buttons";
 
 export default async function AdminPage() {
   const session = await requireAdmin();
+  const [plans, students] = await Promise.all([getPlans(), listStudents()]);
+  const subs = await getSubscriptionForUsers(students.map((s) => s.id));
+  const subByUser = new Map(subs.map((s) => [s.userId, s]));
 
   return (
-    <main className="flex flex-1 flex-col items-center justify-center gap-6 p-8 text-center">
-      <h1 className="text-3xl font-bold">لوحة الإدارة</h1>
-      <p>مدير النظام: {session.user.email}</p>
+    <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 p-8">
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold">لوحة الإدارة</h1>
+        <Link href="/" className={buttonVariants({ variant: "outline", size: "sm" })}>
+          العودة للرئيسية
+        </Link>
+      </div>
+
       <p className="text-sm text-muted-foreground">
-        بوابة مُقيّدة بالدور admin. تُبنى إدارة المستخدمين والاشتراكات هنا في
-        M5.
+        مدير النظام: {session.user.email} — فعّل Premium يدويًا لطلابك. الخطة
+        النشطة تفتح كل المحتوى البريميوم وتزيل سقف محادثات المعلم الذكي.
       </p>
-      <Link href="/" className={buttonVariants({ variant: "outline" })}>
-        العودة للرئيسية
-      </Link>
+
+      <div>
+        <h2 className="mb-3 text-lg font-semibold">الطلاب والاشتراكات</h2>
+        <ul className="grid gap-3">
+          {students.map((s) => {
+            const sub = subByUser.get(s.id);
+            const active =
+              sub && sub.expiresAt > new Date()
+                ? {
+                    planName: sub.plan?.name ?? "Premium",
+                    expiresAt: sub.expiresAt.toISOString(),
+                  }
+                : null;
+            return (
+              <li
+                key={s.id}
+                className="flex flex-col gap-3 rounded-xl bg-card p-5 ring-1 ring-foreground/10"
+              >
+                <div>
+                  <p className="font-semibold">{s.name}</p>
+                  <p className="text-sm text-muted-foreground">{s.email}</p>
+                </div>
+                <AdminSubscriptionButtons
+                  userId={s.id}
+                  plans={plans}
+                  active={active}
+                />
+              </li>
+            );
+          })}
+        </ul>
+      </div>
     </main>
   );
 }

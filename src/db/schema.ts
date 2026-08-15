@@ -3,3 +3,4 @@ export * from "../features/auth/schema";
 export * from "../features/curriculum/schema";
 export * from "../features/practice/schema";
 export * from "../features/ai/schema";
+export * from "../features/billing/schema";

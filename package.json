@@ -16,7 +16,8 @@
     "auth:generate": "better-auth generate --config src/shared/auth.ts --output src/features/auth/schema.ts -y",
     "db:seed:admin": "tsx scripts/seed-admin.ts",
     "db:seed:curriculum": "tsx scripts/seed-curriculum.ts",
-    "db:seed:quiz": "tsx scripts/seed-quiz.ts"
+    "db:seed:quiz": "tsx scripts/seed-quiz.ts",
+    "db:seed:plans": "tsx scripts/seed-plans.ts"
   },
   "dependencies": {
     "@ai-sdk/openai-compatible": "^3.0.30",

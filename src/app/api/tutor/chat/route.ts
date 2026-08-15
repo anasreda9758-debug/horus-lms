@@ -4,6 +4,7 @@ import { getSession } from "@/shared/session";
 import { db } from "@/shared/db";
 import { generateTutorReply, type TutorMessage } from "@/shared/ai-client";
 import { FREE_DAILY_LIMIT, getAiUsageToday, recordAiUsage } from "@/features/ai/queries";
+import { isPremiumActive } from "@/features/billing/queries";
 import { lecture } from "@/features/curriculum/schema";
 
 const MAX_MESSAGES = 20;
@@ -64,19 +65,22 @@ export async function POST(request: NextRequest) {
   if (!lectureRow || !lectureRow.module) {
     return NextResponse.json({ error: "lecture not found" }, { status: 400 });
   }
-  if (!lectureRow.module.isFree) {
+  const premium = await isPremiumActive(session.user.id);
+  if (!lectureRow.module.isFree && !premium) {
     return NextResponse.json({ error: "premium required" }, { status: 403 });
   }
 
-  const usedToday = await getAiUsageToday(session.user.id);
-  if (usedToday >= FREE_DAILY_LIMIT) {
-    return NextResponse.json(
-      {
-        error: "free_limit",
-        message: `وصلت إلى حد ${FREE_DAILY_LIMIT} رسالة مجانية اليوم. فعّل Premium لفتح محادثات غير محدودة.`,
-      },
-      { status: 429 },
-    );
+  if (!premium) {
+    const usedToday = await getAiUsageToday(session.user.id);
+    if (usedToday >= FREE_DAILY_LIMIT) {
+      return NextResponse.json(
+        {
+          error: "free_limit",
+          message: `وصلت إلى حد ${FREE_DAILY_LIMIT} رسالة مجانية اليوم. فعّل Premium لفتح محادثات غير محدودة.`,
+        },
+        { status: 429 },
+      );
+    }
   }
 
   try {
