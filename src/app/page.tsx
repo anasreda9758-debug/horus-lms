@@ -28,6 +28,12 @@ export default async function Home() {
             <Link href="/ospe" className={buttonVariants({ variant: "secondary", size: "lg" })}>
               🔬 محاكي OSPE
             </Link>
+            <Link href="/flashcards" className={buttonVariants({ variant: "secondary", size: "lg" })}>
+              🧠 بطاقات
+            </Link>
+            <Link href="/cases" className={buttonVariants({ variant: "secondary", size: "lg" })}>
+              🩺 حالات سريرية
+            </Link>
             {user.role === "admin" ? (
               <Link
                 href="/admin"

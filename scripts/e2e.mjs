@@ -199,7 +199,7 @@ try {
 
   // ---- AI tutor (optional, needs GROQ_API_KEY) ----
   if (process.env.GROQ_API_KEY) {
-    const freeLectures = await sql`select l.id from lecture l join module m on m.id=l.module_id where m.is_free=true limit 1`;
+    const freeLectures = await sql`select l.id from lecture l join module m on m.id=l.module_id where m.is_free=true and l.content is not null and length(l.content)>0 limit 1`;
     if (freeLectures[0]) {
       const res = await fetch(`${BASE}/api/tutor/chat`, {
         method: "POST",
@@ -215,6 +215,60 @@ try {
         res.status === 200 && typeof tutorJson.reply === "string" && tutorJson.reply.length > 0,
         `status=${res.status}`,
       );
+
+      // ---- review (flashcards + clinical cases, needs GROQ) ----
+      const pages = ["/flashcards", "/cases"];
+      for (const p of pages) {
+        const page = await getPage(p, studentCookie);
+        check(`review page ${p} renders`, page.status === 200, `status=${page.status}`);
+      }
+
+      r = await fetch(`${BASE}/api/review/flashcards`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Cookie: studentCookie },
+        body: JSON.stringify({ lectureId: freeLectures[0].id }),
+      });
+      const fcJson = await r.json().catch(() => ({}));
+      check("flashcards generate (GROQ)", r.status === 200 && fcJson.count > 0, `status=${r.status}`);
+
+      const due = await (await getPage("/api/review/flashcards", studentCookie)).json();
+      check("flashcards due listed", Array.isArray(due.cards) && due.cards.length > 0);
+      if (due.cards?.[0]) {
+        r = await fetch(`${BASE}/api/review/flashcards/review`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Cookie: studentCookie },
+          body: JSON.stringify({ cardId: due.cards[0].id, rating: "good" }),
+        });
+        check("flashcard review", r.status === 200, `status=${r.status}`);
+      }
+
+      r = await fetch(`${BASE}/api/review/cases`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Cookie: studentCookie },
+        body: JSON.stringify({ lectureId: freeLectures[0].id }),
+      });
+      const caseJson = await r.json().catch(() => ({}));
+      check(
+        "clinical case generate (GROQ)",
+        r.status === 200 && !!caseJson.caseId && Array.isArray(caseJson.questions),
+        `status=${r.status}`,
+      );
+      if (caseJson.caseId) {
+        r = await fetch(`${BASE}/api/review/cases/evaluate`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Cookie: studentCookie },
+          body: JSON.stringify({
+            caseId: caseJson.caseId,
+            answers: caseJson.questions.map((_q, i) => `answer ${i + 1}`),
+          }),
+        });
+        const evalJson = await r.json().catch(() => ({}));
+        check(
+          "clinical case evaluate (GROQ)",
+          r.status === 200 && typeof evalJson.feedback === "string" && evalJson.feedback.length > 0,
+          `status=${r.status}`,
+        );
+      }
     }
   } else {
     console.log("SKIP tutor (GROQ_API_KEY not set)");

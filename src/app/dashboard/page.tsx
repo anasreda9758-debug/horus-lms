@@ -63,6 +63,12 @@ export default async function DashboardPage() {
         <Link href="/ospe" className={buttonVariants({ variant: "secondary", size: "lg" })}>
           🔬 محاكي OSPE
         </Link>
+        <Link href="/flashcards" className={buttonVariants({ variant: "secondary", size: "lg" })}>
+          🧠 بطاقات
+        </Link>
+        <Link href="/cases" className={buttonVariants({ variant: "secondary", size: "lg" })}>
+          🩺 حالات سريرية
+        </Link>
         <Link href="/" className={buttonVariants({ variant: "outline" })}>
           الرئيسية
         </Link>
