@@ -1,0 +1,84 @@
+# Staging topology (single VPS). Requires a .env.staging file, e.g.:
+#   POSTGRES_PASSWORD=<alphanumeric, no URL-special chars>
+#   BETTER_AUTH_SECRET=<long random string>
+#   BETTER_AUTH_URL=https://staging.example.com
+#   GROQ_API_KEY=...
+#   GROQ_MODEL=llama-3.3-70b-versatile
+#
+# Deploy: docker compose -f docker-compose.staging.yml up -d --build
+name: lms-platform-staging
+
+services:
+  db:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: lms
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env.staging}
+      POSTGRES_DB: lms
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lms -d lms"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  migrate:
+    build: .
+    restart: "no"
+    command: ["node", "scripts/migrate.mjs"]
+    environment:
+      DATABASE_URL: postgres://lms:${POSTGRES_PASSWORD:?}@db:5432/lms
+    depends_on:
+      db:
+        condition: service_healthy
+
+  app:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgres://lms:${POSTGRES_PASSWORD:?}@db:5432/lms
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?set BETTER_AUTH_SECRET in .env.staging}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3000}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      GROQ_MODEL: ${GROQ_MODEL:-llama-3.3-70b-versatile}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - wget -q -O - http://127.0.0.1:3000/api/health | grep -q '"ok":true' || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  backup:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD:?}
+    volumes:
+      - backups:/backups
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        cat > /backup.sh <<'EOF'
+        #!/bin/sh
+        pg_dump -h db -U lms -d lms -Fc -f /backups/lms-$$(date +%Y%m%d-%H%M%S).dump
+        find /backups -name '*.dump' -mtime +14 -delete
+        EOF
+        chmod +x /backup.sh
+        echo "0 3 * * * /backup.sh" > /etc/crontabs/root
+        crond -f
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:
+  backups:

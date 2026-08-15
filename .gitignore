@@ -37,6 +37,9 @@ yarn-error.log*
 # local embedded postgres (dev only)
 .pgdata/
 
+# local logical backups (npm run db:backup)
+backups/
+
 # vercel
 .vercel
 
