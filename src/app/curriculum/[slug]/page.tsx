@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/shared/session";
 import { getModuleBySlug } from "@/features/curriculum/queries";
+import { getBankForModule } from "@/features/practice/queries";
 import { buttonVariants } from "@/components/ui/button";
 import { ProgressBar } from "@/components/progress-bar";
 import { CompleteButton } from "@/components/complete-button";
@@ -15,6 +16,7 @@ export default async function ModulePage({
   const session = await requireUser();
   const mod = await getModuleBySlug(session.user.id, slug);
   if (!mod) notFound();
+  const bank = await getBankForModule(mod.id);
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 p-8">
@@ -48,6 +50,12 @@ export default async function ModulePage({
           هذا الموديول بريميوم. سيُفتح تلقائيًا عند تفعيل اشتراكك (التفعيل اليدوي
           يبدأ في المرحلة القادمة).
         </p>
+      ) : null}
+
+      {mod.isFree && bank ? (
+        <Link href={`/quiz/${bank.slug}`} className={buttonVariants({ size: "sm" })}>
+          اختبار الموديول
+        </Link>
       ) : null}
 
       <ul className="grid gap-3">
