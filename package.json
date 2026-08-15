@@ -13,7 +13,8 @@
     "db:status": "node scripts/dev-db.mjs status",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "auth:generate": "better-auth generate --config src/shared/auth.ts --output src/features/auth/schema.ts -y"
+    "auth:generate": "better-auth generate --config src/shared/auth.ts --output src/features/auth/schema.ts -y",
+    "db:seed:admin": "tsx scripts/seed-admin.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",
@@ -44,6 +45,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.3.1",
     "tailwindcss": "^4",
+    "tsx": "^4.23.12",
     "typescript": "^5"
   },
   "allowScripts": {

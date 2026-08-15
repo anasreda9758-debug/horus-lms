@@ -8,6 +8,13 @@
       "when": 1786825061474,
       "tag": "0000_loving_prowler",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1786826165443,
+      "tag": "0001_jazzy_spitfire",
+      "breakpoints": true
     }
   ]
 }
