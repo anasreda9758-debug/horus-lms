@@ -3,12 +3,13 @@ import { randomUUID } from "node:crypto";
 import { db } from "../src/shared/db";
 import { question, questionBank, questionOption } from "../src/features/practice/schema";
 
-const BANK_SLUG = "anatomy-module-1";
-const BANK_TITLE = "تشريح عام — اختبار الموديول 1";
+const BANK_SLUG = "ahe-anatomy";
+const BANK_TITLE = "تشريح — اختبار وحدة AEH";
+const FREE_MODULE_SLUG = "ahe-101";
 
-const PREMIUM_BANK_SLUG = "respiratory-module-2";
-const PREMIUM_BANK_TITLE = "الجهاز التنفسي — اختبار الموديول 2";
-const PREMIUM_MODULE_SLUG = "respiratory-overview";
+const PREMIUM_BANK_SLUG = "resp-anatomy";
+const PREMIUM_BANK_TITLE = "الجهاز التنفسي — اختبار وحدة RS";
+const PREMIUM_MODULE_SLUG = "rs-201";
 
 type SeedQuestion = {
   prompt: string;
@@ -235,7 +236,7 @@ async function seedBank(opts: {
 
 async function main() {
   const okFree = await seedBank({
-    moduleSlug: "anatomy-module-1",
+    moduleSlug: FREE_MODULE_SLUG,
     bankSlug: BANK_SLUG,
     bankTitle: BANK_TITLE,
     questions,

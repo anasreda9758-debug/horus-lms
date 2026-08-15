@@ -9,14 +9,19 @@ import { lecture } from "@/features/curriculum/schema";
 
 const MAX_MESSAGES = 20;
 
-function buildSystemPrompt(title: string, summary: string | null) {
+function buildSystemPrompt(title: string, summary: string | null, content: string | null) {
+  const body = content
+    ? content.length > 15000
+      ? `${content.slice(0, 15000)}\n...[مقتطع — المحتوى أطول من 15000 حرف]`
+      : content
+    : summary ?? "(لا يوجد ملخص نصي بعد)";
   return [
     "أنت مدرس خصوصي لطلاب الطب، تجيب بالعربية الفصحى بأسلوب واضح ومباشر.",
     "أنت مقيّد بمحتوى المحاضرة الحالية فقط: لا تجب عن أسئلة خارج هذا المحتوى، وإذا سُئلت عن موضوع خارج المحاضرة فذكّر الطالب بهذا الحد.",
     "",
     "=== محتوى المحاضرة ===",
     `العنوان: ${title}`,
-    summary ? `الملخص: ${summary}` : "(لا يوجد ملخص نصي بعد)",
+    body,
   ].join("\n");
 }
 
@@ -85,7 +90,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const { text, inputTokens, outputTokens } = await generateTutorReply({
-      system: buildSystemPrompt(lectureRow.title, lectureRow.summary),
+      system: buildSystemPrompt(lectureRow.title, lectureRow.summary, lectureRow.content),
       messages,
     });
     await recordAiUsage({

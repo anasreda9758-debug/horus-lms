@@ -22,6 +22,17 @@ export const auth = betterAuth({
   },
   advanced: {
     cookiePrefix: "lms",
+    rateLimit: {
+      enabled: true,
+      window: 60,
+      max: 100,
+      customRules: {
+        "/sign-in/*": { window: 60, max: 30 },
+        "/sign-up/*": { window: 60, max: 20 },
+        "/change-password/*": { window: 60, max: 10 },
+        "/change-email/*": { window: 60, max: 10 },
+      },
+    },
   },
 });
 

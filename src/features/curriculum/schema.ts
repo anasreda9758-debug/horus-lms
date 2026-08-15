@@ -9,6 +9,7 @@ export const curriculumModule = pgTable("module", {
   description: text("description"),
   order: integer("order").notNull().default(0),
   isFree: boolean("is_free").notNull().default(false),
+  term: integer("term").notNull().default(1),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()
@@ -26,6 +27,10 @@ export const lecture = pgTable(
     title: text("title").notNull(),
     slug: text("slug").notNull(),
     summary: text("summary"),
+    subject: text("subject"),
+    kind: text("kind"),
+    content: text("content"),
+    pdfFile: text("pdf_file"),
     order: integer("order").notNull().default(0),
     durationMin: integer("duration_min"),
     createdAt: timestamp("created_at").defaultNow().notNull(),

@@ -91,9 +91,9 @@ try {
   check("wrong password 401", r.status === 401, `status=${r.status}`);
 
   // ---- curriculum + progress ----
-  const mods = await sql`select slug, is_free from module order by is_free`;
-  const freeMod = mods.find((m) => m.is_free);
-  const premiumMod = mods.find((m) => !m.is_free);
+  const mods = await sql`select m.slug, m.is_free, count(l.id)::int as lectures from module m left join lecture l on l.module_id=m.id group by m.id order by m.is_free, lectures desc`;
+  const freeMod = mods.find((m) => m.is_free && m.lectures > 0);
+  const premiumMod = mods.find((m) => !m.is_free && m.lectures > 0);
   check("seed data present (free+premium)", !!freeMod && !!premiumMod);
 
   if (freeMod) {
@@ -122,38 +122,43 @@ try {
   const premLec = premLectures[0];
   check("premium lecture seeded", !!premLec);
   if (premLec && premiumMod) {
-    html = await (await getPage(`/curriculum/${premiumMod.slug}`, studentCookie)).text();
-    check("premium module locked", html.includes("هذا الموديول بريميوم"));
-    check("premium module hides lectures", !html.includes(premLec.title));
+    const premOwnLectures = await sql`select l.id, l.slug, l.title from lecture l join module m on m.id=l.module_id where m.slug=${premiumMod.slug} limit 1`;
+    const premOwnLec = premOwnLectures[0];
+    if (premOwnLec) {
+      const titleEsc = premOwnLec.title.replace(/&/g, "&amp;");
+      html = await (await getPage(`/curriculum/${premiumMod.slug}`, studentCookie)).text();
+      check("premium module locked", html.includes("هذا الموديول بريميوم"));
+      check("premium module hides lectures", !html.includes(premOwnLec.title) && !html.includes(titleEsc));
 
-    r = await fetch(`${BASE}/api/tutor/chat`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Cookie: studentCookie },
-      body: JSON.stringify({ lectureId: premLec.id, messages: [{ role: "user", content: "ما هو التنفس؟" }] }),
-    });
-    check("tutor premium 403 for free user", r.status === 403, `status=${r.status}`);
+      r = await fetch(`${BASE}/api/tutor/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Cookie: studentCookie },
+        body: JSON.stringify({ lectureId: premOwnLec.id, messages: [{ role: "user", content: "ما هو التنفس؟" }] }),
+      });
+      check("tutor premium 403 for free user", r.status === 403, `status=${r.status}`);
 
-    const adminCookie = await signIn(adminEmail, adminPassword);
-    r = await fetch(`${BASE}/api/admin/subscriptions`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Cookie: adminCookie },
-      body: JSON.stringify({ action: "activate", userId: studentId, planId: "monthly" }),
-    });
-    check("admin activate premium", r.status === 200, `status=${r.status}`);
+      const adminCookie = await signIn(adminEmail, adminPassword);
+      r = await fetch(`${BASE}/api/admin/subscriptions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Cookie: adminCookie },
+        body: JSON.stringify({ action: "activate", userId: studentId, planId: "monthly" }),
+      });
+      check("admin activate premium", r.status === 200, `status=${r.status}`);
 
-    html = await (await getPage(`/curriculum/${premiumMod.slug}`, studentCookie)).text();
-    check("premium unlocked after activate", html.includes(premLec.title));
+      html = await (await getPage(`/curriculum/${premiumMod.slug}`, studentCookie)).text();
+      check("premium unlocked after activate", html.includes(premOwnLec.title) || html.includes(titleEsc));
 
-    await sql`update subscription set expires_at=now()-interval '1 day' where user_id=${studentId} and status='active'`;
-    html = await (await getPage(`/curriculum/${premiumMod.slug}`, studentCookie)).text();
-    check("expired locks again", html.includes("هذا الموديول بريميوم"));
+      await sql`update subscription set expires_at=now()-interval '1 day' where user_id=${studentId} and status='active'`;
+      html = await (await getPage(`/curriculum/${premiumMod.slug}`, studentCookie)).text();
+      check("expired locks again", html.includes("هذا الموديول بريميوم"));
 
-    r = await fetch(`${BASE}/api/admin/subscriptions`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Cookie: adminCookie },
-      body: JSON.stringify({ action: "deactivate", userId: studentId }),
-    });
-    check("admin deactivate", r.status === 200, `status=${r.status}`);
+      r = await fetch(`${BASE}/api/admin/subscriptions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Cookie: adminCookie },
+        body: JSON.stringify({ action: "deactivate", userId: studentId }),
+      });
+      check("admin deactivate", r.status === 200, `status=${r.status}`);
+    }
 
     r = await fetch(`${BASE}/api/admin/subscriptions`, {
       method: "POST",

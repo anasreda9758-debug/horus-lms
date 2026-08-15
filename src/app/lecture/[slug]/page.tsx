@@ -38,10 +38,22 @@ export default async function LecturePage({
 
       <div>
         <h1 className="text-3xl font-bold">{lectureRow.title}</h1>
-        <p className="mt-2 text-muted-foreground">{moduleName}</p>
-        {lectureRow.durationMin ? (
-          <p className="mt-1 text-xs text-muted-foreground">{lectureRow.durationMin} دقيقة</p>
-        ) : null}
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <p className="text-muted-foreground">{moduleName}</p>
+          {lectureRow.subject ? (
+            <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
+              {lectureRow.subject}
+            </span>
+          ) : null}
+          {lectureRow.kind ? (
+            <span className="rounded-full bg-foreground/5 px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
+              {lectureRow.kind === "lecture" ? "محاضرة" : lectureRow.kind === "seminar" ? "سيمينار" : "عملي"}
+            </span>
+          ) : null}
+          {lectureRow.durationMin ? (
+            <p className="text-xs text-muted-foreground">{lectureRow.durationMin} دقيقة</p>
+          ) : null}
+        </div>
       </div>
 
       {!access ? (
@@ -54,12 +66,33 @@ export default async function LecturePage({
         </div>
       ) : (
         <>
-          <div className="rounded-xl bg-card p-6 ring-1 ring-foreground/10">
-            <h2 className="mb-2 text-lg font-semibold">المحتوى</h2>
-            <p className="leading-relaxed text-muted-foreground">
-              {lectureRow.summary ?? "المحتوى الكامل لهذه المحاضرة قيد الإعداد."}
-            </p>
-          </div>
+          {lectureRow.pdfFile ? (
+            <div className="rounded-xl bg-card p-6 ring-1 ring-foreground/10">
+              <h2 className="mb-3 text-lg font-semibold">الملف الأصلي (PDF)</h2>
+              <iframe
+                src={`/api/content/pdf/${lectureRow.id}`}
+                className="h-[70vh] w-full rounded-lg border-0 bg-muted"
+                title={`PDF: ${lectureRow.title}`}
+              />
+            </div>
+          ) : null}
+
+          {lectureRow.content ? (
+            <div className="rounded-xl bg-card p-6 ring-1 ring-foreground/10">
+              <h2 className="mb-2 text-lg font-semibold">المحتوى النصي</h2>
+              <pre className="max-h-[40rem] overflow-auto whitespace-pre-wrap font-sans text-sm leading-relaxed text-muted-foreground">
+                {lectureRow.content}
+              </pre>
+            </div>
+          ) : (
+            <div className="rounded-xl bg-card p-6 ring-1 ring-foreground/10">
+              <h2 className="mb-2 text-lg font-semibold">المحتوى</h2>
+              <p className="leading-relaxed text-muted-foreground">
+                {lectureRow.summary ??
+                  "المحتوى الكامل لهذه المحاضرة متاح في الملف الأصلي أعلاه."}
+              </p>
+            </div>
+          )}
 
           <div>
             <h2 className="mb-3 text-lg font-semibold">المعلم الذكي (AI Tutor)</h2>
