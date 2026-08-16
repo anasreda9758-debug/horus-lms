@@ -115,7 +115,7 @@ export default async function CurriculumPage({
                     <div>
                       <h3 className="text-lg font-bold">الترم الأول</h3>
                       <p className="text-sm text-muted-foreground">
-                        {term1.length} موديولات
+                        3 موديولات + مادتين
                       </p>
                     </div>
                   </div>
@@ -142,7 +142,7 @@ export default async function CurriculumPage({
                     <div>
                       <h3 className="text-lg font-bold">الترم الثاني</h3>
                       <p className="text-sm text-muted-foreground">
-                        {term2.length} موديولات
+                        4 موديولات + مادة
                       </p>
                     </div>
                   </div>
