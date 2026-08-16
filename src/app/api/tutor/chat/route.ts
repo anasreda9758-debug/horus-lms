@@ -6,22 +6,33 @@ import { generateTutorReply, type TutorMessage } from "@/shared/ai-client";
 import { FREE_DAILY_LIMIT, getAiUsageToday, recordAiUsage } from "@/features/ai/queries";
 import { hasModuleAccess, hasAnySubscription } from "@/features/billing/queries";
 import { lecture } from "@/features/curriculum/schema";
+import { getRAGIndex, retrieve } from "@/features/rag";
 
 const MAX_MESSAGES = 20;
 
-function buildSystemPrompt(title: string, summary: string | null, content: string | null) {
-  const body = content
-    ? content.length > 15000
-      ? `${content.slice(0, 15000)}\n...[مقتطع — المحتوى أطول من 15000 حرف]`
-      : content
-    : summary ?? "(لا يوجد ملخص نصي بعد)";
+function buildSystemPrompt(
+  title: string,
+  relevantChunks: { text: string; lectureTitle: string; moduleSlug: string }[],
+  fallbackContent: string | null,
+) {
+  const context = relevantChunks.length > 0
+    ? relevantChunks
+        .map((c, i) => `--- مصدر ${i + 1}: ${c.lectureTitle} (${c.moduleSlug}) ---\n${c.text}`)
+        .join("\n\n")
+    : fallbackContent
+      ? fallbackContent.slice(0, 8000)
+      : "(لا يوجد محتوى نصي متاح)";
+
   return [
     "أنت مدرس خصوصي لطلاب الطب، تجيب بالعربية الفصحى بأسلوب واضح ومباشر.",
-    "أنت مقيّد بمحتوى المحاضرة الحالية فقط: لا تجب عن أسئلة خارج هذا المحتوى، وإذا سُئلت عن موضوع خارج المحاضرة فذكّر الطالب بهذا الحد.",
+    "أنت مقيّد بالمحتوى العلمي المُقدم فقط. لا تُجب عن أسئلة خارج هذا المحتوى، وإذا سُئلت عن موضوع خارجه فذكّر الطالب بذلك.",
+    "استخدم المراجع المُقدمة للإجابة بشكل دقيق ومحدد.",
     "",
     "=== محتوى المحاضرة ===",
     `العنوان: ${title}`,
-    body,
+    "",
+    "=== مراجع ذات صلة (استخرج منها الإجابة) ===",
+    context,
   ].join("\n");
 }
 
@@ -89,10 +100,31 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    // RAG: Retrieve relevant chunks based on the last user message
+    const lastUserMsg = messages[messages.length - 1].content;
+    const ragIndex = await getRAGIndex();
+    const retrieved = retrieve(ragIndex, lastUserMsg, {
+      topK: 6,
+      moduleSlug: lectureRow.module.slug,
+    });
+
+    const chunks = retrieved.map((r) => ({
+      text: r.chunk.text,
+      lectureTitle: r.chunk.lectureTitle,
+      moduleSlug: r.chunk.moduleSlug,
+    }));
+
+    const systemPrompt = buildSystemPrompt(
+      lectureRow.title,
+      chunks,
+      lectureRow.content,
+    );
+
     const { text, inputTokens, outputTokens } = await generateTutorReply({
-      system: buildSystemPrompt(lectureRow.title, lectureRow.summary, lectureRow.content),
+      system: systemPrompt,
       messages,
     });
+
     await recordAiUsage({
       userId: session.user.id,
       lectureId,
@@ -100,7 +132,14 @@ export async function POST(request: NextRequest) {
       inputTokens,
       outputTokens,
     });
-    return NextResponse.json({ reply: text });
+
+    return NextResponse.json({
+      reply: text,
+      sources: chunks.map((c) => ({
+        lectureTitle: c.lectureTitle,
+        moduleSlug: c.moduleSlug,
+      })),
+    });
   } catch (err) {
     console.error("tutor error:", err);
     return NextResponse.json({ error: "ai_unavailable" }, { status: 502 });
