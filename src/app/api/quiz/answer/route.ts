@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/shared/session";
 import { getBankBySlug, gradeAnswer, resolveAttempt } from "@/features/practice/queries";
+import { awardXp } from "@/features/gamification/queries";
 
 export async function POST(request: NextRequest) {
   const session = await getSession();
@@ -42,6 +43,11 @@ export async function POST(request: NextRequest) {
   });
   if (!result) {
     return NextResponse.json({ error: "question or option not found" }, { status: 400 });
+  }
+
+  // Award XP for correct answer
+  if (result.correct) {
+    awardXp(session.user.id, "quiz_correct", questionId).catch(() => {});
   }
 
   return NextResponse.json({ attemptId: attempt.id, ...result });

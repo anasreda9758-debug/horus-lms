@@ -4,6 +4,7 @@ import { hasAnySubscription } from "@/features/billing/queries";
 import { getAiUsageToday, FREE_DAILY_LIMIT, recordAiUsage } from "@/features/ai/queries";
 import { generateJson } from "@/shared/ai-client";
 import { getClinicalCase } from "@/features/review/queries";
+import { awardXp } from "@/features/gamification/queries";
 
 const SYSTEM_PROMPT =
   "You are a medical examiner. Evaluate the student's answers against the model answers. Give clear, concise feedback " +
@@ -67,6 +68,7 @@ export async function POST(request: NextRequest) {
       inputTokens,
       outputTokens,
     });
+    awardXp(session.user.id, "case_complete", caseId).catch(() => {});
     return NextResponse.json({
       score: data?.score ?? null,
       feedback: data?.feedback ?? "لم نتمكن من توليد تقييم.",

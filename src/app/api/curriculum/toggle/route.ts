@@ -5,6 +5,7 @@ import { randomUUID } from "node:crypto";
 import { getSession } from "@/shared/session";
 import { db } from "@/shared/db";
 import { lectureProgress } from "@/features/curriculum/schema";
+import { awardXp } from "@/features/gamification/queries";
 
 export async function POST(request: NextRequest) {
   const session = await getSession();
@@ -48,6 +49,8 @@ export async function POST(request: NextRequest) {
         lectureId,
       });
       completed = true;
+      // Award XP for lecture completion
+      awardXp(session.user.id, "lecture_complete", lectureId).catch(() => {});
     }
   } catch {
     return NextResponse.json({ error: "lecture not found" }, { status: 400 });

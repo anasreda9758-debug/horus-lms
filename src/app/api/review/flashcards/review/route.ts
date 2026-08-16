@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/shared/session";
 import { reviewFlashcard } from "@/features/review/queries";
+import { awardXp } from "@/features/gamification/queries";
 
 export async function POST(request: NextRequest) {
   const session = await getSession();
@@ -25,5 +26,6 @@ export async function POST(request: NextRequest) {
   }
 
   await reviewFlashcard(cardId, session.user.id, rating);
+  awardXp(session.user.id, "flashcard_review", cardId).catch(() => {});
   return NextResponse.json({ ok: true });
 }

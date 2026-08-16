@@ -3,6 +3,7 @@ import { requireUser } from "@/shared/session";
 import { getOverallProgress } from "@/features/curriculum/queries";
 import { getModuleAccuracy } from "@/features/practice/queries";
 import { getActiveSubscriptions } from "@/features/billing/queries";
+import { getProfile } from "@/features/gamification/queries";
 import { ProgressBar } from "@/components/progress-bar";
 import { Navigation } from "@/components/navigation";
 import {
@@ -13,6 +14,8 @@ import {
   Trophy,
   CreditCard,
   Target,
+  Zap,
+  Swords,
 } from "lucide-react";
 
 export default async function DashboardPage() {
@@ -23,6 +26,7 @@ export default async function DashboardPage() {
   const subs = (await getActiveSubscriptions(user.id)).filter(
     (s) => s.expiresAt > new Date()
   );
+  const profile = await getProfile(user.id);
 
   const totalCorrect = accuracy.reduce((s, m) => s + m.correct, 0);
   const totalAnswered = accuracy.reduce((s, m) => s + m.total, 0);
@@ -42,7 +46,14 @@ export default async function DashboardPage() {
           </div>
 
           {/* Stats Grid */}
-          <div className="mb-8 grid gap-4 sm:grid-cols-3">
+          <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <StatCard
+              icon={Zap}
+              label="المستوى والخبرة"
+              value={`المستوى ${profile.level}`}
+              sub={`${profile.totalXp} XP · ${profile.xpToNext} XP للمستوى التالي`}
+              color="text-yellow-600 bg-yellow-50 dark:bg-yellow-950/40"
+            />
             <StatCard
               icon={Target}
               label="التقدم"
@@ -62,26 +73,24 @@ export default async function DashboardPage() {
               color="text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40"
             />
             <StatCard
-              icon={CreditCard}
-              label="الاشتراك"
-              value={subs.length > 0 ? subs[0].plan.name : "لا يوجد"}
-              sub={
-                subs.length > 0
-                  ? `صالح حتى ${subs[0].expiresAt.toLocaleDateString("ar-EG")}`
-                  : "اشترك لفتح المحتوى"
-              }
-              color="text-amber-600 bg-amber-50 dark:bg-amber-950/40"
+              icon={Swords}
+              label="التحديات"
+              value={`${profile.battlesWon}W / ${profile.battlesLost}L`}
+              sub="سجل المباريات"
+              color="text-red-600 bg-red-50 dark:bg-red-950/40"
             />
           </div>
 
           {/* Quick Actions */}
           <div className="mb-8">
             <h2 className="mb-4 text-lg font-semibold">روابط سريعة</h2>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
               <QuickAction href="/curriculum" icon={BookOpen} label="تصفح المنهج" />
               <QuickAction href="/flashcards" icon={Brain} label="البطاقات التعليمية" />
               <QuickAction href="/cases" icon={Stethoscope} label="الحالات السريرية" />
               <QuickAction href="/ospe" icon={FlaskConical} label="محاكي OSPE" />
+              <QuickAction href="/battles" icon={Swords} label="تحدي الأقران" />
+              <QuickAction href="/leaderboard" icon={Trophy} label="لوحة المتصدرين" />
             </div>
           </div>
 

@@ -14,6 +14,8 @@ import {
   Menu,
   X,
   GraduationCap,
+  Swords,
+  Trophy,
 } from "lucide-react";
 import { SignOutButton } from "@/components/sign-out-button";
 
@@ -23,6 +25,8 @@ const navItems = [
   { href: "/flashcards", label: "البطاقات التعليمية", icon: Brain },
   { href: "/cases", label: "الحالات السريرية", icon: Stethoscope },
   { href: "/ospe", label: "محاكي OSPE", icon: FlaskConical },
+  { href: "/battles", label: "تحدي الأقران", icon: Swords },
+  { href: "/leaderboard", label: "لوحة المتصدرين", icon: Trophy },
   { href: "/pricing", label: "الأسعار والاشتراك", icon: CreditCard },
 ];
 
