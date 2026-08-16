@@ -1,26 +1,28 @@
-import Link from "next/link";
 import { requireUser } from "@/shared/session";
-import { buttonVariants } from "@/components/ui/button";
 import { OspeSimulator } from "@/components/ospe-simulator";
+import { Navigation } from "@/components/navigation";
 
 export default async function OspePage() {
-  await requireUser();
+  const session = await requireUser();
 
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 p-8">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">🔬 محاكي OSPE</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            مراجعة عشوائية للمحطات العملية من معارض الصور.
-          </p>
-        </div>
-        <Link href="/dashboard" className={buttonVariants({ variant: "outline", size: "sm" })}>
-          لوحة الطالب
-        </Link>
-      </div>
+    <div className="flex flex-1">
+      <Navigation
+        user={{ name: session.user.name, email: session.user.email }}
+        isAdmin={session.user.role === "admin"}
+      />
 
-      <OspeSimulator />
-    </main>
+      <main className="flex-1 p-6 lg:p-8">
+        <div className="mx-auto max-w-4xl">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold">محاكي OSPE</h1>
+            <p className="mt-1 text-muted-foreground">
+              مراجعة عشوائية للمحطات العملية من معارض الصور.
+            </p>
+          </div>
+          <OspeSimulator />
+        </div>
+      </main>
+    </div>
   );
 }

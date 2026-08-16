@@ -76,7 +76,7 @@ export default async function DashboardPage() {
 
           {/* Quick Actions */}
           <div className="mb-8">
-            <h2 className="mb-4 text-lg font-semibold">快捷操作</h2>
+            <h2 className="mb-4 text-lg font-semibold">روابط سريعة</h2>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               <QuickAction href="/curriculum" icon={BookOpen} label="تصفح المنهج" />
               <QuickAction href="/flashcards" icon={Brain} label="البطاقات التعليمية" />
