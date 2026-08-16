@@ -3,8 +3,9 @@ import { notFound } from "next/navigation";
 import { requireUser } from "@/shared/session";
 import { hasModuleAccess } from "@/shared/entitlements";
 import { getBankBySlug, getQuizQuestions } from "@/features/practice/queries";
-import { buttonVariants } from "@/components/ui/button";
 import { QuizRunner } from "@/components/quiz-runner";
+import { Navigation } from "@/components/navigation";
+import { Lock, HelpCircle } from "lucide-react";
 
 export default async function QuizPage({
   params,
@@ -17,49 +18,83 @@ export default async function QuizPage({
   if (!bank) notFound();
 
   const moduleName = bank.module?.name ?? "هذا الموديول";
-  const access = await hasModuleAccess(session.user.id, bank.module ?? {
-    id: "",
-    slug: "",
-    isFree: true,
-    term: 1,
-  });
+  const access = await hasModuleAccess(
+    session.user.id,
+    bank.module ?? {
+      id: "",
+      slug: "",
+      isFree: true,
+      term: 1,
+    }
+  );
 
   const questions = await getQuizQuestions(bank.id);
 
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 p-8">
-      <div className="flex items-center justify-between">
-        <Link
-          href={bank.module ? `/curriculum/${bank.module.slug}` : "/curriculum"}
-          className={buttonVariants({ variant: "outline", size: "sm" })}
-        >
-          العودة
-        </Link>
-        <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
-          {questions.length} سؤالًا
-        </span>
-      </div>
+    <div className="flex flex-1">
+      <Navigation
+        user={{ name: session.user.name, email: session.user.email }}
+        isAdmin={session.user.role === "admin"}
+      />
 
-      <div>
-        <h1 className="text-3xl font-bold">{bank.title}</h1>
-        <p className="mt-2 text-muted-foreground">{moduleName}</p>
-      </div>
+      <main className="flex-1 p-6 lg:p-8">
+        <div className="mx-auto max-w-3xl">
+          {/* Breadcrumb */}
+          <div className="mb-6 flex items-center gap-2 text-sm text-muted-foreground">
+            {bank.module && (
+              <>
+                <Link
+                  href={`/curriculum/${bank.module.slug}`}
+                  className="hover:text-foreground"
+                >
+                  {moduleName}
+                </Link>
+                <span>/</span>
+              </>
+            )}
+            <span className="text-foreground">{bank.title}</span>
+          </div>
 
-      {!access ? (
-        <div className="rounded-xl bg-amber-500/10 p-4 text-sm">
-          <p className="font-semibold text-amber-700">هذا الاختبار مدفوع</p>
-          <p className="mt-1 text-muted-foreground">
-            اشترِ الموديول أو الترم أو السنة لفتح اختبارات هذا الموديول.
-          </p>
-          <Link href="/pricing" className={`${buttonVariants({ size: "sm", className: "mt-3" })}`}>
-            عرض الأسعار والاشتراك
-          </Link>
+          {/* Header */}
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold">{bank.title}</h1>
+            <div className="mt-3 flex items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+                <HelpCircle className="h-3 w-3" />
+                {questions.length} سؤالًا
+              </span>
+              <span className="text-sm text-muted-foreground">{moduleName}</span>
+            </div>
+          </div>
+
+          {!access ? (
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-8 text-center dark:border-amber-900 dark:bg-amber-950/20">
+              <Lock className="mx-auto mb-4 h-12 w-12 text-amber-400" />
+              <h2 className="mb-2 text-xl font-semibold">
+                هذا الاختبار مدفوع
+              </h2>
+              <p className="mb-6 text-muted-foreground">
+                اشترِ الموديول أو الترم أو السنة لفتح اختبارات هذا الموديول.
+              </p>
+              <Link
+                href="/pricing"
+                className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+              >
+                عرض الأسعار والاشتراك
+              </Link>
+            </div>
+          ) : questions.length === 0 ? (
+            <div className="rounded-2xl border border-border bg-card p-12 text-center">
+              <HelpCircle className="mx-auto mb-4 h-12 w-12 text-muted-foreground/40" />
+              <p className="text-muted-foreground">
+                لا توجد أسئلة في هذا الاختبار بعد.
+              </p>
+            </div>
+          ) : (
+            <QuizRunner bankSlug={bankSlug} questions={questions} />
+          )}
         </div>
-      ) : questions.length === 0 ? (
-        <p className="text-muted-foreground">لا توجد أسئلة في هذا الاختبار بعد.</p>
-      ) : (
-        <QuizRunner bankSlug={bankSlug} questions={questions} />
-      )}
-    </main>
+      </main>
+    </div>
   );
 }

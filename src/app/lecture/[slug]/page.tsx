@@ -3,8 +3,16 @@ import { notFound } from "next/navigation";
 import { requireUser } from "@/shared/session";
 import { hasModuleAccess } from "@/shared/entitlements";
 import { getLectureBySlug } from "@/features/curriculum/queries";
-import { buttonVariants } from "@/components/ui/button";
 import { TutorChat } from "@/components/tutor-chat";
+import { MarkdownContent } from "@/components/markdown-content";
+import { Navigation } from "@/components/navigation";
+import {
+  Clock,
+  BookOpen,
+  FileText,
+  Lock,
+  MessageCircle,
+} from "lucide-react";
 
 export default async function LecturePage({
   params,
@@ -18,99 +26,156 @@ export default async function LecturePage({
 
   const moduleName = lectureRow.module?.name ?? "الموديول";
   const isFree = lectureRow.module?.isFree ?? true;
-  const access = await hasModuleAccess(session.user.id, lectureRow.module ?? {
-    id: "",
-    slug: "",
-    isFree: true,
-    term: 1,
-  });
+  const access = await hasModuleAccess(
+    session.user.id,
+    lectureRow.module ?? {
+      id: "",
+      slug: "",
+      isFree: true,
+      term: 1,
+    }
+  );
 
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 p-8">
-      <div className="flex items-center justify-between">
-        <Link
-          href={lectureRow.module ? `/curriculum/${lectureRow.module.slug}` : "/curriculum"}
-          className={buttonVariants({ variant: "outline", size: "sm" })}
-        >
-          العودة للموديول
-        </Link>
-        {!isFree ? (
-          <span className="rounded-full bg-amber-500/10 px-3 py-1 text-xs font-medium text-amber-600">
-            محتوى مدفوع
-          </span>
-        ) : null}
-      </div>
+    <div className="flex flex-1">
+      <Navigation
+        user={{ name: session.user.name, email: session.user.email }}
+        isAdmin={session.user.role === "admin"}
+      />
 
-      <div>
-        <h1 className="text-3xl font-bold">{lectureRow.title}</h1>
-        <div className="mt-2 flex flex-wrap items-center gap-2">
-          <p className="text-muted-foreground">{moduleName}</p>
-          {lectureRow.subject ? (
-            <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
-              {lectureRow.subject}
-            </span>
-          ) : null}
-          {lectureRow.kind ? (
-            <span className="rounded-full bg-foreground/5 px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
-              {lectureRow.kind === "lecture" ? "محاضرة" : lectureRow.kind === "seminar" ? "سيمينار" : "عملي"}
-            </span>
-          ) : null}
-          {lectureRow.durationMin ? (
-            <p className="text-xs text-muted-foreground">{lectureRow.durationMin} دقيقة</p>
-          ) : null}
-        </div>
-      </div>
+      <main className="flex-1 p-6 lg:p-8">
+        <div className="mx-auto max-w-4xl">
+          {/* Breadcrumb */}
+          <div className="mb-6 flex items-center gap-2 text-sm text-muted-foreground">
+            <Link href="/curriculum" className="hover:text-foreground">
+              المنهج
+            </Link>
+            <span>/</span>
+            {lectureRow.module && (
+              <>
+                <Link
+                  href={`/curriculum/${lectureRow.module.slug}`}
+                  className="hover:text-foreground"
+                >
+                  {moduleName}
+                </Link>
+                <span>/</span>
+              </>
+            )}
+            <span className="text-foreground">{lectureRow.title}</span>
+          </div>
 
-      {!access ? (
-        <div className="rounded-xl bg-amber-500/10 p-4 text-sm">
-          <p className="font-semibold text-amber-700">هذه المحاضرة مدفوعة</p>
-          <p className="mt-1 text-muted-foreground">
-            اشترِ الموديول أو الترم أو السنة لفتح محتوى هذه المحاضرة والمعلم الذكي.
-          </p>
-          <Link href="/pricing" className={`${buttonVariants({ size: "sm", className: "mt-3" })}`}>
-            عرض الأسعار والاشتراك
-          </Link>
-        </div>
-      ) : (
-        <>
-          {lectureRow.pdfFile ? (
-            <div className="rounded-xl bg-card p-6 ring-1 ring-foreground/10">
-              <h2 className="mb-3 text-lg font-semibold">الملف الأصلي (PDF)</h2>
-              <iframe
-                src={`/api/content/pdf/${lectureRow.id}`}
-                className="h-[70vh] w-full rounded-lg border-0 bg-muted"
-                title={`PDF: ${lectureRow.title}`}
-              />
+          {/* Header */}
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold">{lectureRow.title}</h1>
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
+                <BookOpen className="h-3 w-3" />
+                {moduleName}
+              </span>
+              {lectureRow.subject ? (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+                  {lectureRow.subject}
+                </span>
+              ) : null}
+              {lectureRow.kind ? (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
+                  {lectureRow.kind === "lecture"
+                    ? "محاضرة"
+                    : lectureRow.kind === "seminar"
+                      ? "سيمينار"
+                      : "عملي"}
+                </span>
+              ) : null}
+              {lectureRow.durationMin ? (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1 text-xs text-muted-foreground">
+                  <Clock className="h-3 w-3" />
+                  {lectureRow.durationMin} دقيقة
+                </span>
+              ) : null}
+              {!isFree ? (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 px-3 py-1 text-xs font-medium text-amber-600">
+                  <Lock className="h-3 w-3" />
+                  محتوى مدفوع
+                </span>
+              ) : null}
             </div>
-          ) : null}
+          </div>
 
-          {lectureRow.content ? (
-            <div className="rounded-xl bg-card p-6 ring-1 ring-foreground/10">
-              <h2 className="mb-2 text-lg font-semibold">المحتوى النصي</h2>
-              <pre className="max-h-[40rem] overflow-auto whitespace-pre-wrap font-sans text-sm leading-relaxed text-muted-foreground">
-                {lectureRow.content}
-              </pre>
+          {!access ? (
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-8 text-center dark:border-amber-900 dark:bg-amber-950/20">
+              <Lock className="mx-auto mb-4 h-12 w-12 text-amber-400" />
+              <h2 className="mb-2 text-xl font-semibold">
+                هذه المحاضرة مدفوعة
+              </h2>
+              <p className="mb-6 text-muted-foreground">
+                اشترِ الموديول أو الترم أو السنة لفتح محتوى هذه المحاضرة والمعلم
+                الذكي.
+              </p>
+              <Link
+                href="/pricing"
+                className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+              >
+                عرض الأسعار والاشتراك
+              </Link>
             </div>
           ) : (
-            <div className="rounded-xl bg-card p-6 ring-1 ring-foreground/10">
-              <h2 className="mb-2 text-lg font-semibold">المحتوى</h2>
-              <p className="leading-relaxed text-muted-foreground">
-                {lectureRow.summary ??
-                  "المحتوى الكامل لهذه المحاضرة متاح في الملف الأصلي أعلاه."}
-              </p>
-            </div>
-          )}
+            <>
+              {/* PDF Viewer */}
+              {lectureRow.pdfFile ? (
+                <div className="mb-6 rounded-2xl border border-border bg-card p-6">
+                  <div className="mb-4 flex items-center gap-2">
+                    <FileText className="h-5 w-5 text-muted-foreground" />
+                    <h2 className="font-semibold">الملف الأصلي (PDF)</h2>
+                  </div>
+                  <iframe
+                    src={`/api/content/pdf/${lectureRow.id}`}
+                    className="h-[70vh] w-full rounded-xl border-0 bg-muted"
+                    title={`PDF: ${lectureRow.title}`}
+                  />
+                </div>
+              ) : null}
 
-          <div>
-            <h2 className="mb-3 text-lg font-semibold">المعلم الذكي (AI Tutor)</h2>
-            <p className="mb-4 text-sm text-muted-foreground">
-              اسأل أي سؤال متعلق بمحتوى هذه المحاضرة فقط. الحد المجاني: 15 رسالة
-              يوميًا — وبدون حد للمشتركين.
-            </p>
-            <TutorChat lectureId={lectureRow.id} />
-          </div>
-        </>
-      )}
-    </main>
+              {/* Content */}
+              {lectureRow.content ? (
+                <div className="mb-6 rounded-2xl border border-border bg-card p-6">
+                  <div className="mb-4 flex items-center gap-2">
+                    <BookOpen className="h-5 w-5 text-muted-foreground" />
+                    <h2 className="font-semibold">المحتوى النصي</h2>
+                  </div>
+                  <div className="max-h-[50rem] overflow-auto">
+                    <MarkdownContent content={lectureRow.content} />
+                  </div>
+                </div>
+              ) : (
+                <div className="mb-6 rounded-2xl border border-border bg-card p-6">
+                  <div className="mb-4 flex items-center gap-2">
+                    <BookOpen className="h-5 w-5 text-muted-foreground" />
+                    <h2 className="font-semibold">المحتوى</h2>
+                  </div>
+                  <p className="leading-relaxed text-muted-foreground">
+                    {lectureRow.summary ??
+                      "المحتوى الكامل لهذه المحاضرة متاح في الملف الأصلي أعلاه."}
+                  </p>
+                </div>
+              )}
+
+              {/* AI Tutor */}
+              <div className="rounded-2xl border border-border bg-card p-6">
+                <div className="mb-4 flex items-center gap-2">
+                  <MessageCircle className="h-5 w-5 text-muted-foreground" />
+                  <h2 className="font-semibold">المعلم الذكي (AI Tutor)</h2>
+                </div>
+                <p className="mb-4 text-sm text-muted-foreground">
+                  اسأل أي سؤال متعلق بمحتوى هذه المحاضرة فقط. الحد المجاني: 15
+                  رسالة يوميًا — وبدون حد للمشتركين.
+                </p>
+                <TutorChat lectureId={lectureRow.id} />
+              </div>
+            </>
+          )}
+        </div>
+      </main>
+    </div>
   );
 }

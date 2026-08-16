@@ -1,0 +1,187 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useState } from "react";
+import {
+  BookOpen,
+  LayoutDashboard,
+  FlaskConical,
+  Brain,
+  Stethoscope,
+  CreditCard,
+  Settings,
+  Menu,
+  X,
+  GraduationCap,
+} from "lucide-react";
+import { SignOutButton } from "@/components/sign-out-button";
+
+const navItems = [
+  { href: "/dashboard", label: "لوحة الطالب", icon: LayoutDashboard },
+  { href: "/curriculum", label: "المنهج", icon: BookOpen },
+  { href: "/flashcards", label: "البطاقات التعليمية", icon: Brain },
+  { href: "/cases", label: "الحالات السريرية", icon: Stethoscope },
+  { href: "/ospe", label: "محاكي OSPE", icon: FlaskConical },
+  { href: "/pricing", label: "الأسعار والاشتراك", icon: CreditCard },
+];
+
+export function Navigation({
+  user,
+  isAdmin,
+}: {
+  user: { name: string; email: string };
+  isAdmin: boolean;
+}) {
+  const pathname = usePathname();
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  return (
+    <>
+      {/* Desktop sidebar */}
+      <aside className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col">
+        <div className="flex grow flex-col gap-y-6 overflow-y-auto border-l border-border bg-card px-6 pb-4 pt-8">
+          {/* Logo */}
+          <Link href="/dashboard" className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+              <GraduationCap className="h-5 w-5" />
+            </div>
+            <div>
+              <h1 className="text-lg font-bold">Horus MED</h1>
+              <p className="text-xs text-muted-foreground">منصة الطب الذكية</p>
+            </div>
+          </Link>
+
+          {/* Nav links */}
+          <nav className="flex flex-1 flex-col gap-1">
+            {navItems.map((item) => {
+              const isActive =
+                pathname === item.href || pathname.startsWith(item.href + "/");
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                    isActive
+                      ? "bg-primary/10 text-primary"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  }`}
+                >
+                  <item.icon className="h-4 w-4" />
+                  {item.label}
+                </Link>
+              );
+            })}
+            {isAdmin && (
+              <Link
+                href="/admin"
+                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                  pathname === "/admin"
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                }`}
+              >
+                <Settings className="h-4 w-4" />
+                لوحة الإدارة
+              </Link>
+            )}
+          </nav>
+
+          {/* User card */}
+          <div className="border-t border-border pt-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
+                {user.name.charAt(0)}
+              </div>
+              <div className="flex-1 overflow-hidden">
+                <p className="truncate text-sm font-medium">{user.name}</p>
+                <p className="truncate text-xs text-muted-foreground">
+                  {user.email}
+                </p>
+              </div>
+              <SignOutButton />
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      {/* Mobile header */}
+      <div className="sticky top-0 z-40 flex items-center gap-4 border-b border-border bg-card/80 px-4 py-3 backdrop-blur-sm lg:hidden">
+        <button
+          onClick={() => setMobileOpen(!mobileOpen)}
+          className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted"
+        >
+          {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+        </button>
+        <Link href="/dashboard" className="flex items-center gap-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+            <GraduationCap className="h-4 w-4" />
+          </div>
+          <span className="font-bold">Horus MED</span>
+        </Link>
+      </div>
+
+      {/* Mobile sidebar overlay */}
+      {mobileOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <div
+            className="fixed inset-0 bg-black/20 backdrop-blur-sm"
+            onClick={() => setMobileOpen(false)}
+          />
+          <aside className="fixed inset-y-0 right-0 z-50 w-72 overflow-y-auto bg-card px-6 pb-4 pt-8 shadow-xl">
+            <button
+              onClick={() => setMobileOpen(false)}
+              className="absolute left-4 top-4 rounded-lg p-1.5 text-muted-foreground hover:bg-muted"
+            >
+              <X className="h-5 w-5" />
+            </button>
+            <Link
+              href="/dashboard"
+              className="mb-6 flex items-center gap-3"
+              onClick={() => setMobileOpen(false)}
+            >
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+                <GraduationCap className="h-5 w-5" />
+              </div>
+              <div>
+                <h1 className="text-lg font-bold">Horus MED</h1>
+                <p className="text-xs text-muted-foreground">منصة الطب الذكية</p>
+              </div>
+            </Link>
+            <nav className="flex flex-col gap-1">
+              {navItems.map((item) => {
+                const isActive =
+                  pathname === item.href || pathname.startsWith(item.href + "/");
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setMobileOpen(false)}
+                    className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                      isActive
+                        ? "bg-primary/10 text-primary"
+                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                    }`}
+                  >
+                    <item.icon className="h-4 w-4" />
+                    {item.label}
+                  </Link>
+                );
+              })}
+              {isAdmin && (
+                <Link
+                  href="/admin"
+                  onClick={() => setMobileOpen(false)}
+                  className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
+                >
+                  <Settings className="h-4 w-4" />
+                  لوحة الإدارة
+                </Link>
+              )}
+            </nav>
+          </aside>
+        </div>
+      )}
+    </>
+  );
+}

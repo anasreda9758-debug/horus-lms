@@ -14,7 +14,7 @@
 //   - Extracts searchable text only for reasonably small PDFs (<= MAX_EXTRACT_MB) and
 //     caps stored content length.
 import "dotenv/config";
-import { readdirSync, statSync, existsSync } from "node:fs";
+import { readdirSync, statSync, existsSync, readFileSync } from "node:fs";
 import { readFile, stat } from "node:fs/promises";
 import { join, relative, resolve, sep } from "node:path";
 import { randomUUID } from "node:crypto";
@@ -24,6 +24,10 @@ import { db } from "../src/shared/db";
 import { lecture, curriculumModule } from "../src/features/curriculum/schema";
 
 const CONTENT_ROOT = resolve(process.env.CONTENT_ROOT ?? "C:/work/projects");
+const EXTRACTED_TEXTS_DIR = resolve(
+  process.env.EXTRACTED_TEXTS_DIR ??
+    "C:/Users/anasr/AppData/Local/Temp/opencode/lectures"
+);
 const MAX_EXTRACT_MB = 12;
 const MAX_CONTENT_CHARS = 120_000;
 
@@ -678,13 +682,47 @@ function readdirSyncSafe(dir: string): string[] {
 
 // ---- Text extraction ---------------------------------------------------------------
 
+function cleanExtractedText(raw: string): string {
+  // Remove slide markers like "1 of 608 --", page numbers, and excessive whitespace
+  return raw
+    .replace(/\d+ of \d+\s*--\s*/g, "")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+function findExtractedText(
+  folderKeywords: string[]
+): string | null {
+  if (!existsSync(EXTRACTED_TEXTS_DIR)) return null;
+
+  const files = readdirSyncSafe(EXTRACTED_TEXTS_DIR).filter((f) =>
+    f.toLowerCase().endsWith(".txt")
+  );
+
+  // Try to find a matching extracted text file by keywords
+  for (const file of files) {
+    const fileLower = file.toLowerCase();
+    const matches = folderKeywords.filter((kw) => fileLower.includes(kw));
+    if (matches.length > 0) {
+      const filePath = join(EXTRACTED_TEXTS_DIR, file);
+      try {
+        const content = readFileSync(filePath, "utf-8");
+        return cleanExtractedText(content).slice(0, MAX_CONTENT_CHARS);
+      } catch {
+        continue;
+      }
+    }
+  }
+  return null;
+}
+
 async function extractPdfText(filePath: string): Promise<string> {
   try {
     const buf = await readFile(filePath);
     const parser = new PDFParse({ data: buf });
     const result = await parser.getText();
     await parser.destroy();
-    return (result.text ?? "").slice(0, MAX_CONTENT_CHARS);
+    return cleanExtractedText((result.text ?? "").slice(0, MAX_CONTENT_CHARS));
   } catch {
     return "";
   }
@@ -755,11 +793,31 @@ async function main() {
                 content = text;
                 textsExtracted++;
               }
+            } else if (size > MAX_EXTRACT_MB * 1024 * 1024) {
+              // PDF too large for direct extraction — try pre-extracted text
+              const keywords =
+                subjectFolderKeywords(mod.code, subject.name) ?? [];
+              const extracted = findExtractedText(keywords);
+              if (extracted) {
+                content = extracted;
+                textsExtracted++;
+                console.log(
+                  `  [info] used pre-extracted text for ${item.title} (${(extracted.length / 1024).toFixed(0)} KB)`
+                );
+              }
             }
           } else if (folderPdfs.length > 0) {
             const primary = join(subjectFolder, folderPdfs[0]);
             pdfFile = normalizeSlashes(relative(CONTENT_ROOT, primary));
             filesLinked++;
+            // Try pre-extracted text for primary PDF too
+            const keywords =
+              subjectFolderKeywords(mod.code, subject.name) ?? [];
+            const extracted = findExtractedText(keywords);
+            if (extracted) {
+              content = extracted;
+              textsExtracted++;
+            }
           }
         }
 
