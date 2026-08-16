@@ -1,0 +1,1 @@
+ALTER TABLE "plan" ADD COLUMN "active" boolean DEFAULT true NOT NULL;

@@ -18,7 +18,7 @@ export default async function ModulePage({
   const mod = await getModuleBySlug(session.user.id, slug);
   if (!mod) notFound();
   const bank = await getBankForModule(mod.id);
-  const access = await hasModuleAccess(session.user.id, mod.isFree);
+  const access = await hasModuleAccess(session.user.id, mod);
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 p-8">
@@ -28,7 +28,7 @@ export default async function ModulePage({
         </Link>
         {!mod.isFree ? (
           <span className="rounded-full bg-amber-500/10 px-3 py-1 text-xs font-medium text-amber-600">
-            محتوى بريميوم
+            محتوى مدفوع
           </span>
         ) : null}
       </div>
@@ -49,7 +49,7 @@ export default async function ModulePage({
                 : "bg-amber-500/10 text-amber-600"
             }`}
           >
-            {mod.isFree ? "مجاني" : "بريميوم"}
+            {mod.isFree ? "مجاني" : "مدفوع"}
           </span>
         </div>
       </div>
@@ -63,11 +63,14 @@ export default async function ModulePage({
 
       {!access ? (
         <div className="rounded-xl bg-amber-500/10 p-4 text-sm">
-          <p className="font-semibold text-amber-700">هذا الموديول بريميوم</p>
+          <p className="font-semibold text-amber-700">هذا الموديول مدفوع</p>
           <p className="mt-1 text-muted-foreground">
-            فعّل اشتراكك (يدويًا من فريق الدعم حاليًا) لفتح المحاضرات والاختبارات
-            والمعلم الذكي غير المحدود.
+            اشترِ الموديول أو الترم أو السنة بالكامل لفتح المحاضرات والاختبارات
+            والمعلم الذكي.
           </p>
+          <Link href="/pricing" className={`${buttonVariants({ size: "sm", className: "mt-3" })}`}>
+            عرض الأسعار والاشتراك
+          </Link>
         </div>
       ) : (
         <>

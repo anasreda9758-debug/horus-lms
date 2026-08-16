@@ -17,8 +17,12 @@ export default async function QuizPage({
   if (!bank) notFound();
 
   const moduleName = bank.module?.name ?? "هذا الموديول";
-  const isFree = bank.module?.isFree ?? true;
-  const access = await hasModuleAccess(session.user.id, isFree);
+  const access = await hasModuleAccess(session.user.id, bank.module ?? {
+    id: "",
+    slug: "",
+    isFree: true,
+    term: 1,
+  });
 
   const questions = await getQuizQuestions(bank.id);
 
@@ -43,10 +47,13 @@ export default async function QuizPage({
 
       {!access ? (
         <div className="rounded-xl bg-amber-500/10 p-4 text-sm">
-          <p className="font-semibold text-amber-700">هذا الاختبار بريميوم</p>
+          <p className="font-semibold text-amber-700">هذا الاختبار مدفوع</p>
           <p className="mt-1 text-muted-foreground">
-            فعّل اشتراكك (يدويًا من فريق الدعم حاليًا) لفتح اختبارات هذا الموديول.
+            اشترِ الموديول أو الترم أو السنة لفتح اختبارات هذا الموديول.
           </p>
+          <Link href="/pricing" className={`${buttonVariants({ size: "sm", className: "mt-3" })}`}>
+            عرض الأسعار والاشتراك
+          </Link>
         </div>
       ) : questions.length === 0 ? (
         <p className="text-muted-foreground">لا توجد أسئلة في هذا الاختبار بعد.</p>

@@ -24,7 +24,7 @@ export default async function CasesPage() {
 
       {lectures.length === 0 ? (
         <div className="rounded-xl bg-card p-10 text-center text-muted-foreground ring-1 ring-foreground/10">
-          لا توجد محاضرات بنص قابل للقراءة بعد — أو اشترك Premium لفتح محتوى الترم الثاني.
+          لا توجد محاضرات بنص قابل للقراءة بعد — أو اشترك في موديول/ترم لفتح المحتوى.
         </div>
       ) : (
         <CaseStudio lectures={lectures} />

@@ -25,9 +25,8 @@ export async function GET(
   }
 
   if (!row.module.isFree) {
-    const { isPremiumActive } = await import("@/features/billing/queries");
-    const premium = await isPremiumActive(session.user.id);
-    if (!premium) {
+    const { hasModuleAccess } = await import("@/features/billing/queries");
+    if (!(await hasModuleAccess(session.user.id, row.module))) {
       return NextResponse.json({ error: "premium required" }, { status: 403 });
     }
   }

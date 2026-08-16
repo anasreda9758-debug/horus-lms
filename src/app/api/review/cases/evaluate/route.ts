@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/shared/session";
-import { isPremiumActive } from "@/features/billing/queries";
+import { hasAnySubscription } from "@/features/billing/queries";
 import { getAiUsageToday, FREE_DAILY_LIMIT, recordAiUsage } from "@/features/ai/queries";
 import { generateJson } from "@/shared/ai-client";
 import { getClinicalCase } from "@/features/review/queries";
@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "case not found" }, { status: 404 });
   }
 
-  const premium = await isPremiumActive(session.user.id);
+  const premium = await hasAnySubscription(session.user.id);
   if (!premium) {
     const usedToday = await getAiUsageToday(session.user.id);
     if (usedToday >= FREE_DAILY_LIMIT) {

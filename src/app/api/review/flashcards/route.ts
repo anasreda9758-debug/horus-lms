@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm";
 import { getSession } from "@/shared/session";
 import { db } from "@/shared/db";
 import { lecture } from "@/features/curriculum/schema";
-import { isPremiumActive } from "@/features/billing/queries";
+import { hasAnySubscription, hasModuleAccess } from "@/features/billing/queries";
 import { getAiUsageToday, FREE_DAILY_LIMIT, recordAiUsage } from "@/features/ai/queries";
 import { generateJson } from "@/shared/ai-client";
 import { createFlashcards, getDueFlashcards } from "@/features/review/queries";
@@ -41,8 +41,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "no readable content for this lecture" }, { status: 400 });
   }
 
-  const premium = await isPremiumActive(session.user.id);
-  if (!lectureRow.module.isFree && !premium) {
+  const premium = await hasAnySubscription(session.user.id);
+  if (!lectureRow.module.isFree && !(await hasModuleAccess(session.user.id, lectureRow.module))) {
     return NextResponse.json({ error: "premium required" }, { status: 403 });
   }
   if (!premium) {

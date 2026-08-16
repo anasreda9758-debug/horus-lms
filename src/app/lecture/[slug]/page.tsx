@@ -18,7 +18,12 @@ export default async function LecturePage({
 
   const moduleName = lectureRow.module?.name ?? "الموديول";
   const isFree = lectureRow.module?.isFree ?? true;
-  const access = await hasModuleAccess(session.user.id, isFree);
+  const access = await hasModuleAccess(session.user.id, lectureRow.module ?? {
+    id: "",
+    slug: "",
+    isFree: true,
+    term: 1,
+  });
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 p-8">
@@ -31,7 +36,7 @@ export default async function LecturePage({
         </Link>
         {!isFree ? (
           <span className="rounded-full bg-amber-500/10 px-3 py-1 text-xs font-medium text-amber-600">
-            محتوى بريميوم
+            محتوى مدفوع
           </span>
         ) : null}
       </div>
@@ -58,11 +63,13 @@ export default async function LecturePage({
 
       {!access ? (
         <div className="rounded-xl bg-amber-500/10 p-4 text-sm">
-          <p className="font-semibold text-amber-700">هذه المحاضرة بريميوم</p>
+          <p className="font-semibold text-amber-700">هذه المحاضرة مدفوعة</p>
           <p className="mt-1 text-muted-foreground">
-            فعّل اشتراكك (يدويًا من فريق الدعم حاليًا) لفتح محتوى هذه المحاضرة
-            والمعلم الذكي غير المحدود.
+            اشترِ الموديول أو الترم أو السنة لفتح محتوى هذه المحاضرة والمعلم الذكي.
           </p>
+          <Link href="/pricing" className={`${buttonVariants({ size: "sm", className: "mt-3" })}`}>
+            عرض الأسعار والاشتراك
+          </Link>
         </div>
       ) : (
         <>

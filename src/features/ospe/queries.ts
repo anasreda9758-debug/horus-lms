@@ -17,20 +17,22 @@ export async function getOspeModuleAccess(userId: string): Promise<OspeFolderAcc
   const modules = await db.query.curriculumModule.findMany({
     where: inArray(curriculumModule.slug, slugs),
   });
-  const { isPremiumActive } = await import("@/features/billing/queries");
-  const premium = await isPremiumActive(userId);
+  const { hasModuleAccess } = await import("@/features/billing/queries");
   const bySlug = new Map(modules.map((m) => [m.slug, m]));
 
-  return Object.entries(OSPE_FOLDER_TO_MODULE).map(([folder, slug]) => {
+  const out: OspeFolderAccess[] = [];
+  for (const [folder, slug] of Object.entries(OSPE_FOLDER_TO_MODULE)) {
     const m = bySlug.get(slug);
     const isFree = m?.isFree ?? false;
-    return {
+    const accessible = m ? await hasModuleAccess(userId, m) : false;
+    out.push({
       folder,
       moduleSlug: slug,
       moduleName: m?.name ?? slug,
       isFree,
       term: m?.term ?? 1,
-      locked: !isFree && !premium,
-    };
-  });
+      locked: !accessible,
+    });
+  }
+  return out;
 }

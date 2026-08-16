@@ -57,6 +57,20 @@
       "when": 1786836677782,
       "tag": "0007_thin_ben_grimm",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1786848652175,
+      "tag": "0008_demonic_black_tom",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1786848910368,
+      "tag": "0009_lumpy_sally_floyd",
+      "breakpoints": true
     }
   ]
 }

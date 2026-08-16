@@ -1,6 +1,10 @@
-import { isPremiumActive } from "@/features/billing/queries";
+import { hasModuleAccess, hasAnySubscription } from "@/features/billing/queries";
 
-export async function hasModuleAccess(userId: string, isFree: boolean) {
-  if (isFree) return true;
-  return isPremiumActive(userId);
+export async function hasModuleAccessForUser(
+  userId: string,
+  module: { id: string; slug: string; isFree: boolean; term: number },
+) {
+  return hasModuleAccess(userId, module);
 }
+
+export { hasModuleAccess, hasAnySubscription };

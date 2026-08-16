@@ -1,4 +1,4 @@
-// Imports the authoritative medical curriculum into the LMS from the real content
+﻿// Imports the authoritative medical curriculum into the LMS from the real content
 // folders (C:\work\projects\semester <n>). Ported from the Streamlit prototype (app.py).
 //
 //   CONTENT_ROOT=<abs path to the folder holding "semester 1|2"> npx tsx scripts/import-content.ts
@@ -6,7 +6,8 @@
 //
 // Behavior:
 //   - Wipes all existing modules/lectures (cascades quiz banks, progress, attempts).
-//   - Term 1 modules are free; Term 2 modules are premium.
+//   - All modules are paid (isFree=false); access is granted per module/term/year
+//     subscription through the billing system.
 //   - Fuzzy-matches each curriculum lecture/seminar/practical against PDF filenames in
 //     the subject's folder. When no dedicated file matches, falls back to the subject's
 //     primary PDF so the PDF viewer always has something to open.
@@ -51,9 +52,9 @@ const CURRICULUM: Curriculum[] = [
     code: "AEH-101",
     slug: "ahe-101",
     name: "Anatomy, Embryology & Histology (AEH-101)",
-    description: "التشريح، الأجنة، والأنسجة — الترم الأول.",
+    description: "Ø§Ù„ØªØ´Ø±ÙŠØ­ØŒ Ø§Ù„Ø£Ø¬Ù†Ø©ØŒ ÙˆØ§Ù„Ø£Ù†Ø³Ø¬Ø© â€” Ø§Ù„ØªØ±Ù… Ø§Ù„Ø£ÙˆÙ„.",
     order: 1,
-    isFree: true,
+    isFree: false,
     term: 1,
     subjects: [
       {
@@ -124,9 +125,9 @@ const CURRICULUM: Curriculum[] = [
     code: "PPG-102",
     slug: "ppg-102",
     name: "Pharmacology, Molecular Biology & Physiology (PPG-102)",
-    description: "الفارماكولوجيا، البيولوجيا الجزيئية، والفيزيولوجيا — الترم الأول.",
+    description: "Ø§Ù„ÙØ§Ø±Ù…Ø§ÙƒÙˆÙ„ÙˆØ¬ÙŠØ§ØŒ Ø§Ù„Ø¨ÙŠÙˆÙ„ÙˆØ¬ÙŠØ§ Ø§Ù„Ø¬Ø²ÙŠØ¦ÙŠØ©ØŒ ÙˆØ§Ù„ÙÙŠØ²ÙŠÙˆÙ„ÙˆØ¬ÙŠØ§ â€” Ø§Ù„ØªØ±Ù… Ø§Ù„Ø£ÙˆÙ„.",
     order: 2,
-    isFree: true,
+    isFree: false,
     term: 1,
     subjects: [
       {
@@ -186,9 +187,9 @@ const CURRICULUM: Curriculum[] = [
     code: "PMB-103",
     slug: "pmb-103",
     name: "Pathology, Microbiology & Biochemistry (PMB-103)",
-    description: "الباثولوجيا، الميكروبيولوجيا، والكيمياء الحيوية — الترم الأول.",
+    description: "Ø§Ù„Ø¨Ø§Ø«ÙˆÙ„ÙˆØ¬ÙŠØ§ØŒ Ø§Ù„Ù…ÙŠÙƒØ±ÙˆØ¨ÙŠÙˆÙ„ÙˆØ¬ÙŠØ§ØŒ ÙˆØ§Ù„ÙƒÙŠÙ…ÙŠØ§Ø¡ Ø§Ù„Ø­ÙŠÙˆÙŠØ© â€” Ø§Ù„ØªØ±Ù… Ø§Ù„Ø£ÙˆÙ„.",
     order: 3,
-    isFree: true,
+    isFree: false,
     term: 1,
     subjects: [
       {
@@ -251,9 +252,9 @@ const CURRICULUM: Curriculum[] = [
     code: "MT-104",
     slug: "mt-104",
     name: "Medical Terminology (MT-104)",
-    description: "المصطلحات الطبية — الترم الأول.",
+    description: "Ø§Ù„Ù…ØµØ·Ù„Ø­Ø§Øª Ø§Ù„Ø·Ø¨ÙŠØ© â€” Ø§Ù„ØªØ±Ù… Ø§Ù„Ø£ÙˆÙ„.",
     order: 4,
-    isFree: true,
+    isFree: false,
     term: 1,
     subjects: [],
   },
@@ -261,9 +262,9 @@ const CURRICULUM: Curriculum[] = [
     code: "EN-105",
     slug: "en-105",
     name: "English Language (EN-105)",
-    description: "اللغة الإنجليزية — الترم الأول.",
+    description: "Ø§Ù„Ù„ØºØ© Ø§Ù„Ø¥Ù†Ø¬Ù„ÙŠØ²ÙŠØ© â€” Ø§Ù„ØªØ±Ù… Ø§Ù„Ø£ÙˆÙ„.",
     order: 5,
-    isFree: true,
+    isFree: false,
     term: 1,
     subjects: [],
   },
@@ -271,7 +272,7 @@ const CURRICULUM: Curriculum[] = [
     code: "RS-201",
     slug: "rs-201",
     name: "Respiratory System (RS-201)",
-    description: "الجهاز التنفسي — الترم الثاني.",
+    description: "Ø§Ù„Ø¬Ù‡Ø§Ø² Ø§Ù„ØªÙ†ÙØ³ÙŠ â€” Ø§Ù„ØªØ±Ù… Ø§Ù„Ø«Ø§Ù†ÙŠ.",
     order: 6,
     isFree: false,
     term: 2,
@@ -353,7 +354,7 @@ const CURRICULUM: Curriculum[] = [
     code: "CVS-202",
     slug: "cvs-202",
     name: "Cardio-Vascular System (CVS-202)",
-    description: "الجهاز القلبي الوعائي — الترم الثاني.",
+    description: "Ø§Ù„Ø¬Ù‡Ø§Ø² Ø§Ù„Ù‚Ù„Ø¨ÙŠ Ø§Ù„ÙˆØ¹Ø§Ø¦ÙŠ â€” Ø§Ù„ØªØ±Ù… Ø§Ù„Ø«Ø§Ù†ÙŠ.",
     order: 7,
     isFree: false,
     term: 2,
@@ -441,7 +442,7 @@ const CURRICULUM: Curriculum[] = [
     code: "RAU-203",
     slug: "rau-203",
     name: "Renal & Urinary System (RAU-203)",
-    description: "الجهاز البولي — الترم الثاني.",
+    description: "Ø§Ù„Ø¬Ù‡Ø§Ø² Ø§Ù„Ø¨ÙˆÙ„ÙŠ â€” Ø§Ù„ØªØ±Ù… Ø§Ù„Ø«Ø§Ù†ÙŠ.",
     order: 8,
     isFree: false,
     term: 2,
@@ -475,7 +476,7 @@ const CURRICULUM: Curriculum[] = [
       {
         name: "Biochemistry",
         lectures: [
-          { title: "Acid–base balance", kind: "lecture" },
+          { title: "Acidâ€“base balance", kind: "lecture" },
           { title: "Biochemical aspects of renal function", kind: "lecture" },
           { title: "Urine composition", kind: "lecture" },
           { title: "Urine analysis & urinary stone", kind: "practical" },
@@ -521,7 +522,7 @@ const CURRICULUM: Curriculum[] = [
     code: "IBL-204",
     slug: "ibl-204",
     name: "Immune, Blood & Lymphatic (IBL-204)",
-    description: "المناعة والدم والجهاز اللمفاوي — الترم الثاني.",
+    description: "Ø§Ù„Ù…Ù†Ø§Ø¹Ø© ÙˆØ§Ù„Ø¯Ù… ÙˆØ§Ù„Ø¬Ù‡Ø§Ø² Ø§Ù„Ù„Ù…ÙØ§ÙˆÙŠ â€” Ø§Ù„ØªØ±Ù… Ø§Ù„Ø«Ø§Ù†ÙŠ.",
     order: 9,
     isFree: false,
     term: 2,
@@ -581,7 +582,7 @@ const CURRICULUM: Curriculum[] = [
     code: "UNI-205",
     slug: "uni-205",
     name: "Community Health Issues (UNI-205)",
-    description: "القضايا المجتمعية — الترم الثاني.",
+    description: "Ø§Ù„Ù‚Ø¶Ø§ÙŠØ§ Ø§Ù„Ù…Ø¬ØªÙ…Ø¹ÙŠØ© â€” Ø§Ù„ØªØ±Ù… Ø§Ù„Ø«Ø§Ù†ÙŠ.",
     order: 10,
     isFree: false,
     term: 2,
@@ -784,7 +785,7 @@ async function main() {
   }
 
   console.log(
-    `[import-content] done — modules=${modulesCreated} lectures=${lecturesCreated} filesLinked=${filesLinked} texts=${textsExtracted} missingFolders=${missingFolders}`,
+    `[import-content] done â€” modules=${modulesCreated} lectures=${lecturesCreated} filesLinked=${filesLinked} texts=${textsExtracted} missingFolders=${missingFolders}`,
   );
   process.exit(0);
 }

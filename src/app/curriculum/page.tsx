@@ -24,7 +24,7 @@ function ModuleCard({ m }: { m: NonNullable<Awaited<ReturnType<typeof getCurricu
             </span>
           ) : (
             <span className="shrink-0 rounded-full bg-amber-500/10 px-3 py-1 text-xs font-medium text-amber-600">
-              بريميوم — افتح الآن
+              مدفوع — اشترك الآن
             </span>
           )}
         </div>
@@ -76,8 +76,8 @@ export default async function CurriculumPage() {
         <p className="text-muted-foreground">لا توجد وحدات بعد.</p>
       ) : (
         <div className="grid gap-8">
-          {renderTerm("الترم الأول", term1, "محاضرات مجانية")}
-          {renderTerm("الترم الثاني", term2, "محتوى بريميوم")}
+          {renderTerm("الترم الأول", term1, "محتوى الترم الأول")}
+          {renderTerm("الترم الثاني", term2, "محتوى الترم الثاني")}
         </div>
       )}
     </main>

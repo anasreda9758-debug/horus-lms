@@ -90,7 +90,7 @@ export function OspeSimulator() {
               {modules.map((m) => (
                 <option key={m.folder} value={m.folder} disabled={m.locked}>
                   {m.moduleName}
-                  {m.locked ? " (بريميوم)" : ""} — {m.count} صورة
+                  {m.locked ? " (مدفوع)" : ""} — {m.count} صورة
                 </option>
               ))}
             </select>
@@ -103,7 +103,7 @@ export function OspeSimulator() {
           محطات تُراجع هذه الجلسة: {count}
           {lockedCount > 0 ? (
             <span className="ms-2 text-amber-600">
-              · {lockedCount} وحدة بريميوم مؤمنة
+              · {lockedCount} وحدة مدفوعة مؤمنة
             </span>
           ) : null}
         </p>

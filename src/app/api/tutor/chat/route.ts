@@ -4,7 +4,7 @@ import { getSession } from "@/shared/session";
 import { db } from "@/shared/db";
 import { generateTutorReply, type TutorMessage } from "@/shared/ai-client";
 import { FREE_DAILY_LIMIT, getAiUsageToday, recordAiUsage } from "@/features/ai/queries";
-import { isPremiumActive } from "@/features/billing/queries";
+import { hasModuleAccess, hasAnySubscription } from "@/features/billing/queries";
 import { lecture } from "@/features/curriculum/schema";
 
 const MAX_MESSAGES = 20;
@@ -70,8 +70,8 @@ export async function POST(request: NextRequest) {
   if (!lectureRow || !lectureRow.module) {
     return NextResponse.json({ error: "lecture not found" }, { status: 400 });
   }
-  const premium = await isPremiumActive(session.user.id);
-  if (!lectureRow.module.isFree && !premium) {
+  const premium = await hasAnySubscription(session.user.id);
+  if (!lectureRow.module.isFree && !(await hasModuleAccess(session.user.id, lectureRow.module))) {
     return NextResponse.json({ error: "premium required" }, { status: 403 });
   }
 

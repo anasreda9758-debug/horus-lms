@@ -9,7 +9,8 @@ const modules = [
     slug: "anatomy-module-1",
     description: "مدخل إلى علم التشريح: المصطلحات، المستويات، والأنظمة الأساسية.",
     order: 1,
-    isFree: true,
+    isFree: false,
+    term: 1,
     lectures: [
       {
         title: "المصطلحات التشريحية ومستويات الجسم",
@@ -48,9 +49,10 @@ const modules = [
   {
     name: "الجهاز التنفسي: نظرة عامة",
     slug: "respiratory-overview",
-    description: "محتوى بريميوم تجريبي لعرض بوابة التفعيل.",
+    description: "محتوى مدفوع تجريبي لعرض بوابة الاشتراك.",
     order: 2,
     isFree: false,
+    term: 2,
     lectures: [
       {
         title: "تشريح المجاري التنفسية",
@@ -88,6 +90,7 @@ async function main() {
       description: m.description,
       order: m.order,
       isFree: m.isFree,
+      term: m.term ?? 1,
     });
     for (const l of m.lectures) {
       await db.insert(lecture).values({

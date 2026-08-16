@@ -6,20 +6,77 @@ import { user } from "../auth/schema";
 
 export async function getPlans() {
   return db.query.plan.findMany({
-    orderBy: (p) => [asc(p.priceEg)],
+    where: eq(plan.active, true),
+    orderBy: (p) => [asc(p.scope), asc(p.priceEg)],
   });
 }
 
-export async function getActiveSubscription(userId: string) {
-  return db.query.subscription.findFirst({
+export type ActiveSubscription = {
+  id: string;
+  planId: string;
+  status: string;
+  startsAt: Date;
+  expiresAt: Date;
+  plan: {
+    id: string;
+    name: string;
+    priceEg: number;
+    durationDays: number;
+    scope: string;
+    scopeRef: string | null;
+  };
+};
+
+export async function getActiveSubscriptions(userId: string): Promise<ActiveSubscription[]> {
+  return db.query.subscription.findMany({
     where: and(eq(subscription.userId, userId), eq(subscription.status, "active")),
     with: { plan: true },
   });
 }
 
-export async function isPremiumActive(userId: string) {
-  const sub = await getActiveSubscription(userId);
-  return !!sub && sub.expiresAt > new Date();
+// True when the user holds an active subscription that covers the given module.
+// Year unlocks everything; term unlocks all modules of that term; module unlocks that module.
+export async function hasModuleAccess(
+  userId: string,
+  module: { id: string; slug: string; isFree: boolean; term: number },
+) {
+  if (module.isFree) return true;
+  const subs = await getActiveSubscriptions(userId);
+  const now = new Date();
+  for (const s of subs) {
+    if (s.expiresAt <= now) continue;
+    const p = s.plan;
+    if (p.scope === "year") return true;
+    if (p.scope === "term" && String(p.scopeRef) === String(module.term)) return true;
+    if (p.scope === "module" && p.scopeRef === module.slug) return true;
+  }
+  return false;
+}
+
+// True when the user holds ANY active subscription (used for AI limits).
+export async function hasAnySubscription(userId: string) {
+  const subs = await getActiveSubscriptions(userId);
+  return subs.some((s) => s.expiresAt > new Date());
+}
+
+// Enrich every module with its resolved access flag.
+export async function withModuleAccess<T extends { id: string; slug: string; isFree: boolean; term: number }>(
+  userId: string,
+  modules: T[],
+): Promise<(T & { access: boolean })[]> {
+  const subs = await getActiveSubscriptions(userId);
+  const now = new Date();
+  const hasYear = subs.some((s) => s.expiresAt > now && s.plan.scope === "year");
+  const termSet = new Set(
+    subs.filter((s) => s.expiresAt > now && s.plan.scope === "term").map((s) => String(s.plan.scopeRef)),
+  );
+  const moduleSet = new Set(
+    subs.filter((s) => s.expiresAt > now && s.plan.scope === "module").map((s) => s.plan.scopeRef),
+  );
+  return modules.map((m) => ({
+    ...m,
+    access: m.isFree || hasYear || termSet.has(String(m.term)) || moduleSet.has(m.slug),
+  }));
 }
 
 export async function activateSubscription(userId: string, planId: string) {
@@ -27,13 +84,14 @@ export async function activateSubscription(userId: string, planId: string) {
   if (!planRow) return null;
 
   const now = new Date();
+  const expiresAt = new Date(now);
+  expiresAt.setDate(expiresAt.getDate() + planRow.durationDays);
+
+  // Replace any active subscription of the same plan so re-activating renews cleanly.
   await db
     .update(subscription)
     .set({ status: "expired", updatedAt: now })
-    .where(and(eq(subscription.userId, userId), eq(subscription.status, "active")));
-
-  const expiresAt = new Date(now);
-  expiresAt.setDate(expiresAt.getDate() + planRow.durationDays);
+    .where(and(eq(subscription.userId, userId), eq(subscription.planId, planId), eq(subscription.status, "active")));
 
   await db.insert(subscription).values({
     id: randomUUID(),

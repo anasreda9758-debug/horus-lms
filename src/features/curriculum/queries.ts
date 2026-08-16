@@ -45,7 +45,8 @@ export async function getModuleBySlug(userId: string, slug: string) {
 
 export async function getOverallProgress(userId: string) {
   const curriculum = await getCurriculum(userId);
-  const accessible = curriculum.filter((m) => m.isFree);
+  const { withModuleAccess } = await import("@/features/billing/queries");
+  const accessible = (await withModuleAccess(userId, curriculum)).filter((m) => m.access);
   const total = accessible.reduce((sum, m) => sum + m.totalLectures, 0);
   const completed = accessible.reduce((sum, m) => sum + m.completedLectures, 0);
   return {

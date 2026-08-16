@@ -1,18 +1,29 @@
 import { relations } from "drizzle-orm";
-import { index, integer, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { boolean, index, integer, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 import { user } from "../auth/schema";
 
-export const plan = pgTable("plan", {
-  id: text("id").primaryKey(),
-  name: text("name").notNull(),
-  priceEg: integer("price_eg").notNull(),
-  durationDays: integer("duration_days").notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at")
-    .defaultNow()
-    .$onUpdate(() => new Date())
-    .notNull(),
-});
+export const plan = pgTable(
+  "plan",
+  {
+    id: text("id").primaryKey(),
+    name: text("name").notNull(),
+    description: text("description"),
+    priceEg: integer("price_eg").notNull(),
+    durationDays: integer("duration_days").notNull(),
+    // scope: "module" | "term" | "year"
+    scope: text("scope").notNull().default("year"),
+    // module scope → module slug; term scope → "1" | "2"; year scope → null
+    scopeRef: text("scope_ref"),
+    // hidden from purchase UI / admin but kept so old subscriptions still resolve
+    active: boolean("active").notNull().default(true),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [index("plan_scope_idx").on(table.scope, table.scopeRef)],
+);
 
 export const subscription = pgTable(
   "subscription",
@@ -33,7 +44,10 @@ export const subscription = pgTable(
       .$onUpdate(() => new Date())
       .notNull(),
   },
-  (table) => [index("subscription_user_idx").on(table.userId, table.status)],
+  (table) => [
+    index("subscription_user_idx").on(table.userId, table.status),
+    index("subscription_user_plan_active_idx").on(table.userId, table.planId, table.status),
+  ],
 );
 
 export const planRelations = relations(plan, ({ many }) => ({

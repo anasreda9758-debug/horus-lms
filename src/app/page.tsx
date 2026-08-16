@@ -25,6 +25,9 @@ export default async function Home() {
             <Link href="/dashboard" className={buttonVariants({ size: "lg" })}>
               لوحة الطالب
             </Link>
+            <Link href="/pricing" className={buttonVariants({ variant: "secondary", size: "lg" })}>
+              الأسعار والاشتراك
+            </Link>
             <Link href="/ospe" className={buttonVariants({ variant: "secondary", size: "lg" })}>
               🔬 محاكي OSPE
             </Link>
@@ -49,6 +52,9 @@ export default async function Home() {
         <div className="flex flex-wrap items-center justify-center gap-3">
           <Link href="/sign-in" className={buttonVariants({ size: "lg" })}>
             تسجيل الدخول
+          </Link>
+          <Link href="/pricing" className={buttonVariants({ variant: "outline", size: "lg" })}>
+            الأسعار
           </Link>
           <Link
             href="/sign-up"
