@@ -1,9 +1,19 @@
 # Staging topology (single VPS). Requires a .env.staging file, e.g.:
 #   POSTGRES_PASSWORD=<alphanumeric, no URL-special chars>
 #   BETTER_AUTH_SECRET=<long random string>
-#   BETTER_AUTH_URL=https://staging.example.com
+#   BETTER_AUTH_URL=http://<VPS_IP>:3000     # IP only (no domain)
 #   GROQ_API_KEY=...
 #   GROQ_MODEL=llama-3.3-70b-versatile
+#   ADMIN_EMAIL=admin@horus.edu.eg
+#   ADMIN_PASSWORD=<strong password>
+#
+# Content lives on the VPS at /opt/lms-content (semester 1|2 + images), rsynced
+# from the dev machine, and is bind-mounted into the app and seed containers as
+# /data. Do NOT store content in git.
+#
+# Bootstrap on a fresh VPS (once):
+#   sudo mkdir -p /opt/lms-content
+#   rsync -az "semester 1" "semester 2" images anasr@<VPS_IP>:/opt/lms-content/
 #
 # Deploy: docker compose -f docker-compose.staging.yml up -d --build
 name: lms-platform-staging
@@ -34,6 +44,22 @@ services:
       db:
         condition: service_healthy
 
+  seed:
+    build:
+      context: .
+      target: seed
+    restart: "no"
+    environment:
+      DATABASE_URL: postgres://lms:${POSTGRES_PASSWORD:?}@db:5432/lms
+      CONTENT_ROOT: /data
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@horus.edu.eg}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-ChangeMe!Admin2026}
+    volumes:
+      - /opt/lms-content:/data:ro
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
   app:
     build: .
     restart: unless-stopped
@@ -45,9 +71,12 @@ services:
       BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3000}
       GROQ_API_KEY: ${GROQ_API_KEY:-}
       GROQ_MODEL: ${GROQ_MODEL:-llama-3.3-70b-versatile}
+      CONTENT_ROOT: /data
       LOG_LEVEL: ${LOG_LEVEL:-info}
+    volumes:
+      - /opt/lms-content:/data:ro
     depends_on:
-      migrate:
+      seed:
         condition: service_completed_successfully
     healthcheck:
       test:

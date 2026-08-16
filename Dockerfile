@@ -23,6 +23,13 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder /app/drizzle ./drizzle
 COPY --from=builder /app/scripts/migrate.mjs ./scripts/migrate.mjs
 
+# One-shot seeding stage. Builds from `builder` so tsx + source + dev deps are
+# available. Runs scripts/staging-seed.ts (idempotent). Kept separate from
+# `runner` so no source/devDeps leak into the runtime image.
+FROM builder AS seed
+ENV NODE_ENV=production
+CMD ["node_modules/.bin/tsx", "scripts/staging-seed.ts"]
+
 # Never ship env files that Next may copy into the standalone output.
 RUN rm -f .env .env.local .env.development .env.production .env.staging
 
