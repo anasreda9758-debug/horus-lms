@@ -91,7 +91,7 @@ export default async function QuizPage({
               </p>
             </div>
           ) : (
-            <QuizRunner bankSlug={bankSlug} questions={questions} />
+            <QuizRunner bankSlug={bankSlug} moduleSlug={bank.module?.slug ?? ""} questions={questions} />
           )}
         </div>
       </main>

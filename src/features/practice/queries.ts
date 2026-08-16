@@ -120,6 +120,9 @@ export async function finishAttempt(userId: string, attemptId: string) {
     };
   }
 
+  // Get total question count from the bank (not just answered count)
+  const questionCount = await db.$count(question, eq(question.bankId, attempt.bankId));
+
   const answers = await db
     .select({ isCorrect: quizAnswer.isCorrect })
     .from(quizAnswer)
@@ -128,13 +131,13 @@ export async function finishAttempt(userId: string, attemptId: string) {
 
   await db
     .update(quizAttempt)
-    .set({ score, total: answers.length, status: "completed", completedAt: new Date() })
+    .set({ score, total: questionCount, status: "completed", completedAt: new Date() })
     .where(eq(quizAttempt.id, attemptId));
 
   return {
     score,
-    total: answers.length,
-    percent: answers.length ? Math.round((score / answers.length) * 100) : 0,
+    total: questionCount,
+    percent: questionCount ? Math.round((score / questionCount) * 100) : 0,
   };
 }
 

@@ -25,9 +25,11 @@ type Result = {
 
 export function QuizRunner({
   bankSlug,
+  moduleSlug,
   questions,
 }: {
   bankSlug: string;
+  moduleSlug: string;
   questions: QuizQuestion[];
 }) {
   const router = useRouter();
@@ -100,7 +102,7 @@ export function QuizRunner({
           <Button variant="outline" onClick={() => router.refresh()}>
             إعادة الاختبار
           </Button>
-          <Button onClick={() => router.push(`/curriculum/${bankSlug}`)}>
+          <Button onClick={() => router.push(`/curriculum/${moduleSlug}`)}>
             العودة للموديول
           </Button>
         </div>

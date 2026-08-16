@@ -6,13 +6,11 @@ import { getLectureBySlug } from "@/features/curriculum/queries";
 import { TutorChat } from "@/components/tutor-chat";
 import { MarkdownContent } from "@/components/markdown-content";
 import { Navigation } from "@/components/navigation";
-import {
-  Clock,
-  BookOpen,
-  FileText,
-  Lock,
-  MessageCircle,
-} from "lucide-react";
+import { Clock, BookOpen, FileText, Lock, MessageCircle, CheckCircle2 } from "lucide-react";
+import { CompleteButton } from "@/components/complete-button";
+import { db } from "@/shared/db";
+import { lectureProgress } from "@/features/curriculum/schema";
+import { and, eq } from "drizzle-orm";
 
 export default async function LecturePage({
   params,
@@ -35,6 +33,15 @@ export default async function LecturePage({
       term: 1,
     }
   );
+
+  // Check if lecture is completed
+  const progressRow = await db.query.lectureProgress.findFirst({
+    where: and(
+      eq(lectureProgress.userId, session.user.id),
+      eq(lectureProgress.lectureId, lectureRow.id)
+    ),
+  });
+  const isCompleted = !!progressRow;
 
   return (
     <div className="flex flex-1">
@@ -99,7 +106,22 @@ export default async function LecturePage({
                   محتوى مدفوع
                 </span>
               ) : null}
+              {isCompleted && (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-600">
+                  <CheckCircle2 className="h-3 w-3" />
+                  مكتمل
+                </span>
+              )}
             </div>
+            {access && (
+              <div className="mt-4">
+                <CompleteButton
+                  lectureId={lectureRow.id}
+                  moduleSlug={lectureRow.module?.slug ?? ""}
+                  completed={isCompleted}
+                />
+              </div>
+            )}
           </div>
 
           {!access ? (

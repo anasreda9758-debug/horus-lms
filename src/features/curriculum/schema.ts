@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm";
-import { boolean, index, integer, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { boolean, index, integer, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 import { user } from "../auth/schema";
 
 export const curriculumModule = pgTable("module", {
@@ -39,7 +39,10 @@ export const lecture = pgTable(
       .$onUpdate(() => new Date())
       .notNull(),
   },
-  (table) => [index("lecture_module_id_idx").on(table.moduleId)],
+  (table) => [
+    index("lecture_module_id_idx").on(table.moduleId),
+    uniqueIndex("lecture_slug_idx").on(table.slug),
+  ],
 );
 
 export const lectureProgress = pgTable(
@@ -58,7 +61,10 @@ export const lectureProgress = pgTable(
       .$onUpdate(() => new Date())
       .notNull(),
   },
-  (table) => [index("lecture_progress_user_lecture_idx").on(table.userId, table.lectureId)],
+  (table) => [
+    index("lecture_progress_user_lecture_idx").on(table.userId, table.lectureId),
+    uniqueIndex("lecture_progress_user_lecture_unique").on(table.userId, table.lectureId),
+  ],
 );
 
 export const curriculumModuleRelations = relations(curriculumModule, ({ many }) => ({
