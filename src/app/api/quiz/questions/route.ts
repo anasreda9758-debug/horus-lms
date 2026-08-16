@@ -10,17 +10,32 @@ export async function GET(request: NextRequest) {
   const bankSlug = request.nextUrl.searchParams.get("slug");
   const count = Math.min(Math.max(parseInt(request.nextUrl.searchParams.get("count") ?? "5", 10), 1), 10);
 
+  // If no slug, return list of all banks
   if (!bankSlug) {
-    return NextResponse.json({ error: "slug required" }, { status: 400 });
+    const banks = await db.execute(sql`
+      SELECT qb.slug, qb.title, m.name as module_name, m.slug as module_slug,
+        (SELECT count(*) FROM question q WHERE q.bank_id = qb.id) as question_count
+      FROM question_bank qb
+      JOIN module m ON m.id = qb.module_id
+      ORDER BY m."order", qb.title
+    `);
+    return NextResponse.json({
+      banks: (banks as any[]).map((b) => ({
+        slug: b.slug,
+        title: b.title,
+        moduleName: b.module_name,
+        moduleSlug: b.module_slug,
+        questionCount: Number(b.question_count),
+      })),
+    });
   }
 
-  // Get bank
+  // Get questions from specific bank
   const [bank] = await db.execute(sql`
     SELECT id FROM question_bank WHERE slug = ${bankSlug}
   `);
   if (!bank) return NextResponse.json({ error: "bank not found" }, { status: 404 });
 
-  // Get random questions with options
   const rows = await db.execute(sql`
     SELECT q.id, q.prompt,
       (SELECT json_agg(json_build_object('id', qo.id, 'text', qo.text) ORDER BY qo."order")

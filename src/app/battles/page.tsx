@@ -3,6 +3,14 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
+type Bank = {
+  slug: string;
+  title: string;
+  moduleName: string;
+  moduleSlug: string;
+  questionCount: number;
+};
+
 type Battle = {
   id: string;
   status: string;
@@ -26,7 +34,8 @@ type BattleHistory = {
 
 export default function BattlesPage() {
   const router = useRouter();
-  const [bankSlug, setBankSlug] = useState("cvs-202-mcq");
+  const [banks, setBanks] = useState<Bank[]>([]);
+  const [bankSlug, setBankSlug] = useState("");
   const [questionCount, setQuestionCount] = useState(5);
   const [activeBattle, setActiveBattle] = useState<Battle | null>(null);
   const [history, setHistory] = useState<BattleHistory[]>([]);
@@ -34,6 +43,14 @@ export default function BattlesPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    fetch("/api/quiz/questions")
+      .then((r) => r.json())
+      .then((data) => {
+        const b = data.banks ?? [];
+        setBanks(b);
+        if (b.length > 0 && !bankSlug) setBankSlug(b[0].slug);
+      })
+      .catch(() => {});
     fetch("/api/battles")
       .then((r) => r.json())
       .then((data) => setHistory(data.battles ?? []))
@@ -113,6 +130,12 @@ export default function BattlesPage() {
     }
   }
 
+  // Group banks by module
+  const grouped = banks.reduce<Record<string, Bank[]>>((acc, b) => {
+    (acc[b.moduleName] ??= []).push(b);
+    return acc;
+  }, {});
+
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
       <h1 className="mb-8 text-3xl font-bold">⚔️ تحدي الأقران</h1>
@@ -158,10 +181,15 @@ export default function BattlesPage() {
                 onChange={(e) => setBankSlug(e.target.value)}
                 className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
               >
-                <option value="cvs-202-mcq">CVS-202 MCQ</option>
-                <option value="rs-immunology">RS Immunology</option>
-                <option value="ibl-immunology">IBL Immunology</option>
-                <option value="pmb-pathology">PMB Pathology</option>
+                {Object.entries(grouped).map(([modName, modBanks]) => (
+                  <optgroup key={modName} label={modName}>
+                    {modBanks.map((b) => (
+                      <option key={b.slug} value={b.slug}>
+                        {b.title} ({b.questionCount} سؤال)
+                      </option>
+                    ))}
+                  </optgroup>
+                ))}
               </select>
             </div>
             <div>
@@ -178,7 +206,7 @@ export default function BattlesPage() {
             </div>
             <button
               onClick={createBattle}
-              disabled={loading}
+              disabled={loading || !bankSlug}
               className="w-full rounded-lg bg-primary px-4 py-2 font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
             >
               {loading ? "جارٍ الإنشاء…" : "⚔️ إنشاء تحدي"}
