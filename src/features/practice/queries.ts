@@ -54,7 +54,7 @@ export async function getQuizQuestionsRandom(bankId: string, count: number): Pro
     id: q.id,
     prompt: q.prompt,
     order: q.order,
-    options: q.options.map((o) => ({ id: o.id, text: o.text })),
+    options: q.options.map((o) => ({ id: o.id, text: o.text })).sort(() => Math.random() - 0.5),
   }));
 }
 
