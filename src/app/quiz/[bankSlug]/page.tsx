@@ -94,7 +94,7 @@ export default async function QuizPage({
             <div className="rounded-2xl border border-border bg-card p-8 text-center">
               <HelpCircle className="mx-auto mb-4 h-12 w-12 text-muted-foreground/40" />
               <h2 className="mb-2 text-xl font-semibold">اختر عدد الأسئلة</h2>
-              <p className="mb-6 text-muted-foreground">是多少道题想 تحل؟</p>
+              <p className="mb-6 text-muted-foreground">عايز تحل كام سؤال؟</p>
               <div className="flex flex-wrap justify-center gap-4">
                 {[10, 25, 50].map((n) => (
                   <Link
