@@ -99,7 +99,7 @@ export function QuizRunner({
           {result.score} من {result.total} إجابة صحيحة
         </p>
         <div className="mt-6 flex flex-wrap gap-3">
-          <Button variant="outline" onClick={() => router.refresh()}>
+          <Button variant="outline" onClick={() => router.push(`/quiz/${bankSlug}`)}>
             إعادة الاختبار
           </Button>
           <Button onClick={() => router.push(`/curriculum/${moduleSlug}`)}>

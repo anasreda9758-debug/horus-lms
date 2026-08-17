@@ -43,6 +43,21 @@ export async function getQuizQuestions(bankId: string): Promise<QuizQuestion[]> 
   }));
 }
 
+export async function getQuizQuestionsRandom(bankId: string, count: number): Promise<QuizQuestion[]> {
+  const rows = await db.query.question.findMany({
+    where: eq(question.bankId, bankId),
+    with: { options: { orderBy: (o, { asc }) => [asc(o.order)] } },
+  });
+  const shuffled = rows.sort(() => Math.random() - 0.5);
+  const sliced = shuffled.slice(0, count);
+  return sliced.map((q) => ({
+    id: q.id,
+    prompt: q.prompt,
+    order: q.order,
+    options: q.options.map((o) => ({ id: o.id, text: o.text })),
+  }));
+}
+
 export async function getInProgressAttempt(userId: string, bankId: string) {
   return db.query.quizAttempt.findFirst({
     where: and(
@@ -120,14 +135,12 @@ export async function finishAttempt(userId: string, attemptId: string) {
     };
   }
 
-  // Get total question count from the bank (not just answered count)
-  const questionCount = await db.$count(question, eq(question.bankId, attempt.bankId));
-
   const answers = await db
     .select({ isCorrect: quizAnswer.isCorrect })
     .from(quizAnswer)
     .where(eq(quizAnswer.attemptId, attemptId));
   const score = answers.filter((a) => a.isCorrect).length;
+  const questionCount = answers.length;
 
   await db
     .update(quizAttempt)

@@ -2,17 +2,20 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/shared/session";
 import { hasModuleAccess } from "@/shared/entitlements";
-import { getBankBySlug, getQuizQuestions } from "@/features/practice/queries";
+import { getBankBySlug, getQuizQuestionsRandom } from "@/features/practice/queries";
 import { QuizRunner } from "@/components/quiz-runner";
 import { Navigation } from "@/components/navigation";
 import { Lock, HelpCircle } from "lucide-react";
 
 export default async function QuizPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ bankSlug: string }>;
+  searchParams: Promise<{ count?: string }>;
 }) {
   const { bankSlug } = await params;
+  const { count: countParam } = await searchParams;
   const session = await requireUser();
   const bank = await getBankBySlug(bankSlug);
   if (!bank) notFound();
@@ -28,7 +31,9 @@ export default async function QuizPage({
     }
   );
 
-  const questions = await getQuizQuestions(bank.id);
+  const count = countParam ? parseInt(countParam, 10) : 0;
+  const validCount = [10, 25, 50].includes(count) ? count : 0;
+  const questions = validCount > 0 ? await getQuizQuestionsRandom(bank.id, validCount) : [];
 
   return (
     <div className="flex flex-1">
@@ -61,7 +66,7 @@ export default async function QuizPage({
             <div className="mt-3 flex items-center gap-2">
               <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
                 <HelpCircle className="h-3 w-3" />
-                {questions.length} سؤالًا
+                اختبار من {bank.title}
               </span>
               <span className="text-sm text-muted-foreground">{moduleName}</span>
             </div>
@@ -83,15 +88,26 @@ export default async function QuizPage({
                 عرض الأسعار والاشتراك
               </Link>
             </div>
-          ) : questions.length === 0 ? (
-            <div className="rounded-2xl border border-border bg-card p-12 text-center">
-              <HelpCircle className="mx-auto mb-4 h-12 w-12 text-muted-foreground/40" />
-              <p className="text-muted-foreground">
-                لا توجد أسئلة في هذا الاختبار بعد.
-              </p>
-            </div>
-          ) : (
+          ) : validCount > 0 && questions.length > 0 ? (
             <QuizRunner bankSlug={bankSlug} moduleSlug={bank.module?.slug ?? ""} questions={questions} />
+          ) : (
+            <div className="rounded-2xl border border-border bg-card p-8 text-center">
+              <HelpCircle className="mx-auto mb-4 h-12 w-12 text-muted-foreground/40" />
+              <h2 className="mb-2 text-xl font-semibold">اختر عدد الأسئلة</h2>
+              <p className="mb-6 text-muted-foreground">是多少道题想 تحل؟</p>
+              <div className="flex flex-wrap justify-center gap-4">
+                {[10, 25, 50].map((n) => (
+                  <Link
+                    key={n}
+                    href={`/quiz/${bankSlug}?count=${n}`}
+                    className="flex h-24 w-28 flex-col items-center justify-center rounded-xl border border-border bg-background transition-colors hover:border-primary hover:bg-primary/5"
+                  >
+                    <span className="text-3xl font-bold">{n}</span>
+                    <span className="mt-1 text-sm text-muted-foreground">سؤال</span>
+                  </Link>
+                ))}
+              </div>
+            </div>
           )}
         </div>
       </main>
