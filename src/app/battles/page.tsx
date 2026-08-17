@@ -175,7 +175,7 @@ export default function BattlesPage() {
           <h2 className="mb-4 text-xl font-bold">إنشاء تحدي جديد</h2>
           <div className="space-y-4">
             <div>
-              <label className="mb-1 block text-sm font-medium">بنك الأسئلة</label>
+              <label className="mb-1 block text-sm font-medium">الموديول</label>
               <select
                 value={bankSlug}
                 onChange={(e) => setBankSlug(e.target.value)}
@@ -184,8 +184,8 @@ export default function BattlesPage() {
                 {Object.entries(grouped).map(([modName, modBanks]) => (
                   <optgroup key={modName} label={modName}>
                     {modBanks.map((b) => (
-                      <option key={b.slug} value={b.slug}>
-                        {b.title} ({b.questionCount} سؤال)
+                      <option key={b.moduleSlug} value={b.moduleSlug}>
+                        {b.moduleName}
                       </option>
                     ))}
                   </optgroup>

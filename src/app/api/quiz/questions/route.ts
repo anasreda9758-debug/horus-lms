@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
   const bankSlug = request.nextUrl.searchParams.get("slug");
   const count = Math.min(Math.max(parseInt(request.nextUrl.searchParams.get("count") ?? "5", 10), 1), 10);
 
-  // If no slug, return list of all banks
+  // If no slug, return list of all banks grouped by module
   if (!bankSlug) {
     const banks = await db.execute(sql`
       SELECT qb.slug, qb.title, m.name as module_name, m.slug as module_slug,
@@ -30,23 +30,38 @@ export async function GET(request: NextRequest) {
     });
   }
 
-  // Get questions from specific bank
-  const [bank] = await db.execute(sql`
-    SELECT id FROM question_bank WHERE slug = ${bankSlug}
-  `);
-  if (!bank) return NextResponse.json({ error: "bank not found" }, { status: 404 });
+  // Try matching as bank slug first
+  const [bank] = await db.execute(sql`SELECT id FROM question_bank WHERE slug = ${bankSlug}`);
 
-  const rows = await db.execute(sql`
-    SELECT q.id, q.prompt,
-      (SELECT json_agg(json_build_object('id', qo.id, 'text', qo.text) ORDER BY qo."order")
-       FROM question_option qo WHERE qo.question_id = q.id) as options
-    FROM question q
-    WHERE q.bank_id = ${(bank as any).id}
-    ORDER BY RANDOM()
-    LIMIT ${count}
-  `);
+  let questionRows: any[];
 
-  const questions = (rows as any[]).map((r) => ({
+  if (bank) {
+    // Direct bank match
+    questionRows = await db.execute(sql`
+      SELECT q.id, q.prompt,
+        (SELECT json_agg(json_build_object('id', qo.id, 'text', qo.text) ORDER BY qo."order")
+         FROM question_option qo WHERE qo.question_id = q.id) as options
+      FROM question q
+      WHERE q.bank_id = ${(bank as any).id}
+      ORDER BY RANDOM()
+      LIMIT ${count}
+    `);
+  } else {
+    // Try matching as module slug — fetch from ALL banks in that module
+    questionRows = await db.execute(sql`
+      SELECT q.id, q.prompt,
+        (SELECT json_agg(json_build_object('id', qo.id, 'text', qo.text) ORDER BY qo."order")
+         FROM question_option qo WHERE qo.question_id = q.id) as options
+      FROM question q
+      JOIN question_bank qb ON qb.id = q.bank_id
+      JOIN module m ON m.id = qb.module_id
+      WHERE m.slug = ${bankSlug}
+      ORDER BY RANDOM()
+      LIMIT ${count}
+    `);
+  }
+
+  const questions = (questionRows as any[]).map((r) => ({
     id: r.id,
     prompt: r.prompt,
     options: r.options ?? [],
