@@ -1,5 +1,5 @@
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
-import { generateText } from "ai";
+import { generateText, streamText } from "ai";
 
 const groq = createOpenAICompatible({
   name: "groq",
@@ -22,6 +22,7 @@ export async function generateTutorReply(params: {
     model,
     system: params.system,
     messages: params.messages,
+    abortSignal: AbortSignal.timeout(30_000),
   });
 
   const inputTokens = usage?.inputTokens ?? 0;
@@ -30,13 +31,24 @@ export async function generateTutorReply(params: {
   return { text, inputTokens, outputTokens };
 }
 
-// One-shot structured generation: asks the model for pure JSON and parses it,
-// stripping any markdown fences the model wraps it in.
+export function streamTutorReply(params: {
+  system: string;
+  messages: TutorMessage[];
+}) {
+  return streamText({
+    model,
+    system: params.system,
+    messages: params.messages,
+    abortSignal: AbortSignal.timeout(60_000),
+  });
+}
+
 export async function generateJson<T>(params: { system: string; user: string }) {
   const { text, usage } = await generateText({
     model,
     system: params.system,
     prompt: params.user,
+    abortSignal: AbortSignal.timeout(30_000),
   });
 
   const inputTokens = usage?.inputTokens ?? 0;

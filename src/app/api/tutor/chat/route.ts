@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { getSession } from "@/shared/session";
 import { db } from "@/shared/db";
-import { generateTutorReply, type TutorMessage } from "@/shared/ai-client";
+import { streamTutorReply, type TutorMessage } from "@/shared/ai-client";
 import { FREE_DAILY_LIMIT, getAiUsageToday, recordAiUsage } from "@/features/ai/queries";
 import { hasModuleAccess, hasAnySubscription } from "@/features/billing/queries";
 import { lecture } from "@/features/curriculum/schema";
@@ -10,8 +10,10 @@ import { getRAGIndex, retrieve } from "@/features/rag";
 
 const MAX_MESSAGES = 20;
 
+// ── Principle 1: Role Playing ──────────────────────────────────────────────
 function buildSystemPrompt(
   title: string,
+  moduleName: string,
   relevantChunks: { text: string; lectureTitle: string; moduleSlug: string }[],
   fallbackContent: string | null,
 ) {
@@ -23,17 +25,87 @@ function buildSystemPrompt(
       ? fallbackContent.slice(0, 8000)
       : "(لا يوجد محتوى نصي متاح)";
 
-  return [
-    "أنت مدرس خصوصي لطلاب الطب، تجيب بالعربية الفصحى بأسلوب واضح ومباشر.",
-    "أنت مقيّد بالمحتوى العلمي المُقدم فقط. لا تُجب عن أسئلة خارج هذا المحتوى، وإذا سُئلت عن موضوع خارجه فذكّر الطالب بذلك.",
-    "استخدم المراجع المُقدمة للإجابة بشكل دقيق ومحدد.",
-    "",
-    "=== محتوى المحاضرة ===",
-    `العنوان: ${title}`,
-    "",
-    "=== مراجع ذات صلة (استخرج منها الإجابة) ===",
-    context,
-  ].join("\n");
+  // ── Principles 2+3+4: Boundaries + Formatting + Constraints ──
+  return `# الدور والشخصية
+أنت "د. هوروس" — أستاذ طب جامعي خبير في تخصص "${moduleName}".
+أنت تدرّس في كلية طب مصرية. تتحدث بالعربية الفصحى العلمية فقط.
+أسلوبك: أكاديمي دقيق، مباشر، بدون حشو أو كلام عام.
+لا تستخدم ألفاظ عامية أو دعابات. لا تقول "أهلاً" أو "مرحباً" — ابدأ فوراً بالمحتوى.
+
+# الحدود الصارمة (Context Boundaries)
+أنت مقيّد بالمحتوى المُقدم أدناه بشكل مطلق.
+- استخرج الإجابات فقط من المراجع والمحتوى المُقدم.
+- إذا كانت المعلومة غير موجودة في المحتوى المُقدم، قل جملة واحدة:
+  "هذه المعلومة غير متوفرة في محتوى المحاضرة الحالية. يُنصح بمراجعة المصادر الأكاديمية."
+- لا تختلق أو تُخترع معلومات طبية أبداً.
+- لا تعطي نصائح علاجية محددة — قل "استشر طبيبك".
+- إذا كان السؤال خارج نطاق المحاضرة تماماً، قل:
+  "هذا السؤال خارج نطاق المحاضرة الحالية (${title}). يُرجى السؤال داخل سياق المحتوى."
+
+# شكل المخرجات حسب نوع السؤال
+
+## إذا كان السؤال طلباً للشرح:
+أعد الإجابة بهذا الترتيب بالضبط:
+**الشرح:**
+[شرح مبسط ومنظم بالفقرات]
+
+**أهم النقاط للحفظ:**
+- نقطة 1
+- نقطة 2
+- نقطة 3
+
+**المصطلحات المهمة:**
+- المصطلح الإنجليزي = التعريف بالعربية
+
+**سؤال متوقع في الامتحان:**
+[سؤال MCQ بسيط مع الإجابة الصحيحة]
+
+## إذا كان السؤال يطلب اختباراً أو أسئلة:
+أعد JSON صالح فقط بهذا الشكل بدون أي كلام خارج JSON:
+\`\`\`json
+{"questions":[{"q":"نص السؤال","options":["أ","ب","ج","د"],"correct":"أ","explanation":"سبب الصواب"}]}
+\`\`\`
+
+## إذا كان السؤال يطلب خريطة ذهنية:
+أعد كود Mermaid صالح فقط بدون أي كلام خارج الكود:
+\`\`\`mermaid
+mindmap
+  root((العنوان))
+    فرع1
+      عنصر1
+      عنصر2
+    فرع2
+      عنصر3
+\`\`\`
+استخدم حروف إنجليزية للعقد وأضف النص العربي داخل أقواس مربعة.
+
+## إذا كان السؤال عاماً أو توضيحياً:
+أعد فقرة واحدة مرتّبة تحتوي:
+1. تعريف مختصر
+2. الشرح العلمي
+3. صلة المحاضرة
+
+# قواعد الجودة
+- لا تكرر السؤال في الإجابة — ابدأ مباشرة بالجواب.
+- إذا ذكرت إحصائية، اذكر مصدرها من المحتوى المُقدم.
+- إذا وجدت تضارباً في المصادر، اذكر الرأيين واذكر أن هناك خلافاً أكاديمياً.
+- الإجابة القصيرة المختصرة أفضل من الطويلة المملّة.
+
+# المحتوى العلمي المُقدم
+المحاضرة: ${title}
+الموديول: ${moduleName}
+
+=== مراجع ذات صلة (استخرج منها الإجابة) ===
+${context}`;
+}
+
+// ── Detect query type for response guidance ──
+function detectQueryType(msg: string): string {
+  const lower = msg.toLowerCase();
+  if (/اختبار|امتحان|MCQ|mcq|سئ(le|ؤ)ل|اختبرني|حل.?لي/.test(lower)) return "quiz";
+  if (/خريطة ذهنية|mind.?map|مخطط/.test(lower)) return "mindmap";
+  if (/اشرح|شرح|وضّح|فسّر|what is|define|volume/.test(lower)) return "explanation";
+  return "general";
 }
 
 export async function POST(request: NextRequest) {
@@ -100,8 +172,9 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    // RAG: Retrieve relevant chunks based on the last user message
     const lastUserMsg = messages[messages.length - 1].content;
+    const queryType = detectQueryType(lastUserMsg);
+
     const ragIndex = await getRAGIndex();
     const retrieved = retrieve(ragIndex, lastUserMsg, {
       topK: 6,
@@ -116,31 +189,53 @@ export async function POST(request: NextRequest) {
 
     const systemPrompt = buildSystemPrompt(
       lectureRow.title,
+      lectureRow.module.name,
       chunks,
       lectureRow.content,
     );
 
-    const { text, inputTokens, outputTokens } = await generateTutorReply({
+    // Add query-type hint to the last user message
+    const typeHints: Record<string, string> = {
+      quiz: "\n[نوع الطلب: اختبار MCQ — أعد JSON فقط كما هو محدد في التعليمات]",
+      mindmap: "\n[نوع الطلب: خريطة ذهنية — أعد كود Mermaid فقط كما هو محدد]",
+      explanation: "\n[نوع الطلب: شرح — التزم بالترتيب المحدد: شرح + نقاط + مصطلحات + سؤال]",
+      general: "",
+    };
+
+    const patchedMessages = [...messages];
+    patchedMessages[patchedMessages.length - 1] = {
+      ...patchedMessages[patchedMessages.length - 1],
+      content: patchedMessages[patchedMessages.length - 1].content + (typeHints[queryType] ?? ""),
+    };
+
+    // Stream the response
+    const result = await streamTutorReply({
       system: systemPrompt,
-      messages,
+      messages: patchedMessages,
     });
 
     await recordAiUsage({
       userId: session.user.id,
       lectureId,
       model: process.env.GROQ_MODEL ?? "llama-3.3-70b-versatile",
-      inputTokens,
-      outputTokens,
+      inputTokens: 0,
+      outputTokens: 0,
     });
 
-    return NextResponse.json({
-      reply: text,
-      sources: chunks.map((c) => ({
-        lectureTitle: c.lectureTitle,
-        moduleSlug: c.moduleSlug,
-      })),
-    });
-  } catch (err) {
+    // Return sources alongside the stream
+    const sources = chunks.map((c) => ({
+      lectureTitle: c.lectureTitle,
+      moduleSlug: c.moduleSlug,
+    }));
+
+    const response = result.toTextStreamResponse();
+    // Append sources as a custom header (client will read from the response)
+    response.headers.set("X-Sources", JSON.stringify(sources));
+    return response;
+  } catch (err: any) {
+    if (err?.name === "TimeoutError" || err?.message?.includes("timeout")) {
+      return NextResponse.json({ error: "timeout", message: "انتهت مهلة الرد. حاول سؤالاً أقصر." }, { status: 504 });
+    }
     console.error("tutor error:", err);
     return NextResponse.json({ error: "ai_unavailable" }, { status: 502 });
   }
