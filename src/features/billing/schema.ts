@@ -35,9 +35,10 @@ export const subscription = pgTable(
     planId: text("plan_id")
       .notNull()
       .references(() => plan.id, { onDelete: "restrict" }),
-    status: text("status").notNull().default("active"),
+    status: text("status").notNull().default("active"), // active | expired | grace | cancelled
     startsAt: timestamp("starts_at").notNull(),
     expiresAt: timestamp("expires_at").notNull(),
+    graceExpiresAt: timestamp("grace_expires_at"), // 3-day grace period after expiry
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()
@@ -47,6 +48,32 @@ export const subscription = pgTable(
   (table) => [
     index("subscription_user_idx").on(table.userId, table.status),
     index("subscription_user_plan_active_idx").on(table.userId, table.planId, table.status),
+  ],
+);
+
+export const payment = pgTable(
+  "payment",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    planId: text("plan_id")
+      .notNull()
+      .references(() => plan.id, { onDelete: "restrict" }),
+    amountEg: integer("amount_eg").notNull(),
+    // Paymob fields
+    paymobOrderId: text("paymob_order_id"),
+    paymobPaymentKey: text("paymob_payment_key"),
+    paymobTransactionId: text("paymob_transaction_id"),
+    status: text("status").notNull().default("pending"), // pending | paid | failed | refunded
+    paymentMethod: text("payment_method"), // card | wallet | fawry
+    paidAt: timestamp("paid_at"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    index("payment_user_idx").on(table.userId),
+    index("payment_status_idx").on(table.status),
   ],
 );
 

@@ -2,8 +2,8 @@ import { randomUUID } from "node:crypto";
 import { db } from "@/shared/db";
 import { auditLog } from "@/features/hierarchy/schema";
 
-export type AuditAction = "create" | "update" | "delete" | "reorder";
-export type AuditEntityType = "module" | "lecture" | "university" | "faculty" | "program" | "academic_year" | "semester" | "subject";
+export type AuditAction = "create" | "update" | "delete" | "reorder" | "payment";
+export type AuditEntityType = "module" | "lecture" | "university" | "faculty" | "program" | "academic_year" | "semester" | "subject" | "subscription";
 
 export async function logAudit(params: {
   userId: string;

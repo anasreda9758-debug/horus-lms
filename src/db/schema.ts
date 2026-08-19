@@ -7,3 +7,4 @@ export * from "../features/ai/schema";
 export * from "../features/billing/schema";
 export * from "../features/review/schema";
 export * from "../features/gamification/schema";
+export * from "../features/ospe/schema";
