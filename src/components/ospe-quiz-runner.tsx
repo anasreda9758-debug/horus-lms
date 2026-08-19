@@ -1,0 +1,274 @@
+"use client";
+
+import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Clock, Pause, Play, ImageIcon } from "lucide-react";
+
+type QuizQuestion = {
+  id: string;
+  prompt: string;
+  imageUrl: string | null;
+  explanation: string | null;
+  difficulty: string;
+  order: number;
+  options: { id: string; text: string }[];
+};
+
+type Feedback = {
+  correct: boolean;
+  explanation: string | null;
+  attemptId: string;
+};
+
+type Result = {
+  score: number;
+  total: number;
+  percent: number;
+};
+
+function formatTime(sec: number) {
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return `${m}:${s.toString().padStart(2, "0")}`;
+}
+
+function difficultyBadge(d: string) {
+  if (d === "easy") return { text: "سهل", cls: "bg-emerald-500/10 text-emerald-600" };
+  if (d === "hard") return { text: "صعب", cls: "bg-red-500/10 text-red-600" };
+  return { text: "متوسط", cls: "bg-amber-500/10 text-amber-600" };
+}
+
+export function OspeQuizRunner({
+  bankSlug,
+  moduleSlug,
+  questions,
+  timeLimitSec,
+}: {
+  bankSlug: string;
+  moduleSlug: string;
+  questions: QuizQuestion[];
+  timeLimitSec?: number | null;
+}) {
+  const router = useRouter();
+  const [index, setIndex] = useState(0);
+  const [selected, setSelected] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [feedback, setFeedback] = useState<Feedback | null>(null);
+  const [attemptId, setAttemptId] = useState<string | null>(null);
+  const [result, setResult] = useState<Result | null>(null);
+  const [answered, setAnswered] = useState(0);
+
+  const [timeLeft, setTimeLeft] = useState(timeLimitSec ?? 0);
+  const [timerPaused, setTimerPaused] = useState(false);
+  const questionStartRef = useRef<number>(Date.now());
+  const totalElapsedRef = useRef(0);
+
+  const q = questions[index];
+  const isLast = index === questions.length - 1;
+
+  useEffect(() => {
+    if (!timeLimitSec || timerPaused || result) return;
+    if (timeLeft <= 0) {
+      finish();
+      return;
+    }
+    const interval = setInterval(() => {
+      setTimeLeft((t) => {
+        if (t <= 1) {
+          clearInterval(interval);
+          return 0;
+        }
+        return t - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [timeLimitSec, timerPaused, timeLeft, result]);
+
+  useEffect(() => {
+    questionStartRef.current = Date.now();
+  }, [index]);
+
+  async function submit() {
+    if (!selected || busy) return;
+    setBusy(true);
+    const timeSpentMs = Date.now() - questionStartRef.current;
+    totalElapsedRef.current += timeSpentMs;
+    try {
+      const res = await fetch("/api/quiz/answer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bankSlug, questionId: q.id, optionId: selected, timeSpentMs }),
+      });
+      if (res.ok) {
+        const data = (await res.json()) as Feedback;
+        setFeedback(data);
+        setAttemptId(data.attemptId);
+        setAnswered((n) => n + 1);
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function next() {
+    setSelected(null);
+    setFeedback(null);
+    setIndex((i) => i + 1);
+  }
+
+  async function finish() {
+    if (!attemptId || busy) return;
+    setBusy(true);
+    try {
+      const res = await fetch("/api/quiz/finish", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ attemptId }),
+      });
+      if (res.ok) {
+        setResult((await res.json()) as Result);
+        router.refresh();
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (result) {
+    return (
+      <div className="rounded-xl bg-card p-6 ring-1 ring-foreground/10">
+        <h2 className="text-2xl font-bold">نتيجة اختبار OSPE</h2>
+        <p className="mt-3 text-5xl font-bold">{result.percent}%</p>
+        <p className="mt-2 text-muted-foreground">
+          {result.score} من {result.total} إجابة صحيحة
+        </p>
+        {timeLimitSec ? (
+          <p className="mt-1 text-sm text-muted-foreground">
+            الوقت: {formatTime(timeLimitSec - timeLeft)} / {formatTime(timeLimitSec)}
+          </p>
+        ) : null}
+        <div className="mt-6 flex flex-wrap gap-3">
+          <Button variant="outline" onClick={() => router.push(`/quiz/ospe/${moduleSlug}`)}>
+            إعادة الاختبار
+          </Button>
+          <Button onClick={() => router.push("/quiz/ospe")}>
+            اختيار موديول آخر
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  const diff = difficultyBadge(q.difficulty);
+
+  return (
+    <div>
+      {/* Header bar */}
+      <div className="mb-3 flex items-center justify-between">
+        <p className="text-sm text-muted-foreground">
+          المحطة {index + 1} من {questions.length} · أُجيب: {answered}
+        </p>
+        {timeLimitSec ? (
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
+              onClick={() => setTimerPaused((p) => !p)}
+            >
+              {timerPaused ? <Play className="h-3.5 w-3.5" /> : <Pause className="h-3.5 w-3.5" />}
+            </Button>
+            <span className={`flex items-center gap-1 text-sm font-mono ${timeLeft < 30 ? "text-red-500" : "text-muted-foreground"}`}>
+              <Clock className="h-3.5 w-3.5" />
+              {formatTime(timeLeft)}
+            </span>
+          </div>
+        ) : null}
+      </div>
+
+      {/* Image */}
+      {q.imageUrl ? (
+        <div className="mb-4 overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10">
+          <div className="flex items-center gap-2 border-b px-4 py-2">
+            <ImageIcon className="h-4 w-4 text-muted-foreground" />
+            <span className="text-xs text-muted-foreground">صورة المحطة</span>
+          </div>
+          <img
+            src={q.imageUrl}
+            alt={`Station ${index + 1}`}
+            className="max-h-[45vh] w-full bg-black object-contain"
+          />
+        </div>
+      ) : null}
+
+      {/* Question + Options */}
+      <div className="rounded-xl bg-card p-6 ring-1 ring-foreground/10">
+        <div className="flex items-start gap-3">
+          <h2 className="flex-1 text-lg font-semibold leading-relaxed">{q.prompt}</h2>
+          <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${diff.cls}`}>
+            {diff.text}
+          </span>
+        </div>
+
+        <ul className="mt-5 grid gap-2">
+          {q.options.map((opt) => {
+            let cls = "justify-start text-start ring-1 ring-border hover:ring-foreground/30";
+            if (feedback) {
+              if (feedback.correct && selected === opt.id) {
+                cls = "justify-start text-start ring-2 ring-emerald-500 bg-emerald-500/10";
+              } else if (!feedback.correct && selected === opt.id) {
+                cls = "justify-start text-start ring-2 ring-red-500 bg-red-500/10";
+              } else {
+                cls = "justify-start text-start ring-1 ring-border opacity-60";
+              }
+            } else if (selected === opt.id) {
+              cls = "justify-start text-start ring-2 ring-primary";
+            }
+            return (
+              <li key={opt.id}>
+                <Button
+                  variant="ghost"
+                  className={cls}
+                  disabled={!!feedback || busy || timerPaused}
+                  onClick={() => setSelected(opt.id)}
+                >
+                  {opt.text}
+                </Button>
+              </li>
+            );
+          })}
+        </ul>
+
+        {feedback ? (
+          <div className={`mt-4 rounded-lg p-4 text-sm ${feedback.correct ? "bg-emerald-500/10" : "bg-red-500/10"}`}>
+            <p className={feedback.correct ? "text-emerald-600" : "text-red-600"}>
+              {feedback.correct ? "إجابة صحيحة" : "إجابة خاطئة"}
+            </p>
+            {feedback.explanation ? (
+              <p className="mt-1 text-muted-foreground">{feedback.explanation}</p>
+            ) : null}
+          </div>
+        ) : null}
+
+        <div className="mt-6 flex justify-between gap-3">
+          {feedback ? (
+            isLast ? (
+              <Button className="ms-auto" onClick={finish} disabled={busy}>
+                إنهاء الاختبار
+              </Button>
+            ) : (
+              <Button className="ms-auto" onClick={next}>
+                المحطة التالية
+              </Button>
+            )
+          ) : (
+            <Button className="ms-auto" onClick={submit} disabled={!selected || busy || timerPaused}>
+              إرسال الإجابة
+            </Button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

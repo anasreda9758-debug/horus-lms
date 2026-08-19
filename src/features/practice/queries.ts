@@ -13,6 +13,7 @@ import { curriculumModule } from "../curriculum/schema";
 export type QuizQuestion = {
   id: string;
   prompt: string;
+  imageUrl: string | null;
   explanation: string | null;
   difficulty: string;
   order: number;
@@ -41,6 +42,7 @@ export async function getQuizQuestions(bankId: string): Promise<QuizQuestion[]> 
   return rows.map((q) => ({
     id: q.id,
     prompt: q.prompt,
+    imageUrl: q.imageUrl ?? null,
     explanation: q.explanation ?? null,
     difficulty: q.difficulty ?? "medium",
     order: q.order,
@@ -91,6 +93,7 @@ export async function getQuizQuestionsRandom(
   return sliced.map((q) => ({
     id: q.id,
     prompt: q.prompt,
+    imageUrl: q.imageUrl ?? null,
     explanation: q.explanation ?? null,
     difficulty: q.difficulty ?? "medium",
     order: q.order,
