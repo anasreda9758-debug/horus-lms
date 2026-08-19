@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/shared/session";
 import { createBattle, joinBattle, getBattle, getUserBattles } from "@/features/gamification/battles";
+import { battleCreateSchema } from "@/shared/validation";
 
 export async function GET(request: NextRequest) {
   const session = await getSession();
@@ -21,20 +22,27 @@ export async function POST(request: NextRequest) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  const body = await request.json();
+  let body: any;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "invalid json" }, { status: 400 });
+  }
 
   if (body.action === "create") {
-    const bankSlug = body.bankSlug as string;
-    const questionCount = Math.min(Math.max(Number(body.questionCount) || 5, 3), 10);
-    if (!bankSlug) return NextResponse.json({ error: "bankSlug required" }, { status: 400 });
-    const battleId = await createBattle(session.user.id, bankSlug, questionCount);
+    const parsed = battleCreateSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: "validation", details: parsed.error.issues }, { status: 400 });
+    }
+    const battleId = await createBattle(session.user.id, parsed.data.bankSlug, parsed.data.questionCount);
     return NextResponse.json({ battleId });
   }
 
   if (body.action === "join") {
-    const battleId = body.battleId as string;
-    if (!battleId) return NextResponse.json({ error: "battleId required" }, { status: 400 });
-    const result = await joinBattle(battleId, session.user.id);
+    if (typeof body.battleId !== "string" || body.battleId.length === 0) {
+      return NextResponse.json({ error: "battleId required" }, { status: 400 });
+    }
+    const result = await joinBattle(body.battleId, session.user.id);
     if (!result) return NextResponse.json({ error: "battle unavailable" }, { status: 400 });
     return NextResponse.json({ battleId: result });
   }

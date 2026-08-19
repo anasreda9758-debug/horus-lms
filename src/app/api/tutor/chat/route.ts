@@ -7,8 +7,8 @@ import { FREE_DAILY_LIMIT, getAiUsageToday, recordAiUsage } from "@/features/ai/
 import { hasModuleAccess, hasAnySubscription } from "@/features/billing/queries";
 import { lecture } from "@/features/curriculum/schema";
 import { getRAGIndex, retrieve } from "@/features/rag";
-
-const MAX_MESSAGES = 20;
+import { tutorChatSchema } from "@/shared/validation";
+import { updateStreak } from "@/features/gamification/queries";
 
 // ── Principle 1: Role Playing ──────────────────────────────────────────────
 function buildSystemPrompt(
@@ -114,35 +114,19 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
+  updateStreak(session.user.id).catch(() => {});
+
   let lectureId: string;
   let messages: TutorMessage[];
   try {
     const body = await request.json();
-    if (typeof body.lectureId !== "string" || body.lectureId.length === 0) {
-      return NextResponse.json({ error: "invalid lectureId" }, { status: 400 });
+    const parsed = tutorChatSchema.parse(body);
+    lectureId = parsed.lectureId;
+    messages = parsed.messages;
+  } catch (e: any) {
+    if (e?.issues) {
+      return NextResponse.json({ error: "validation", details: e.issues }, { status: 400 });
     }
-    if (!Array.isArray(body.messages) || body.messages.length === 0 || body.messages.length > MAX_MESSAGES) {
-      return NextResponse.json({ error: "invalid messages" }, { status: 400 });
-    }
-    const clean: TutorMessage[] = [];
-    for (const m of body.messages) {
-      if (
-        typeof m !== "object" ||
-        (m.role !== "user" && m.role !== "assistant") ||
-        typeof m.content !== "string" ||
-        m.content.length === 0 ||
-        m.content.length > 4000
-      ) {
-        return NextResponse.json({ error: "invalid messages" }, { status: 400 });
-      }
-      clean.push({ role: m.role, content: m.content });
-    }
-    if (clean[clean.length - 1].role !== "user") {
-      return NextResponse.json({ error: "last message must be from user" }, { status: 400 });
-    }
-    lectureId = body.lectureId;
-    messages = clean;
-  } catch {
     return NextResponse.json({ error: "invalid json" }, { status: 400 });
   }
 

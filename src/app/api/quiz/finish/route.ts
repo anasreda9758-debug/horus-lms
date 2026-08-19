@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { getSession } from "@/shared/session";
 import { finishAttempt } from "@/features/practice/queries";
+import { quizFinishSchema } from "@/shared/validation";
+import { updateStreak } from "@/features/gamification/queries";
 
 export async function POST(request: NextRequest) {
   const session = await getSession();
@@ -12,11 +14,12 @@ export async function POST(request: NextRequest) {
   let attemptId: string;
   try {
     const body = await request.json();
-    if (typeof body.attemptId !== "string" || body.attemptId.length === 0) {
-      return NextResponse.json({ error: "invalid attemptId" }, { status: 400 });
+    const parsed = quizFinishSchema.parse(body);
+    attemptId = parsed.attemptId;
+  } catch (e: any) {
+    if (e?.issues) {
+      return NextResponse.json({ error: "validation", details: e.issues }, { status: 400 });
     }
-    attemptId = body.attemptId;
-  } catch {
     return NextResponse.json({ error: "invalid json" }, { status: 400 });
   }
 
@@ -24,6 +27,8 @@ export async function POST(request: NextRequest) {
   if (!result) {
     return NextResponse.json({ error: "attempt not found" }, { status: 404 });
   }
+
+  updateStreak(session.user.id).catch(() => {});
 
   revalidatePath("/dashboard");
   return NextResponse.json(result);

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/shared/session";
 import { getBankBySlug, gradeAnswer, resolveAttempt } from "@/features/practice/queries";
 import { awardXp } from "@/features/gamification/queries";
+import { quizAnswerSchema } from "@/shared/validation";
 
 export async function POST(request: NextRequest) {
   const session = await getSession();
@@ -14,19 +15,14 @@ export async function POST(request: NextRequest) {
   let optionId: string;
   try {
     const body = await request.json();
-    if (typeof body.bankSlug !== "string" || body.bankSlug.length === 0) {
-      return NextResponse.json({ error: "invalid bankSlug" }, { status: 400 });
+    const parsed = quizAnswerSchema.parse(body);
+    bankSlug = parsed.bankSlug;
+    questionId = parsed.questionId;
+    optionId = parsed.optionId;
+  } catch (e: any) {
+    if (e?.issues) {
+      return NextResponse.json({ error: "validation", details: e.issues }, { status: 400 });
     }
-    if (typeof body.questionId !== "string" || body.questionId.length === 0) {
-      return NextResponse.json({ error: "invalid questionId" }, { status: 400 });
-    }
-    if (typeof body.optionId !== "string" || body.optionId.length === 0) {
-      return NextResponse.json({ error: "invalid optionId" }, { status: 400 });
-    }
-    bankSlug = body.bankSlug;
-    questionId = body.questionId;
-    optionId = body.optionId;
-  } catch {
     return NextResponse.json({ error: "invalid json" }, { status: 400 });
   }
 

@@ -23,6 +23,75 @@ function xpForNextLevel(level: number): number {
   return level * 200;
 }
 
+/** Returns today's date as YYYY-MM-DD string (Egypt timezone). */
+function todayStr(now = new Date()): string {
+  return now.toLocaleDateString("sv-SE", { timeZone: "Africa/Cairo" });
+}
+
+/** Returns yesterday's date as YYYY-MM-DD string. */
+function yesterdayStr(now = new Date()): string {
+  const d = new Date(now);
+  d.setDate(d.getDate() - 1);
+  return d.toLocaleDateString("sv-SE", { timeZone: "Africa/Cairo" });
+}
+
+/**
+ * Update streak: if lastActiveDate is today, no-op.
+ * If it's yesterday, increment streak.
+ * If older, reset to 1.
+ * Awards daily_streak XP on streak milestone days (7, 14, 21, 30, 60, 90, 180, 365).
+ */
+export async function updateStreak(userId: string): Promise<{ streak: number; bonusAwarded: boolean }> {
+  const [row] = await db.execute(sql`
+    SELECT streak, last_active_date FROM user_profile WHERE user_id = ${userId}
+  `);
+
+  const today = todayStr();
+  const yesterday = yesterdayStr();
+  const lastActive = (row as any)?.last_active_date
+    ? new Date((row as any).last_active_date as string)
+    : null;
+  const lastActiveDay = lastActive
+    ? lastActive.toLocaleDateString("sv-SE", { timeZone: "Africa/Cairo" })
+    : null;
+
+  // Already active today — no change
+  if (lastActiveDay === today) {
+    return { streak: (row as any)?.streak ?? 1, bonusAwarded: false };
+  }
+
+  const currentStreak = (row as any)?.streak ?? 0;
+  let newStreak: number;
+  let bonusAwarded = false;
+
+  if (lastActiveDay === yesterday) {
+    // Consecutive day — increment
+    newStreak = currentStreak + 1;
+  } else {
+    // Streak broken or first day — reset to 1
+    newStreak = 1;
+  }
+
+  // Award bonus XP on milestone streak days
+  const MILESTONES = [7, 14, 21, 30, 60, 90, 180, 365];
+  if (MILESTONES.includes(newStreak)) {
+    await awardXp(userId, "daily_streak", `streak-${newStreak}`);
+    bonusAwarded = true;
+  }
+
+  // Update profile
+  await db.execute(sql`
+    INSERT INTO user_profile (user_id, total_xp, level, streak, last_active_date, updated_at)
+    VALUES (${userId}, 0, 1, ${newStreak}, NOW(), NOW())
+    ON CONFLICT (user_id) DO UPDATE SET
+      streak = ${newStreak},
+      last_active_date = NOW(),
+      updated_at = NOW()
+  `);
+
+  return { streak: newStreak, bonusAwarded };
+}
+
 export async function awardXp(userId: string, reason: XpReason, referenceId?: string) {
   const amount = XP_REWARDS[reason];
 

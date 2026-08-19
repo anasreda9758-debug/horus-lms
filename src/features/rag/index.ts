@@ -29,7 +29,7 @@ export async function rebuildIndex(): Promise<BM25Index> {
     const [row] = await client`SELECT content FROM lecture WHERE id = ${m.lid}`;
     if (!row?.content) continue;
 
-    const content = (row.content as string).replace(/\x00/g, "").slice(0, 5000);
+    const content = (row.content as string).replace(/\x00/g, "").slice(0, 8000);
     const pieces = chunkText(content, { chunkSize: 600, overlap: 100 });
     for (const piece of pieces) {
       allChunks.push({
@@ -54,14 +54,36 @@ export async function rebuildIndex(): Promise<BM25Index> {
   return index;
 }
 
+const MIN_SCORE = 0.1;
+
 export function retrieve(
   index: BM25Index,
   query: string,
   opts?: { topK?: number; moduleSlug?: string },
 ): { chunk: Chunk; score: number }[] {
-  let results = index.search(query, opts?.topK ?? 8);
+  // Fetch more candidates than needed so we can filter + dedup
+  const fetchK = (opts?.topK ?? 6) * 3;
+  let results = index.search(query, fetchK);
+
+  // Filter by moduleSlug FIRST (before dedup) so relevant chunks aren't lost
   if (opts?.moduleSlug) {
     results = results.filter((r) => r.chunk.moduleSlug === opts.moduleSlug);
   }
-  return results;
+
+  // Filter out very low scoring chunks
+  results = results.filter((r) => r.score >= MIN_SCORE);
+
+  // Deduplicate: keep highest scoring chunk per lectureId
+  const seen = new Map<string, { chunk: Chunk; score: number }>();
+  for (const r of results) {
+    const existing = seen.get(r.chunk.lectureId);
+    if (!existing || r.score > existing.score) {
+      seen.set(r.chunk.lectureId, r);
+    }
+  }
+
+  // Return topK from deduplicated results
+  return Array.from(seen.values())
+    .sort((a, b) => b.score - a.score)
+    .slice(0, opts?.topK ?? 6);
 }

@@ -4,8 +4,8 @@ import type { Chunk } from "./chunker";
 // No external dependencies — pure JS
 
 type TermStats = {
-  docFreq: number; // number of documents containing this term
-  postings: Map<number, number>; // docId → term frequency in that doc
+  docFreq: number;
+  postings: Map<number, number>;
 };
 
 const K1 = 1.5;
