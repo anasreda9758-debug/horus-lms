@@ -7,8 +7,8 @@ export type SeedQuestion = {
   prompt: string;
   imageUrl?: string;
   explanation: string;
-  options: [string, string, string, string];
-  answer: 0 | 1 | 2 | 3;
+  options: [string, string, string, string, string]; // 5 choices (A-E)
+  answer: 0 | 1 | 2 | 3 | 4; // index of correct option
   difficulty?: "easy" | "medium" | "hard";
 };
 
