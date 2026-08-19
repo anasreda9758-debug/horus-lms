@@ -8,6 +8,7 @@ import { MarkdownContent } from "@/components/markdown-content";
 import { Navigation } from "@/components/navigation";
 import { Clock, BookOpen, FileText, Lock, MessageCircle, CheckCircle2 } from "lucide-react";
 import { CompleteButton } from "@/components/complete-button";
+import { PdfViewer } from "@/components/pdf-viewer";
 import { db } from "@/shared/db";
 import { lectureProgress } from "@/features/curriculum/schema";
 import { and, eq } from "drizzle-orm";
@@ -150,11 +151,7 @@ export default async function LecturePage({
                     <FileText className="h-5 w-5 text-muted-foreground" />
                     <h2 className="font-semibold">الملف الأصلي (PDF)</h2>
                   </div>
-                  <iframe
-                    src={`/api/content/pdf/${lectureRow.id}`}
-                    className="h-[70vh] w-full rounded-xl border-0 bg-muted"
-                    title={`PDF: ${lectureRow.title}`}
-                  />
+                  <PdfViewer lectureId={lectureRow.id} title={lectureRow.title} />
                 </div>
               ) : null}
 

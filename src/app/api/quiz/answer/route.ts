@@ -13,12 +13,14 @@ export async function POST(request: NextRequest) {
   let bankSlug: string;
   let questionId: string;
   let optionId: string;
+  let timeSpentMs: number | undefined;
   try {
     const body = await request.json();
     const parsed = quizAnswerSchema.parse(body);
     bankSlug = parsed.bankSlug;
     questionId = parsed.questionId;
     optionId = parsed.optionId;
+    timeSpentMs = parsed.timeSpentMs;
   } catch (e: any) {
     if (e?.issues) {
       return NextResponse.json({ error: "validation", details: e.issues }, { status: 400 });
@@ -36,6 +38,7 @@ export async function POST(request: NextRequest) {
     attemptId: attempt.id,
     questionId,
     optionId,
+    timeSpentMs,
   });
   if (!result) {
     return NextResponse.json({ error: "question or option not found" }, { status: 400 });

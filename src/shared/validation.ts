@@ -19,6 +19,7 @@ export const quizAnswerSchema = z.object({
   bankSlug: z.string().min(1).max(200),
   questionId: z.string().min(1).max(200),
   optionId: z.string().min(1).max(200),
+  timeSpentMs: z.number().int().min(0).max(300000).optional(),
 });
 
 // ── Quiz Finish ──
