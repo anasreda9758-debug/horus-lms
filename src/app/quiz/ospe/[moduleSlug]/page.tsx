@@ -97,10 +97,10 @@ export default async function OspeQuizPage({
               timeLimitSec={validTime}
             />
           ) : (
-            <div className="rounded-2xl border border-border bg-card p-8 text-center">
-              <HelpCircle className="mx-auto mb-4 h-12 w-12 text-muted-foreground/40" />
-              <h2 className="mb-2 text-xl font-semibold">إعداد اختبار OSPE</h2>
-              <p className="mb-6 text-muted-foreground">اختار إعدادات الاختبار</p>
+            <div className="rounded-2xl border border-primary/20 bg-primary/5 p-8 text-center">
+              <Stethoscope className="mx-auto mb-4 h-12 w-12 text-primary" />
+              <h2 className="mb-2 text-xl font-bold">إعداد محطات OSPE</h2>
+              <p className="mb-6 text-muted-foreground">اختار عدد المحطات ومستوى الصعوبة</p>
 
               {/* Question count */}
               <div className="mb-6">

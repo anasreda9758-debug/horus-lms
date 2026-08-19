@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Clock, Pause, Play, ImageIcon } from "lucide-react";
+import { Clock, Pause, Play, Stethoscope, CheckCircle2 } from "lucide-react";
 
 type QuizQuestion = {
   id: string;
@@ -62,10 +62,10 @@ export function OspeQuizRunner({
   const [timeLeft, setTimeLeft] = useState(timeLimitSec ?? 0);
   const [timerPaused, setTimerPaused] = useState(false);
   const questionStartRef = useRef<number>(Date.now());
-  const totalElapsedRef = useRef(0);
 
   const q = questions[index];
   const isLast = index === questions.length - 1;
+  const progress = Math.round(((index + 1) / questions.length) * 100);
 
   useEffect(() => {
     if (!timeLimitSec || timerPaused || result) return;
@@ -93,7 +93,6 @@ export function OspeQuizRunner({
     if (!selected || busy) return;
     setBusy(true);
     const timeSpentMs = Date.now() - questionStartRef.current;
-    totalElapsedRef.current += timeSpentMs;
     try {
       const res = await fetch("/api/quiz/answer", {
         method: "POST",
@@ -135,22 +134,36 @@ export function OspeQuizRunner({
     }
   }
 
+  // ── Result screen ──
   if (result) {
+    const passed = result.percent >= 60;
     return (
-      <div className="rounded-xl bg-card p-6 ring-1 ring-foreground/10">
-        <h2 className="text-2xl font-bold">نتيجة اختبار OSPE</h2>
-        <p className="mt-3 text-5xl font-bold">{result.percent}%</p>
-        <p className="mt-2 text-muted-foreground">
-          {result.score} من {result.total} إجابة صحيحة
+      <div className={`rounded-2xl border-2 p-8 text-center ${
+        passed
+          ? "border-emerald-500/30 bg-emerald-500/5"
+          : "border-red-500/30 bg-red-500/5"
+      }`}>
+        <Stethoscope className="mx-auto mb-4 h-12 w-12 text-primary" />
+        <h2 className="text-2xl font-bold"> نتيجة اختبار OSPE</h2>
+        <p className={`mt-3 text-6xl font-bold ${passed ? "text-emerald-600" : "text-red-600"}`}>
+          {result.percent}%
         </p>
+        <p className="mt-2 text-lg text-muted-foreground">
+          {result.score} من {result.total} محطة صحيحة
+        </p>
+        {passed ? (
+          <p className="mt-2 text-sm font-medium text-emerald-600"> نجح</p>
+        ) : (
+          <p className="mt-2 text-sm font-medium text-red-600"> حاول مرة أخرى</p>
+        )}
         {timeLimitSec ? (
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="mt-2 text-sm text-muted-foreground">
             الوقت: {formatTime(timeLimitSec - timeLeft)} / {formatTime(timeLimitSec)}
           </p>
         ) : null}
-        <div className="mt-6 flex flex-wrap gap-3">
+        <div className="mt-8 flex flex-wrap justify-center gap-3">
           <Button variant="outline" onClick={() => router.push(`/quiz/ospe/${moduleSlug}`)}>
-            إعادة الاختبار
+            إعادة المحاولة
           </Button>
           <Button onClick={() => router.push("/quiz/ospe")}>
             اختيار موديول آخر
@@ -163,67 +176,89 @@ export function OspeQuizRunner({
   const diff = difficultyBadge(q.difficulty);
 
   return (
-    <div>
-      {/* Header bar */}
-      <div className="mb-3 flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">
-          المحطة {index + 1} من {questions.length} · أُجيب: {answered}
-        </p>
-        {timeLimitSec ? (
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7"
+    <div className="space-y-4">
+      {/* ── Station progress bar ── */}
+      <div className="rounded-xl bg-card p-4 ring-1 ring-foreground/10">
+        <div className="mb-2 flex items-center justify-between text-sm">
+          <span className="font-medium text-muted-foreground">المحطة {index + 1} / {questions.length}</span>
+          {timeLimitSec ? (
+            <button
+              className="flex items-center gap-1.5"
               onClick={() => setTimerPaused((p) => !p)}
             >
               {timerPaused ? <Play className="h-3.5 w-3.5" /> : <Pause className="h-3.5 w-3.5" />}
-            </Button>
-            <span className={`flex items-center gap-1 text-sm font-mono ${timeLeft < 30 ? "text-red-500" : "text-muted-foreground"}`}>
-              <Clock className="h-3.5 w-3.5" />
-              {formatTime(timeLeft)}
-            </span>
-          </div>
-        ) : null}
+              <span className={`font-mono text-lg font-bold ${timeLeft < 60 ? "text-red-500" : timeLeft < 180 ? "text-amber-500" : "text-foreground"}`}>
+                {formatTime(timeLeft)}
+              </span>
+            </button>
+          ) : (
+            <span className="text-muted-foreground">{answered} أُجيب</span>
+          )}
+        </div>
+        {/* Progress bar */}
+        <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+          <div
+            className="h-full rounded-full bg-primary transition-all duration-500"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+        {/* Station dots */}
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          {questions.map((_, i) => (
+            <div
+              key={i}
+              className={`h-2.5 w-2.5 rounded-full transition-colors ${
+                i < index
+                  ? "bg-primary"
+                  : i === index
+                    ? "bg-primary ring-2 ring-primary/30"
+                    : "bg-muted"
+              }`}
+            />
+          ))}
+        </div>
       </div>
 
-      {/* Image */}
+      {/* ── Image (if present) ── */}
       {q.imageUrl ? (
-        <div className="mb-4 overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10">
-          <div className="flex items-center gap-2 border-b px-4 py-2">
-            <ImageIcon className="h-4 w-4 text-muted-foreground" />
-            <span className="text-xs text-muted-foreground">صورة المحطة</span>
-          </div>
+        <div className="overflow-hidden rounded-xl ring-1 ring-foreground/10">
           <img
             src={q.imageUrl}
             alt={`Station ${index + 1}`}
-            className="max-h-[45vh] w-full bg-black object-contain"
+            className="max-h-[40vh] w-full bg-black object-contain"
           />
         </div>
       ) : null}
 
-      {/* Question + Options */}
-      <div className="rounded-xl bg-card p-6 ring-1 ring-foreground/10">
-        <div className="flex items-start gap-3">
-          <h2 className="flex-1 text-lg font-semibold leading-relaxed">{q.prompt}</h2>
-          <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${diff.cls}`}>
+      {/* ── Clinical scenario ── */}
+      <div className="rounded-xl border border-primary/20 bg-primary/5 p-5">
+        <div className="mb-3 flex items-center gap-2">
+          <Stethoscope className="h-4 w-4 text-primary" />
+          <span className="text-sm font-bold uppercase tracking-wide text-primary">السيناريو السريري</span>
+          <span className={`ms-auto rounded-full px-2 py-0.5 text-xs font-medium ${diff.cls}`}>
             {diff.text}
           </span>
         </div>
+        <p className="text-base leading-relaxed text-foreground">{q.prompt}</p>
+      </div>
 
-        <ul className="mt-5 grid gap-2">
-          {q.options.map((opt) => {
-            let cls = "justify-start text-start ring-1 ring-border hover:ring-foreground/30";
+      {/* ── Options ── */}
+      <div className="rounded-xl bg-card p-5 ring-1 ring-foreground/10">
+        <p className="mb-3 text-sm font-medium text-muted-foreground">اختر الإجابة الصحيحة:</p>
+        <ul className="grid gap-2.5">
+          {q.options.map((opt, i) => {
+            const letter = String.fromCharCode(65 + i); // A, B, C, D, E
+            let cls = "justify-start text-start gap-3 ring-1 ring-border hover:ring-foreground/30";
             if (feedback) {
               if (feedback.correct && selected === opt.id) {
-                cls = "justify-start text-start ring-2 ring-emerald-500 bg-emerald-500/10";
+                cls = "justify-start text-start gap-3 ring-2 ring-emerald-500 bg-emerald-500/10";
               } else if (!feedback.correct && selected === opt.id) {
-                cls = "justify-start text-start ring-2 ring-red-500 bg-red-500/10";
+                cls = "justify-start text-start gap-3 ring-2 ring-red-500 bg-red-500/10";
               } else {
-                cls = "justify-start text-start ring-1 ring-border opacity-60";
+                cls = "justify-start text-start gap-3 ring-1 ring-border opacity-50";
               }
             } else if (selected === opt.id) {
-              cls = "justify-start text-start ring-2 ring-primary";
+              cls = "justify-start text-start gap-3 ring-2 ring-primary bg-primary/5";
             }
             return (
               <li key={opt.id}>
@@ -233,38 +268,46 @@ export function OspeQuizRunner({
                   disabled={!!feedback || busy || timerPaused}
                   onClick={() => setSelected(opt.id)}
                 >
-                  {opt.text}
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold">
+                    {letter}
+                  </span>
+                  <span className="flex-1 text-start">{opt.text}</span>
                 </Button>
               </li>
             );
           })}
         </ul>
 
+        {/* ── Feedback ── */}
         {feedback ? (
-          <div className={`mt-4 rounded-lg p-4 text-sm ${feedback.correct ? "bg-emerald-500/10" : "bg-red-500/10"}`}>
-            <p className={feedback.correct ? "text-emerald-600" : "text-red-600"}>
-              {feedback.correct ? "إجابة صحيحة" : "إجابة خاطئة"}
-            </p>
+          <div className={`mt-5 rounded-lg p-4 text-sm ${feedback.correct ? "bg-emerald-500/10" : "bg-red-500/10"}`}>
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className={`h-4 w-4 ${feedback.correct ? "text-emerald-600" : "text-red-600"}`} />
+              <p className={`font-medium ${feedback.correct ? "text-emerald-600" : "text-red-600"}`}>
+                {feedback.correct ? "إجابة صحيحة" : "إجابة خاطئة"}
+              </p>
+            </div>
             {feedback.explanation ? (
-              <p className="mt-1 text-muted-foreground">{feedback.explanation}</p>
+              <p className="mt-2 text-muted-foreground leading-relaxed">{feedback.explanation}</p>
             ) : null}
           </div>
         ) : null}
 
-        <div className="mt-6 flex justify-between gap-3">
+        {/* ── Actions ── */}
+        <div className="mt-5 flex justify-end">
           {feedback ? (
             isLast ? (
-              <Button className="ms-auto" onClick={finish} disabled={busy}>
+              <Button size="lg" onClick={finish} disabled={busy} className="px-8">
                 إنهاء الاختبار
               </Button>
             ) : (
-              <Button className="ms-auto" onClick={next}>
+              <Button size="lg" onClick={next} className="px-8">
                 المحطة التالية
               </Button>
             )
           ) : (
-            <Button className="ms-auto" onClick={submit} disabled={!selected || busy || timerPaused}>
-              إرسال الإجابة
+            <Button size="lg" onClick={submit} disabled={!selected || busy || timerPaused} className="px-8">
+              تأكيد الإجابة
             </Button>
           )}
         </div>
