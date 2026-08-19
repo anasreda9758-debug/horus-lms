@@ -1,12 +1,14 @@
 import { relations } from "drizzle-orm";
 import { boolean, index, integer, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 import { user } from "../auth/schema";
+import { subject } from "../hierarchy/schema";
 
 export const curriculumModule = pgTable("module", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
   slug: text("slug").notNull().unique(),
   description: text("description"),
+  subjectId: text("subject_id").references(() => subject.id, { onDelete: "set null" }),
   order: integer("order").notNull().default(0),
   isFree: boolean("is_free").notNull().default(false),
   term: integer("term").notNull().default(1),
