@@ -2,40 +2,7 @@ import { requireUser } from "@/shared/session";
 import { OspeSimulator } from "@/components/ospe-simulator";
 import { ExamMode } from "@/components/exam-mode";
 import { Navigation } from "@/components/navigation";
-import { ExternalLink, FileText, ClipboardList } from "lucide-react";
-
-const OSPE_EXAM_LINKS = [
-  {
-    module: "CVS",
-    title: "فورم مراجعة OSPE — CVS",
-    url: "https://forms.cloud.microsoft/r/zS6PhM5nNU",
-  },
-  {
-    module: "Resp — Anatomy & Histology",
-    title: "فورم مراجعة Resp — Anatomy & Histology",
-    url: "https://forms.cloud.microsoft/r/i9k3Ry7WYE",
-  },
-  {
-    module: "Resp — Patho, Micro & Physio",
-    title: "فورم مراجعة Resp — Patho, Micro & Physio",
-    url: "https://forms.office.com/r/KpkDPN1dgn",
-  },
-  {
-    module: "Resp — Patho, Micro & Physio (2)",
-    title: "فورم مراجعة Resp — Patho, Micro & Physio",
-    url: "https://forms.cloud.microsoft/r/YNMrjRj9Ar",
-  },
-  {
-    module: "RENAL — Anatomy",
-    title: "فورم مراجعة RENAL Anatomy (110 سؤال)",
-    url: "https://forms.office.com/r/9pHRDUJyi3",
-  },
-  {
-    module: "RENAL — شامل",
-    title: "فورم مراجعة RENAL شاملة",
-    url: "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=p-bjc0VHYU-qSBFD8XCxuhzBZOJxqiNNlQAgkYSzRNFUMVNRRjU1M1RTUUpUS01KNE5QV1E5RUdDWC4u",
-  },
-];
+import { FileText } from "lucide-react";
 
 const OSPE_PDFS = [
   { name: "OSPE CVS", file: "OSPE CVS.pdf", size: "80 MB" },
@@ -85,37 +52,6 @@ export default async function OspePage({
           </div>
 
           {isExamMode ? <ExamMode /> : <OspeSimulator />}
-
-          {/* External Exam Links Section */}
-          <div className="mt-8 rounded-xl bg-card p-6 ring-1 ring-foreground/10">
-            <div className="mb-4 flex items-center gap-2">
-              <ClipboardList className="h-5 w-5 text-muted-foreground" />
-              <h2 className="text-lg font-bold">مصادر خارجية — فورم مراجعة OSPE</h2>
-              <span className="ml-2 rounded-full bg-yellow-500/10 px-2 py-0.5 text-xs font-medium text-yellow-600 dark:text-yellow-400">
-                خارجي
-              </span>
-            </div>
-            <p className="mb-4 text-sm text-muted-foreground">
-              فورمز Microsoft Forms من مصادر طلابية للتدريب على أسئلة OSPE. هذه الفورمز ليست جزءاً من المنصة وقد تتغير أو تُحذف في أي وقت.
-            </p>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {OSPE_EXAM_LINKS.map((link) => (
-                <a
-                  key={link.url}
-                  href={link.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-3 rounded-lg border border-border p-3 text-sm transition-colors hover:border-primary/30 hover:bg-primary/5"
-                >
-                  <ExternalLink className="h-4 w-4 shrink-0 text-muted-foreground" />
-                  <div className="min-w-0">
-                    <div className="font-medium truncate">{link.module}</div>
-                    <div className="text-xs text-muted-foreground truncate">{link.title}</div>
-                  </div>
-                </a>
-              ))}
-            </div>
-          </div>
 
           {/* PDF References Section */}
           <div className="mt-6 rounded-xl bg-card p-6 ring-1 ring-foreground/10">
