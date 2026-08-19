@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/shared/session";
-import { createExam, startExam } from "@/features/ospe/exam";
+import { createExam, getExam, startExam } from "@/features/ospe/exam";
 
 /**
  * POST /api/ospe/exam
@@ -39,7 +39,30 @@ export async function POST(request: NextRequest) {
     });
 
     const result = await startExam(examId);
-    return NextResponse.json({ ok: true, ...result, examId });
+
+    // Fetch full exam with stations for the client
+    const fullExam = await getExam(examId, session.user.id);
+    if (!fullExam) {
+      return NextResponse.json({ error: "exam created but could not be loaded" }, { status: 500 });
+    }
+
+    return NextResponse.json({
+      ok: true,
+      examId,
+      stationCount: fullExam.stations.length,
+      totalTimeLimitSec: fullExam.totalTimeLimitSec,
+      timePerStationSec: fullExam.timePerStationSec,
+      status: fullExam.status,
+      stations: fullExam.stations.map((s) => ({
+        id: s.id,
+        order: s.order,
+        folder: s.folder,
+        fileName: s.fileName,
+        studentAnswer: s.studentAnswer,
+        score: s.score,
+        timeSpentSec: s.timeSpentSec,
+      })),
+    });
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "failed to create exam" },

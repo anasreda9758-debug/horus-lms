@@ -245,7 +245,18 @@ export function ExamMode({ folder }: { folder?: string }) {
   }
 
   // Exam in progress — show current station
-  const station = exam.stations[currentIdx];
+  const station = exam.stations?.[currentIdx];
+  if (!station) {
+    return (
+      <div className="rounded-xl bg-card p-8 text-center ring-1 ring-foreground/10">
+        <h2 className="mb-2 text-2xl font-bold">تعذر تحميل المحطات</h2>
+        <p className="mb-4 text-muted-foreground">
+          لم يتم العثور على محطات لهذا الامتحان. تأكد من وجود صور OSPE في المجلد الصحيح.
+        </p>
+        <Button onClick={() => router.refresh()} size="lg">حاول مرة أخرى</Button>
+      </div>
+    );
+  }
   const isTimeWarning = stationTimeLeft <= 10;
   const progress = ((currentIdx + 1) / exam.stations.length) * 100;
 
