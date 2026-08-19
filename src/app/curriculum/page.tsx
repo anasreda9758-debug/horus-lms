@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireUser } from "@/shared/session";
 import { getCurriculum } from "@/features/curriculum/queries";
+import { getCachedCurriculum } from "@/shared/query-cache";
 import { ProgressBar } from "@/components/progress-bar";
 import { Navigation } from "@/components/navigation";
 import { BookOpen, Lock, Unlock, Calendar } from "lucide-react";
@@ -62,7 +63,7 @@ export default async function CurriculumPage({
 }) {
   const session = await requireUser();
   const params = await searchParams;
-  const curriculum = await getCurriculum(session.user.id);
+  const curriculum = await getCachedCurriculum(session.user.id);
   const activeTerm = params.term ? Number(params.term) : 0;
 
   const term1 = curriculum.filter((m) => m.term === 1);
