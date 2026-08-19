@@ -40,6 +40,9 @@ yarn-error.log*
 # local logical backups (npm run db:backup)
 backups/
 
+# OSPE PDFs (too large for git — stored locally)
+public/ospe-pdfs/*.pdf
+
 # vercel
 .vercel
 
