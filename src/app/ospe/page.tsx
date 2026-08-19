@@ -86,14 +86,17 @@ export default async function OspePage({
 
           {isExamMode ? <ExamMode /> : <OspeSimulator />}
 
-          {/* Exam Links Section */}
+          {/* External Exam Links Section */}
           <div className="mt-8 rounded-xl bg-card p-6 ring-1 ring-foreground/10">
             <div className="mb-4 flex items-center gap-2">
-              <ClipboardList className="h-5 w-5 text-primary" />
-              <h2 className="text-lg font-bold">فورم مراجعة OSPE</h2>
+              <ClipboardList className="h-5 w-5 text-muted-foreground" />
+              <h2 className="text-lg font-bold">مصادر خارجية — فورم مراجعة OSPE</h2>
+              <span className="ml-2 rounded-full bg-yellow-500/10 px-2 py-0.5 text-xs font-medium text-yellow-600 dark:text-yellow-400">
+                خارجي
+              </span>
             </div>
             <p className="mb-4 text-sm text-muted-foreground">
-              فورمز Microsoft Forms للتدريب على أسئلة شبيهة باللي بتيجي في الامتحان.
+              فورمز Microsoft Forms من مصادر طلابية للتدريب على أسئلة OSPE. هذه الفورمز ليست جزءاً من المنصة وقد تتغير أو تُحذف في أي وقت.
             </p>
             <div className="grid gap-3 sm:grid-cols-2">
               {OSPE_EXAM_LINKS.map((link) => (
@@ -104,7 +107,7 @@ export default async function OspePage({
                   rel="noopener noreferrer"
                   className="flex items-center gap-3 rounded-lg border border-border p-3 text-sm transition-colors hover:border-primary/30 hover:bg-primary/5"
                 >
-                  <ExternalLink className="h-4 w-4 shrink-0 text-primary" />
+                  <ExternalLink className="h-4 w-4 shrink-0 text-muted-foreground" />
                   <div className="min-w-0">
                     <div className="font-medium truncate">{link.module}</div>
                     <div className="text-xs text-muted-foreground truncate">{link.title}</div>
