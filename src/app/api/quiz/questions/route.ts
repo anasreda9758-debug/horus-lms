@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
   if (bank) {
     // Direct bank match
     questionRows = await db.execute(sql`
-      SELECT q.id, q.prompt,
+      SELECT q.id, q.prompt, q.image_url as "imageUrl",
         (SELECT json_agg(json_build_object('id', qo.id, 'text', qo.text) ORDER BY qo."order")
          FROM question_option qo WHERE qo.question_id = q.id) as options
       FROM question q
@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
   } else {
     // Try matching as module slug — fetch from ALL banks in that module
     questionRows = await db.execute(sql`
-      SELECT q.id, q.prompt,
+      SELECT q.id, q.prompt, q.image_url as "imageUrl",
         (SELECT json_agg(json_build_object('id', qo.id, 'text', qo.text) ORDER BY qo."order")
          FROM question_option qo WHERE qo.question_id = q.id) as options
       FROM question q
@@ -64,6 +64,7 @@ export async function GET(request: NextRequest) {
   const questions = (questionRows as any[]).map((r) => ({
     id: r.id,
     prompt: r.prompt,
+    imageUrl: r.imageUrl ?? null,
     options: r.options ?? [],
   }));
 

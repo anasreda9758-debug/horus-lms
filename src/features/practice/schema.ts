@@ -25,6 +25,7 @@ export const question = pgTable(
       .notNull()
       .references(() => questionBank.id, { onDelete: "cascade" }),
     prompt: text("prompt").notNull(),
+    imageUrl: text("image_url"), // OSPE image placeholder — null for text-only questions
     explanation: text("explanation"),
     difficulty: text("difficulty").notNull().default("medium"), // easy | medium | hard
     order: integer("order").notNull().default(0),
