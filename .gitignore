@@ -49,3 +49,6 @@ public/ospe-pdfs/*.pdf
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# script logs
+scripts/gen-*.log

@@ -11,7 +11,7 @@ const groq = createOpenAICompatible({
   apiKey: process.env.GROQ_API_KEY,
 });
 
-const MODEL = "allam-2-7b";
+const MODEL = "openai/gpt-oss-20b";
 
 async function aiJson<T>(system: string, user: string, retries = 3): Promise<T | null> {
   for (let attempt = 0; attempt < retries; attempt++) {
@@ -32,9 +32,9 @@ async function aiJson<T>(system: string, user: string, retries = 3): Promise<T |
         return null;
       }
     } catch (err: any) {
-      if (err.message?.includes("Rate limit") && attempt < retries - 1) {
-        const wait = (attempt + 1) * 10_000;
-        console.log(`    Rate limited, waiting ${wait / 1000}s...`);
+      if ((err.message?.includes("Rate limit") || err.message?.includes("Request too large")) && attempt < retries - 1) {
+        const wait = err.message?.includes("Request too large") ? 5000 : (attempt + 1) * 10_000;
+        console.log(`    ${err.message?.includes("Request too large") ? "Too large" : "Rate limited"}, waiting ${wait / 1000}s...`);
         await new Promise((r) => setTimeout(r, wait));
         continue;
       }
@@ -56,54 +56,15 @@ type MindmapJson = {
   children: { label: string; children?: { label: string }[] }[];
 };
 
-const SUMMARY_SYSTEM = `أنت مساعد طبي متخصص. أنشئ ملخصاً احترافياً للمحاضرة الطبية التالية.
-أرجع JSON فقط بدون أي نص إضافي.
+const SUMMARY_SYSTEM = `أنشئ ملخصاً طبياً. أرجع JSON فقط:
+{"overview":"2-3 جمل","keyPoints":["نقطة","..."],"clinicalPearls":["لؤلؤة"],"references":[]}
+اكتب بالعربية. 5-8 نقاط رئيسية. 2-4 لؤلؤات سريرية.`;
 
-التنسيق المطلوب:
-{
-  "overview": "ملخص عام في 2-3 جمل عن موضوع المحاضرة",
-  "keyPoints": ["نقطة رئيسية 1", "نقطة رئيسية 2", ...],  // 5-8 نقاط
-  "clinicalPearls": ["لؤلؤة سريرية 1", ...],  // 2-4 لؤلؤات سريرية مهمة
-  "references": []  // فارغ - سيتم ملؤه لاحقاً
-}
+const MINDMAP_SYSTEM = `أنشئ خريطة ذهنية طبية. أرجع JSON فقط:
+{"label":"اسم المحاضرة","children":[{"label":"قسم","children":[{"label":"تفصيل"}]}]}
+3-6 أقسام رئيسية، 2-5 تفريعات لكل قسم. بالعربية.`;
 
-الملاحظات:
-- اكتب بالعربية الفصحى الطبية
-- ركّز على المعلومات المهمة للامتحان
--_POINTS يجب أن تكون محددة ومفيدة
-- Clinical Pearns هي أخطاء شائعة أو نقاط مهمة ينساها الطلاب`;
-
-const MINDMAP_SYSTEM = `أنت مساعد طبي متخصص. أنشئ خريطة ذهنية للمحاضرة الطبية التالية.
-أرجع JSON فقط بدون أي نص إضافي.
-
-التنسيق المطلوب:
-{
-  "label": "اسم المحاضرة",
-  "children": [
-    {
-      "label": "القسم الرئيسي 1",
-      "children": [
-        { "label": "تفاصيل فرعية 1" },
-        { "label": "تفاصيل فرعية 2" }
-      ]
-    },
-    {
-      "label": "القسم الرئيسي 2",
-      "children": [
-        { "label": "تفاصيل فرعية" }
-      ]
-    }
-  ]
-}
-
-الملاحظات:
-- اكتب بالعربية الفصحى الطبية
-- عدد الأقسام الرئيسية: 3-6
-- كل قسم رئيسي له 2-5 أقسام فرعية
-- الخريطة يجب أن تعكس هيكل المحاضرة بشكل منطقي
-- لا تستخدم علامات تنسيق markdown`;
-
-const MAX_CONTENT_CHARS = 8_000;
+const MAX_CONTENT_CHARS = 3_000;
 
 async function generateForLecture(
   l: { id: string; title: string; content: string | null; slug: string },
@@ -138,6 +99,11 @@ ${content}
 
 async function main() {
   const onlySlug = process.argv[2]; // optional: only process this module slug
+
+  const SLUGS = onlySlug ? [onlySlug] : [
+    "cvs-202", "rs-201", "rau-203", "ibl-204",
+    "ahe-101", "ppg-102", "pmb-103",
+  ];
 
   const whereClause = onlySlug
     ? eq(curriculumModule.slug, onlySlug)
@@ -186,8 +152,8 @@ async function main() {
         totalGenerated++;
         console.log(`  ✓ ${l.title}`);
 
-        // Rate limit: wait between requests
-        await new Promise((r) => setTimeout(r, 1500));
+        // Rate limit: wait between requests (8K TPM = ~2 req/min for 3K tokens each)
+        await new Promise((r) => setTimeout(r, 15000));
       } catch (err: any) {
         totalFailed++;
         console.error(`  ✗ ${l.title}: ${err.message}`);
