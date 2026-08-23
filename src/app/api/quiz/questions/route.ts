@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/shared/session";
 import { db } from "@/shared/db";
 import { sql } from "drizzle-orm";
+import { startAttempt } from "@/features/practice/queries";
 
 export async function GET(request: NextRequest) {
   const session = await getSession();
@@ -68,5 +69,11 @@ export async function GET(request: NextRequest) {
     options: r.options ?? [],
   }));
 
-  return NextResponse.json({ questions });
+  let attemptId: string | null = null;
+  if (bank && questions.length > 0) {
+    const attempt = await startAttempt(session.user.id, (bank as any).id);
+    attemptId = attempt?.id ?? null;
+  }
+
+  return NextResponse.json({ questions, attemptId });
 }

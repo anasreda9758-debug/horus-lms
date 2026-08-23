@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/shared/session";
-import { getBankBySlug, gradeAnswer, resolveAttempt } from "@/features/practice/queries";
+import { getBankBySlug, gradeAnswer, resolveAttempt, getOwnedAttempt } from "@/features/practice/queries";
 import { awardXp } from "@/features/gamification/queries";
 import { quizAnswerSchema } from "@/shared/validation";
 
@@ -14,6 +14,7 @@ export async function POST(request: NextRequest) {
   let questionId: string;
   let optionId: string;
   let timeSpentMs: number | undefined;
+  let attemptId: string | undefined;
   try {
     const body = await request.json();
     const parsed = quizAnswerSchema.parse(body);
@@ -21,6 +22,7 @@ export async function POST(request: NextRequest) {
     questionId = parsed.questionId;
     optionId = parsed.optionId;
     timeSpentMs = parsed.timeSpentMs;
+    attemptId = parsed.attemptId;
   } catch (e: any) {
     if (e?.issues) {
       return NextResponse.json({ error: "validation", details: e.issues }, { status: 400 });
@@ -33,7 +35,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "bank not found" }, { status: 400 });
   }
 
-  const attempt = await resolveAttempt(session.user.id, bank.id);
+  let attempt = attemptId ? await getOwnedAttempt(session.user.id, attemptId) : null;
+  if (attempt && attempt.status !== "in_progress") attempt = null;
+  if (!attempt || attempt.bankId !== bank.id) {
+    attempt = await resolveAttempt(session.user.id, bank.id);
+  }
+
   const result = await gradeAnswer({
     attemptId: attempt.id,
     questionId,

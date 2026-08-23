@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/shared/session";
 import { hasModuleAccess } from "@/shared/entitlements";
-import { getBankBySlug, getQuizQuestionsRandom } from "@/features/practice/queries";
+import { getBankBySlug, getQuizQuestionsRandom, startAttempt } from "@/features/practice/queries";
 import { OspeQuizRunner } from "@/components/ospe-quiz-runner";
 import { Navigation } from "@/components/navigation";
 import { Lock, HelpCircle, Clock, Stethoscope } from "lucide-react";
@@ -35,6 +35,9 @@ export default async function OspeQuizPage({
   const questions = validCount > 0
     ? await getQuizQuestionsRandom(bank.id, validCount, { difficulty, userId: session.user.id })
     : [];
+
+  const attemptId =
+    access && questions.length > 0 ? (await startAttempt(session.user.id, bank.id, { timeLimitSec: validTime })).id : null;
 
   const hasConfig = validCount > 0 && questions.length > 0;
 
@@ -95,6 +98,7 @@ export default async function OspeQuizPage({
               moduleSlug={moduleSlug}
               questions={questions}
               timeLimitSec={validTime}
+              attemptId={attemptId}
             />
           ) : (
             <div className="rounded-2xl border border-primary/20 bg-primary/5 p-8 text-center">

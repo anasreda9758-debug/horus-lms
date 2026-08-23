@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/shared/session";
 import { hasModuleAccess } from "@/shared/entitlements";
-import { getBankBySlug, getQuizQuestionsRandom } from "@/features/practice/queries";
+import { getBankBySlug, getQuizQuestionsRandom, startAttempt } from "@/features/practice/queries";
 import { QuizRunner } from "@/components/quiz-runner";
 import { Navigation } from "@/components/navigation";
 import { Lock, HelpCircle, Clock, BarChart3 } from "lucide-react";
@@ -40,6 +40,9 @@ export default async function QuizPage({
   const questions = validCount > 0
     ? await getQuizQuestionsRandom(bank.id, validCount, { difficulty, userId: session.user.id })
     : [];
+
+  const attemptId =
+    access && questions.length > 0 ? (await startAttempt(session.user.id, bank.id, { timeLimitSec: validTime })).id : null;
 
   const hasConfig = validCount > 0 && questions.length > 0;
 
@@ -109,6 +112,7 @@ export default async function QuizPage({
               moduleSlug={bank.module?.slug ?? ""}
               questions={questions}
               timeLimitSec={validTime}
+              attemptId={attemptId}
             />
           ) : (
             <div className="rounded-2xl border border-border bg-card p-8 text-center">

@@ -44,18 +44,20 @@ export function QuizRunner({
   moduleSlug,
   questions,
   timeLimitSec,
+  attemptId: initialAttemptId,
 }: {
   bankSlug: string;
   moduleSlug: string;
   questions: QuizQuestion[];
   timeLimitSec?: number | null;
+  attemptId?: string | null;
 }) {
   const router = useRouter();
   const [index, setIndex] = useState(0);
   const [selected, setSelected] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
-  const [attemptId, setAttemptId] = useState<string | null>(null);
+  const [attemptId, setAttemptId] = useState<string | null>(initialAttemptId ?? null);
   const [result, setResult] = useState<Result | null>(null);
   const [answered, setAnswered] = useState(0);
   const [bookmarked, setBookmarked] = useState(false);
@@ -103,7 +105,7 @@ export function QuizRunner({
       const res = await fetch("/api/quiz/answer", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bankSlug, questionId: q.id, optionId: selected, timeSpentMs }),
+        body: JSON.stringify({ bankSlug, questionId: q.id, optionId: selected, timeSpentMs, attemptId }),
       });
       if (res.ok) {
         const data = (await res.json()) as Feedback;

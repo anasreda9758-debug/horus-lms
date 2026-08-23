@@ -152,6 +152,24 @@ export async function resolveAttempt(userId: string, bankId: string) {
   return existing ?? (await createAttempt(userId, bankId));
 }
 
+export async function startAttempt(
+  userId: string,
+  bankId: string,
+  opts?: { difficulty?: string; timeLimitSec?: number },
+) {
+  await db
+    .update(quizAttempt)
+    .set({ status: "abandoned", completedAt: new Date() })
+    .where(
+      and(
+        eq(quizAttempt.userId, userId),
+        eq(quizAttempt.bankId, bankId),
+        eq(quizAttempt.status, "in_progress"),
+      ),
+    );
+  return createAttempt(userId, bankId, opts);
+}
+
 export async function gradeAnswer(params: {
   attemptId: string;
   questionId: string;
