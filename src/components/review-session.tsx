@@ -33,6 +33,7 @@ export function ReviewSession({ questions }: Props) {
   const [selected, setSelected] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
+  const [correctOptionId, setCorrectOptionId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [results, setResults] = useState<{ correct: number; total: number }>({ correct: 0, total: 0 });
 
@@ -44,12 +45,10 @@ export function ReviewSession({ questions }: Props) {
     if (!selected || busy) return;
     setBusy(true);
     try {
-      // Find the correct option
-      const res = await fetch("/api/quiz/answer", {
+      const res = await fetch("/api/review/answer", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          bankSlug: q.bankSlug,
           questionId: q.questionId,
           optionId: selected,
           timeSpentMs: 0,
@@ -58,6 +57,7 @@ export function ReviewSession({ questions }: Props) {
       if (res.ok) {
         const data = await res.json();
         setIsCorrect(data.correct);
+        setCorrectOptionId(data.correctOptionId ?? null);
         setSubmitted(true);
         setResults((r) => ({
           correct: r.correct + (data.correct ? 1 : 0),
@@ -138,8 +138,6 @@ export function ReviewSession({ questions }: Props) {
             const letter = String.fromCharCode(65 + i);
             let cls = "justify-start text-start gap-3 ring-1 ring-border hover:ring-foreground/30";
             if (submitted) {
-              // Show correct answer
-              const isCorrectOpt = !isCorrect && i === q.options.findIndex((o) => o.id !== selected);
               if (isCorrect) {
                 cls = selected === opt.id
                   ? "justify-start text-start gap-3 ring-2 ring-emerald-500 bg-emerald-500/10"
@@ -147,6 +145,8 @@ export function ReviewSession({ questions }: Props) {
               } else {
                 if (opt.id === selected) {
                   cls = "justify-start text-start gap-3 ring-2 ring-red-500 bg-red-500/10";
+                } else if (correctOptionId && opt.id === correctOptionId) {
+                  cls = "justify-start text-start gap-3 ring-2 ring-emerald-500 bg-emerald-500/10";
                 } else {
                   cls = "justify-start text-start gap-3 ring-1 ring-border opacity-50";
                 }

@@ -33,6 +33,13 @@ export async function getBankForModule(moduleId: string) {
   });
 }
 
+export async function getBankForLecture(lectureId: string) {
+  return db.query.questionBank.findFirst({
+    where: eq(questionBank.lectureId, lectureId),
+    with: { module: true },
+  });
+}
+
 export async function getQuizQuestions(bankId: string): Promise<QuizQuestion[]> {
   const rows = await db.query.question.findMany({
     where: eq(question.bankId, bankId),
@@ -53,12 +60,17 @@ export async function getQuizQuestions(bankId: string): Promise<QuizQuestion[]> 
 export async function getQuizQuestionsRandom(
   bankId: string,
   count: number,
-  opts?: { difficulty?: string; userId?: string },
+  opts?: { difficulty?: string; userId?: string; lectureId?: string },
 ): Promise<QuizQuestion[]> {
   let rows = await db.query.question.findMany({
     where: eq(question.bankId, bankId),
     with: { options: { orderBy: (o, { asc }) => [asc(o.order)] } },
   });
+
+  // Filter by lecture if specified (only show questions for this lecture)
+  if (opts?.lectureId) {
+    rows = rows.filter((q) => q.lectureId === opts.lectureId);
+  }
 
   // Filter by difficulty if specified
   if (opts?.difficulty) {
@@ -156,6 +168,7 @@ export async function gradeAnswer(params: {
   if (!selected) return null;
 
   const isCorrect = selected.isCorrect;
+  const correctOption = q.options.find((o) => o.isCorrect);
 
   await db
     .insert(quizAnswer)
@@ -177,7 +190,7 @@ export async function gradeAnswer(params: {
       },
     });
 
-  return { correct: isCorrect, explanation: q.explanation ?? null };
+  return { correct: isCorrect, explanation: q.explanation ?? null, correctOptionId: correctOption?.id ?? null };
 }
 
 export async function finishAttempt(userId: string, attemptId: string) {
@@ -234,7 +247,7 @@ function correctToQuality(isCorrect: boolean, timeMs: number): number {
   return 3;                // correct + slow
 }
 
-async function updateQuestionReview(userId: string, questionId: string, isCorrect: boolean, timeMs: number) {
+export async function updateQuestionReview(userId: string, questionId: string, isCorrect: boolean, timeMs: number) {
   const quality = correctToQuality(isCorrect, timeMs);
 
   const [existing] = await db

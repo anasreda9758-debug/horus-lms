@@ -3,7 +3,7 @@ import { requireUser } from "@/shared/session";
 import { db } from "@/shared/db";
 import { questionReview, question, questionOption, questionBank, quizAnswer, quizAttempt } from "@/features/practice/schema";
 import { curriculumModule } from "@/features/curriculum/schema";
-import { and, eq, lte, desc, asc, sql } from "drizzle-orm";
+import { and, eq, lte, desc, asc, sql, gte } from "drizzle-orm";
 import { Navigation } from "@/components/navigation";
 import { ReviewSession } from "@/components/review-session";
 import { Brain, Clock, CheckCircle2, AlertCircle, BookOpen } from "lucide-react";
@@ -59,7 +59,7 @@ export default async function ReviewPage() {
   const [masteredCount] = await db
     .select({ count: sql<number>`count(*)::int` })
     .from(questionReview)
-    .where(and(eq(questionReview.userId, session.user.id), eq(questionReview.interval, 1)));
+    .where(and(eq(questionReview.userId, session.user.id), gte(questionReview.interval, 21)));
 
   return (
     <div className="flex flex-1">

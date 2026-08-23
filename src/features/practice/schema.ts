@@ -1,13 +1,14 @@
 import { relations } from "drizzle-orm";
 import { boolean, index, integer, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 import { user } from "../auth/schema";
-import { curriculumModule } from "../curriculum/schema";
+import { curriculumModule, lecture } from "../curriculum/schema";
 
 export const questionBank = pgTable("question_bank", {
   id: text("id").primaryKey(),
   moduleId: text("module_id")
     .notNull()
     .references(() => curriculumModule.id, { onDelete: "cascade" }),
+  lectureId: text("lecture_id").references(() => lecture.id, { onDelete: "set null" }),
   slug: text("slug").notNull().unique(),
   title: text("title").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -24,10 +25,11 @@ export const question = pgTable(
     bankId: text("bank_id")
       .notNull()
       .references(() => questionBank.id, { onDelete: "cascade" }),
+    lectureId: text("lecture_id").references(() => lecture.id, { onDelete: "set null" }),
     prompt: text("prompt").notNull(),
-    imageUrl: text("image_url"), // OSPE image placeholder — null for text-only questions
+    imageUrl: text("image_url"),
     explanation: text("explanation"),
-    difficulty: text("difficulty").notNull().default("medium"), // easy | medium | hard
+    difficulty: text("difficulty").notNull().default("medium"),
     order: integer("order").notNull().default(0),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")

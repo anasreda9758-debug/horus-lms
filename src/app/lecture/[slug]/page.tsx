@@ -3,10 +3,11 @@ import { notFound } from "next/navigation";
 import { requireUser } from "@/shared/session";
 import { hasModuleAccess } from "@/shared/entitlements";
 import { getLectureBySlug } from "@/features/curriculum/queries";
+import { getBankForLecture, getBankForModule } from "@/features/practice/queries";
 import { TutorChat } from "@/components/tutor-chat";
 import { MarkdownContent } from "@/components/markdown-content";
 import { Navigation } from "@/components/navigation";
-import { Clock, BookOpen, FileText, Lock, MessageCircle, CheckCircle2, Brain, Lightbulb } from "lucide-react";
+import { Clock, BookOpen, FileText, Lock, MessageCircle, CheckCircle2, Brain, Lightbulb, ClipboardCheck, AlertCircle } from "lucide-react";
 import { CompleteButton } from "@/components/complete-button";
 import { PdfViewer } from "@/components/pdf-viewer";
 import { MindMap } from "@/components/mind-map";
@@ -44,6 +45,13 @@ export default async function LecturePage({
     ),
   });
   const isCompleted = !!progressRow;
+
+  // Find quiz bank for this lecture (lecture-specific or module-wide fallback)
+  const lectureBank = await getBankForLecture(lectureRow.id);
+  const moduleBank = !lectureBank && lectureRow.moduleId
+    ? await getBankForModule(lectureRow.moduleId)
+    : null;
+  const quizBank = lectureBank ?? moduleBank;
 
   return (
     <div className="flex flex-1">
@@ -229,6 +237,41 @@ export default async function LecturePage({
                   <MindMap data={lectureRow.mindmapJson} />
                 </div>
               ) : null}
+
+              {/* Quiz Section */}
+              {quizBank ? (
+                <div className="mb-6 rounded-2xl border-2 border-primary/20 bg-primary/5 p-6">
+                  <div className="flex items-center gap-3">
+                    <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+                      <ClipboardCheck className="h-5 w-5 text-primary" />
+                    </div>
+                    <div className="flex-1">
+                      <h2 className="font-semibold">اختبر معلوماتك</h2>
+                      <p className="text-sm text-muted-foreground">
+                        اختبر فهمك لمحتوى هذا الموديول بعد قراءة المحاضرة.
+                      </p>
+                    </div>
+                    <Link
+                      href={`/quiz/${quizBank.slug}`}
+                      className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+                    >
+                      ابدأ الاختبار
+                    </Link>
+                  </div>
+                </div>
+              ) : (
+                <div className="mb-6 rounded-2xl border border-border bg-card p-6">
+                  <div className="flex items-center gap-3">
+                    <AlertCircle className="h-5 w-5 text-muted-foreground" />
+                    <div>
+                      <h2 className="font-semibold">اختبار</h2>
+                      <p className="text-sm text-muted-foreground">
+                        لا توجد أسئلة اختبار لهذا الموديول بعد.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* AI Tutor */}
               <div className="rounded-2xl border border-border bg-card p-6">

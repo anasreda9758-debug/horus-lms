@@ -18,6 +18,7 @@ type Feedback = {
   correct: boolean;
   explanation: string | null;
   attemptId: string;
+  correctOptionId: string | null;
 };
 
 type Result = {
@@ -246,6 +247,8 @@ export function QuizRunner({
                 cls = "justify-start text-start ring-2 ring-emerald-500 bg-emerald-500/10";
               } else if (!feedback.correct && selected === opt.id) {
                 cls = "justify-start text-start ring-2 ring-red-500 bg-red-500/10";
+              } else if (!feedback.correct && feedback.correctOptionId === opt.id) {
+                cls = "justify-start text-start ring-2 ring-emerald-500 bg-emerald-500/10";
               } else {
                 cls = "justify-start text-start ring-1 ring-border opacity-60";
               }
