@@ -298,10 +298,6 @@ export default async function LecturePage({
                   <MessageCircle className="h-5 w-5 text-muted-foreground" />
                   <h2 className="font-semibold">المعلم الذكي (AI Tutor)</h2>
                 </div>
-                <p className="mb-4 text-sm text-muted-foreground">
-                  اسأل أي سؤال متعلق بمحتوى هذه المحاضرة فقط. الحد المجاني: 15
-                  رسالة يوميًا — وبدون حد للمشتركين.
-                </p>
                 <TutorChat lectureId={lectureRow.id} />
               </div>
             </>
