@@ -29,10 +29,12 @@ const navItems = [
   { href: "/ospe", label: "محاكي OSPE", icon: FlaskConical },
   { href: "/review", label: "مراجعة الأسئلة", icon: RefreshCw },
   { href: "/quiz/analytics", label: "تحليلات الاختبارات", icon: BarChart3 },
+  { href: "/quiz/bookmarks", label: "الأسئلة المحفوظة", icon: BarChart3 },
   { href: "/quiz/history", label: "تاريخ الاختبارات", icon: BarChart3 },
   { href: "/battles", label: "تحدي الأقران", icon: Swords },
   { href: "/leaderboard", label: "لوحة المتصدرين", icon: Trophy },
   { href: "/pricing", label: "الأسعار والاشتراك", icon: CreditCard },
+  { href: "/settings", label: "الإعدادات", icon: Settings },
 ];
 
 export function Navigation({

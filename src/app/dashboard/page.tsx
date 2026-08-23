@@ -1,10 +1,13 @@
 import Link from "next/link";
 import { requireUser } from "@/shared/session";
-import { getOverallProgress } from "@/features/curriculum/queries";
-import { getModuleAccuracy } from "@/features/practice/queries";
+import { getCurriculum } from "@/features/curriculum/queries";
+import { getModuleAccuracy, getDueReviewCount } from "@/features/practice/queries";
 import { getActiveSubscriptions } from "@/features/billing/queries";
 import { getProfile } from "@/features/gamification/queries";
-import { ProgressBar } from "@/components/progress-bar";
+import { db } from "@/shared/db";
+import { quizAttempt, questionBank } from "@/features/practice/schema";
+import { curriculumModule } from "@/features/curriculum/schema";
+import { and, eq, desc } from "drizzle-orm";
 import { Navigation } from "@/components/navigation";
 import {
   BookOpen,
@@ -16,68 +19,113 @@ import {
   Target,
   Zap,
   Swords,
+  RefreshCw,
+  Clock,
+  TrendingUp,
+  ChevronLeft,
 } from "lucide-react";
 
 export default async function DashboardPage() {
   const session = await requireUser();
   const user = session.user;
-  const progress = await getOverallProgress(user.id);
+  const curriculum = await getCurriculum(user.id);
   const accuracy = await getModuleAccuracy(user.id);
   const subs = (await getActiveSubscriptions(user.id)).filter(
     (s) => s.expiresAt > new Date()
   );
   const profile = await getProfile(user.id);
+  const dueReviewCount = await getDueReviewCount(user.id);
 
   const totalCorrect = accuracy.reduce((s, m) => s + m.correct, 0);
   const totalAnswered = accuracy.reduce((s, m) => s + m.total, 0);
   const avgAccuracy =
     totalAnswered > 0 ? Math.round((totalCorrect / totalAnswered) * 100) : 0;
 
+  // Module progress breakdown
+  const moduleProgress = curriculum.map((m) => ({
+    name: m.name,
+    slug: m.slug,
+    completed: m.completedLectures,
+    total: m.totalLectures,
+    percent: m.percent,
+    term: m.term,
+  }));
+
+  // Total lectures
+  const totalLectures = curriculum.reduce((s, m) => s + m.totalLectures, 0);
+  const completedLectures = curriculum.reduce((s, m) => s + m.completedLectures, 0);
+  const overallPercent = totalLectures > 0 ? Math.round((completedLectures / totalLectures) * 100) : 0;
+
+  // Recent quizzes (last 5)
+  const recentQuizzes = await db
+    .select({
+      id: quizAttempt.id,
+      score: quizAttempt.score,
+      total: quizAttempt.total,
+      completedAt: quizAttempt.completedAt,
+      bankTitle: questionBank.title,
+      moduleName: curriculumModule.name,
+    })
+    .from(quizAttempt)
+    .innerJoin(questionBank, eq(quizAttempt.bankId, questionBank.id))
+    .innerJoin(curriculumModule, eq(questionBank.moduleId, curriculumModule.id))
+    .where(and(eq(quizAttempt.userId, user.id), eq(quizAttempt.status, "completed")))
+    .orderBy(desc(quizAttempt.completedAt))
+    .limit(5);
+
+  // Term 1 vs Term 2
+  const term1 = moduleProgress.filter((m) => m.term === 1);
+  const term2 = moduleProgress.filter((m) => m.term === 2);
+  const term1Percent = term1.length > 0 ? Math.round(term1.reduce((s, m) => s + m.completed, 0) / term1.reduce((s, m) => s + m.total, 0) * 100) : 0;
+  const term2Percent = term2.length > 0 ? Math.round(term2.reduce((s, m) => s + m.completed, 0) / term2.reduce((s, m) => s + m.total, 0) * 100) : 0;
+
   return (
     <div className="flex flex-1">
       <Navigation user={{ name: user.name, email: user.email }} isAdmin={user.role === "admin"} />
 
       <main className="flex-1 p-6 lg:p-8">
-        <div className="mx-auto max-w-4xl">
+        <div className="mx-auto max-w-5xl">
           {/* Header */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold">مرحبًا {user.name}</h1>
             <p className="mt-1 text-muted-foreground">{user.email}</p>
           </div>
 
-          {/* Stats Grid */}
+          {/* Hero Stats Row */}
           <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {/* Progress Ring */}
+            <div className="rounded-2xl border border-border bg-card p-5 sm:col-span-2 lg:col-span-1">
+              <div className="flex items-center gap-4">
+                <ProgressRing percent={overallPercent} size={72} strokeWidth={6} />
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">التقدم الكلي</p>
+                  <p className="text-2xl font-bold">{overallPercent}%</p>
+                  <p className="text-xs text-muted-foreground">{completedLectures}/{totalLectures} محاضرة</p>
+                </div>
+              </div>
+            </div>
+
             <StatCard
               icon={Zap}
-              label="المستوى والخبرة"
-              value={`المستوى ${profile.level}`}
-              sub={`${profile.totalXp} XP · ${profile.xpToNext} XP للمستوى التالي`}
+              label="المستوى"
+              value={`Lv.${profile.level}`}
+              sub={`${profile.totalXp} XP`}
               color="text-yellow-600 bg-yellow-50 dark:bg-yellow-950/40"
             />
             <StatCard
               icon={Target}
-              label="التقدم"
-              value={`${progress.percent}%`}
-              sub={`${progress.completed} / ${progress.total} محاضرة`}
-              color="text-blue-600 bg-blue-50 dark:bg-blue-950/40"
-            />
-            <StatCard
-              icon={Trophy}
               label="دقة الاختبارات"
               value={totalAnswered > 0 ? `${avgAccuracy}%` : "—"}
-              sub={
-                totalAnswered > 0
-                  ? `${totalCorrect} من ${totalAnswered} صحيحة`
-                  : "لم تبدأ اختبارات بعد"
-              }
+              sub={totalAnswered > 0 ? `${totalCorrect}/${totalAnswered} صحيحة` : "لم تبدأ بعد"}
               color="text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40"
             />
             <StatCard
-              icon={Swords}
-              label="التحديات"
-              value={`${profile.battlesWon}W / ${profile.battlesLost}L`}
-              sub="سجل المباريات"
-              color="text-red-600 bg-red-50 dark:bg-red-950/40"
+              icon={RefreshCw}
+              label="مراجعة معلقة"
+              value={String(dueReviewCount)}
+              sub={dueReviewCount > 0 ? "أسئلة بانتظار المراجعة" : "لا توجد مراجعات"}
+              color="text-purple-600 bg-purple-50 dark:bg-purple-950/40"
+              href="/review"
             />
           </div>
 
@@ -86,44 +134,205 @@ export default async function DashboardPage() {
             <h2 className="mb-4 text-lg font-semibold">روابط سريعة</h2>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
               <QuickAction href="/curriculum" icon={BookOpen} label="تصفح المنهج" />
+              <QuickAction href="/review" icon={RefreshCw} label="مراجعة الأسئلة" badge={dueReviewCount > 0 ? String(dueReviewCount) : undefined} />
               <QuickAction href="/flashcards" icon={Brain} label="البطاقات التعليمية" />
               <QuickAction href="/cases" icon={Stethoscope} label="الحالات السريرية" />
               <QuickAction href="/ospe" icon={FlaskConical} label="محاكي OSPE" />
               <QuickAction href="/battles" icon={Swords} label="تحدي الأقران" />
-              <QuickAction href="/leaderboard" icon={Trophy} label="لوحة المتصدرين" />
+            </div>
+          </div>
+
+          <div className="grid gap-6 lg:grid-cols-2">
+            {/* Module Progress Breakdown */}
+            <div className="rounded-2xl border border-border bg-card p-6">
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="font-semibold">تقدم المنهج</h2>
+                <Link href="/curriculum" className="flex items-center gap-1 text-xs text-primary hover:underline">
+                  عرض الكل <ChevronLeft className="h-3 w-3" />
+                </Link>
+              </div>
+
+              {/* Term breakdown */}
+              <div className="mb-4 grid grid-cols-2 gap-3">
+                <div className="rounded-xl bg-muted/50 p-3 text-center">
+                  <p className="text-xs text-muted-foreground">الترم الأول</p>
+                  <ProgressRing percent={term1Percent} size={48} strokeWidth={4} />
+                  <p className="mt-1 text-sm font-bold">{term1Percent}%</p>
+                </div>
+                <div className="rounded-xl bg-muted/50 p-3 text-center">
+                  <p className="text-xs text-muted-foreground">الترم الثاني</p>
+                  <ProgressRing percent={term2Percent} size={48} strokeWidth={4} />
+                  <p className="mt-1 text-sm font-bold">{term2Percent}%</p>
+                </div>
+              </div>
+
+              {/* Per-module bars */}
+              <ul className="space-y-3">
+                {moduleProgress.map((m) => (
+                  <li key={m.slug}>
+                    <div className="mb-1 flex items-center justify-between text-sm">
+                      <span className="font-medium">{m.name}</span>
+                      <span className="text-muted-foreground">
+                        {m.completed}/{m.total} ({m.percent}%)
+                      </span>
+                    </div>
+                    <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                      <div
+                        className={`h-full rounded-full transition-all ${
+                          m.percent >= 80 ? "bg-emerald-500" :
+                          m.percent >= 40 ? "bg-amber-500" :
+                          m.percent > 0 ? "bg-blue-500" : "bg-muted-foreground/20"
+                        }`}
+                        style={{ width: `${m.percent}%` }}
+                      />
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Recent Quizzes */}
+            <div className="rounded-2xl border border-border bg-card p-6">
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="font-semibold">آخر الاختبارات</h2>
+                <Link href="/quiz/history" className="flex items-center gap-1 text-xs text-primary hover:underline">
+                  عرض الكل <ChevronLeft className="h-3 w-3" />
+                </Link>
+              </div>
+              {recentQuizzes.length === 0 ? (
+                <div className="py-8 text-center text-sm text-muted-foreground">
+                  <Clock className="mx-auto mb-2 h-8 w-8 text-muted-foreground/40" />
+                  <p>لم تقم بأي اختبار بعد.</p>
+                  <Link href="/curriculum" className="mt-2 inline-block text-primary hover:underline">ابدأ الآن</Link>
+                </div>
+              ) : (
+                <ul className="space-y-2">
+                  {recentQuizzes.map((q) => {
+                    const percent = q.total > 0 ? Math.round((q.score / q.total) * 100) : 0;
+                    return (
+                      <li key={q.id} className="flex items-center gap-3 rounded-xl bg-muted/50 p-3">
+                        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-sm font-bold ${
+                          percent >= 80 ? "bg-emerald-500/10 text-emerald-600" :
+                          percent >= 50 ? "bg-amber-500/10 text-amber-600" :
+                          "bg-red-500/10 text-red-600"
+                        }`}>
+                          {percent}%
+                        </div>
+                        <div className="flex-1 overflow-hidden">
+                          <p className="truncate text-sm font-medium">{q.bankTitle}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {q.moduleName} · {q.score}/{q.total}
+                          </p>
+                        </div>
+                        <span className="text-xs text-muted-foreground">
+                          {q.completedAt ? new Date(q.completedAt).toLocaleDateString("ar-EG", { month: "short", day: "numeric" }) : ""}
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
             </div>
           </div>
 
           {/* Quiz Accuracy by Module */}
           {accuracy.length > 0 && (
-            <div className="rounded-2xl border border-border bg-card p-6">
+            <div className="mt-6 rounded-2xl border border-border bg-card p-6">
               <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-lg font-semibold">نتائج الاختبارات</h2>
-                <Link
-                  href="/curriculum"
-                  className="text-sm text-primary hover:underline"
-                >
-                  عرض المنهج
+                <h2 className="font-semibold">الدقة حسب الموديول</h2>
+                <Link href="/quiz/analytics" className="flex items-center gap-1 text-xs text-primary hover:underline">
+                  تحليلات مفصلة <ChevronLeft className="h-3 w-3" />
                 </Link>
               </div>
-              <ul className="space-y-4">
+              <div className="grid gap-3 sm:grid-cols-2">
                 {accuracy.map((m) => (
-                  <li key={m.moduleSlug}>
-                    <div className="mb-1.5 flex items-center justify-between text-sm">
+                  <div key={m.moduleSlug} className="rounded-xl bg-muted/50 p-3">
+                    <div className="mb-1 flex items-center justify-between text-sm">
                       <span className="font-medium">{m.moduleName}</span>
-                      <span className="text-muted-foreground">
-                        {m.correct}/{m.total} صحيحة ({m.percent}%)
+                      <span className={`text-xs font-medium ${
+                        m.percent >= 80 ? "text-emerald-600" :
+                        m.percent >= 50 ? "text-amber-600" :
+                        "text-red-600"
+                      }`}>
+                        {m.percent}%
                       </span>
                     </div>
-                    <ProgressBar percent={m.percent} />
-                  </li>
+                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                      <div
+                        className={`h-full rounded-full ${
+                          m.percent >= 80 ? "bg-emerald-500" :
+                          m.percent >= 50 ? "bg-amber-500" :
+                          "bg-red-500"
+                        }`}
+                        style={{ width: `${m.percent}%` }}
+                      />
+                    </div>
+                    <p className="mt-1 text-[11px] text-muted-foreground">{m.correct}/{m.total} صحيحة</p>
+                  </div>
                 ))}
-              </ul>
+              </div>
+            </div>
+          )}
+
+          {/* Subscription Status */}
+          {subs.length > 0 && (
+            <div className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-900 dark:bg-emerald-950/20">
+              <div className="flex items-center gap-3">
+                <CreditCard className="h-5 w-5 text-emerald-600" />
+                <div>
+                  <p className="text-sm font-medium text-emerald-600">اشتراكك نشط</p>
+                  <p className="text-xs text-muted-foreground">
+                    {subs.length === 1
+                      ? `ينتهي في ${subs[0].expiresAt.toLocaleDateString("ar-EG")}`
+                      : `${subs.length} اشتراكات نشطة`}
+                  </p>
+                </div>
+              </div>
             </div>
           )}
         </div>
       </main>
     </div>
+  );
+}
+
+function ProgressRing({
+  percent,
+  size = 72,
+  strokeWidth = 6,
+}: {
+  percent: number;
+  size?: number;
+  strokeWidth?: number;
+}) {
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (percent / 100) * circumference;
+
+  return (
+    <svg width={size} height={size} className="shrink-0 -rotate-90">
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={radius}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={strokeWidth}
+        className="text-muted/50"
+      />
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={radius}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={strokeWidth}
+        strokeDasharray={circumference}
+        strokeDashoffset={offset}
+        strokeLinecap="round"
+        className="text-primary transition-all duration-700"
+      />
+    </svg>
   );
 }
 
@@ -133,15 +342,17 @@ function StatCard({
   value,
   sub,
   color,
+  href,
 }: {
   icon: React.ElementType;
   label: string;
   value: string;
   sub: string;
   color: string;
+  href?: string;
 }) {
-  return (
-    <div className="rounded-2xl border border-border bg-card p-5">
+  const content = (
+    <div className="rounded-2xl border border-border bg-card p-5 transition-all hover:border-primary/20 hover:shadow-sm">
       <div className="mb-3 flex items-center gap-3">
         <div className={`inline-flex h-9 w-9 items-center justify-center rounded-xl ${color}`}>
           <Icon className="h-4 w-4" />
@@ -152,26 +363,38 @@ function StatCard({
       <p className="mt-1 text-xs text-muted-foreground">{sub}</p>
     </div>
   );
+
+  if (href) {
+    return <Link href={href}>{content}</Link>;
+  }
+  return content;
 }
 
 function QuickAction({
   href,
   icon: Icon,
   label,
+  badge,
 }: {
   href: string;
   icon: React.ElementType;
   label: string;
+  badge?: string;
 }) {
   return (
     <Link
       href={href}
-      className="group flex items-center gap-3 rounded-xl border border-border bg-card p-4 transition-all hover:border-primary/20 hover:shadow-sm"
+      className="group relative flex items-center gap-3 rounded-xl border border-border bg-card p-4 transition-all hover:border-primary/20 hover:shadow-sm"
     >
       <div className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-muted text-muted-foreground transition-colors group-hover:bg-primary/10 group-hover:text-primary">
         <Icon className="h-4 w-4" />
       </div>
       <span className="text-sm font-medium">{label}</span>
+      {badge && (
+        <span className="absolute -left-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
+          {badge}
+        </span>
+      )}
     </Link>
   );
 }

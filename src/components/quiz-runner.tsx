@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Clock, Pause, Play } from "lucide-react";
+import { Clock, Pause, Play, Bookmark, BookmarkCheck } from "lucide-react";
 
 type QuizQuestion = {
   id: string;
@@ -57,6 +57,7 @@ export function QuizRunner({
   const [attemptId, setAttemptId] = useState<string | null>(null);
   const [result, setResult] = useState<Result | null>(null);
   const [answered, setAnswered] = useState(0);
+  const [bookmarked, setBookmarked] = useState(false);
 
   // Timer state
   const [timeLeft, setTimeLeft] = useState(timeLimitSec ?? 0);
@@ -118,6 +119,31 @@ export function QuizRunner({
     setSelected(null);
     setFeedback(null);
     setIndex((i) => i + 1);
+  }
+
+  // Check bookmark status when question changes
+  useEffect(() => {
+    if (!q?.id) return;
+    setBookmarked(false);
+    fetch(`/api/quiz/bookmark?questionId=${q.id}`)
+      .then((r) => r.json())
+      .then((d: { bookmarked: boolean }) => setBookmarked(d.bookmarked))
+      .catch(() => {});
+  }, [q?.id]);
+
+  async function toggleBookmark() {
+    if (!q?.id) return;
+    try {
+      const res = await fetch("/api/quiz/bookmark", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ questionId: q.id }),
+      });
+      if (res.ok) {
+        const d = await res.json();
+        setBookmarked(d.bookmarked);
+      }
+    } catch {}
   }
 
   async function finish() {
@@ -198,9 +224,18 @@ export function QuizRunner({
       <div className="rounded-xl bg-card p-6 ring-1 ring-foreground/10">
         <div className="flex items-start gap-3">
           <h2 className="flex-1 text-lg font-semibold leading-relaxed">{q.prompt}</h2>
-          <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${diff.cls}`}>
-            {diff.text}
-          </span>
+          <div className="flex shrink-0 items-center gap-2">
+            <button
+              onClick={toggleBookmark}
+              className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+              title={bookmarked ? "إزالة من المحفوظات" : "حفظ السؤال"}
+            >
+              {bookmarked ? <BookmarkCheck className="h-4 w-4 text-primary" /> : <Bookmark className="h-4 w-4" />}
+            </button>
+            <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${diff.cls}`}>
+              {diff.text}
+            </span>
+          </div>
         </div>
 
         <ul className="mt-5 grid gap-2">

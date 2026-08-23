@@ -172,3 +172,18 @@ export const quizAnswerRelations = relations(quizAnswer, ({ one }) => ({
     references: [questionOption.id],
   }),
 }));
+
+export const questionBookmark = pgTable(
+  "question_bookmark",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    questionId: text("question_id")
+      .notNull()
+      .references(() => question.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [uniqueIndex("question_bookmark_user_question_idx").on(table.userId, table.questionId)],
+);
