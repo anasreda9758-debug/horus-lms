@@ -6,9 +6,10 @@ import { getLectureBySlug } from "@/features/curriculum/queries";
 import { TutorChat } from "@/components/tutor-chat";
 import { MarkdownContent } from "@/components/markdown-content";
 import { Navigation } from "@/components/navigation";
-import { Clock, BookOpen, FileText, Lock, MessageCircle, CheckCircle2 } from "lucide-react";
+import { Clock, BookOpen, FileText, Lock, MessageCircle, CheckCircle2, Brain, Lightbulb } from "lucide-react";
 import { CompleteButton } from "@/components/complete-button";
 import { PdfViewer } from "@/components/pdf-viewer";
+import { MindMap } from "@/components/mind-map";
 import { db } from "@/shared/db";
 import { lectureProgress } from "@/features/curriculum/schema";
 import { and, eq } from "drizzle-orm";
@@ -178,6 +179,56 @@ export default async function LecturePage({
                   </p>
                 </div>
               )}
+
+              {/* Summary */}
+              {lectureRow.summaryJson ? (
+                <div className="mb-6 rounded-2xl border border-primary/20 bg-primary/5 p-6">
+                  <div className="mb-4 flex items-center gap-2">
+                    <Lightbulb className="h-5 w-5 text-primary" />
+                    <h2 className="font-bold text-primary">ملخص المحاضرة</h2>
+                  </div>
+                  <p className="mb-4 text-sm leading-relaxed text-foreground">
+                    {lectureRow.summaryJson.overview}
+                  </p>
+                  {lectureRow.summaryJson.keyPoints.length > 0 && (
+                    <div className="mb-4">
+                      <h3 className="mb-2 text-sm font-semibold text-foreground">النقاط الرئيسية</h3>
+                      <ul className="space-y-1.5">
+                        {lectureRow.summaryJson.keyPoints.map((point, i) => (
+                          <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
+                            <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
+                            {point}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {lectureRow.summaryJson.clinicalPearls.length > 0 && (
+                    <div>
+                      <h3 className="mb-2 text-sm font-semibold text-amber-600">لؤلؤات سريرية</h3>
+                      <ul className="space-y-1.5">
+                        {lectureRow.summaryJson.clinicalPearls.map((pearl, i) => (
+                          <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
+                            <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500" />
+                            {pearl}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              ) : null}
+
+              {/* Mind Map */}
+              {lectureRow.mindmapJson ? (
+                <div className="mb-6 rounded-2xl border border-border bg-card p-6">
+                  <div className="mb-4 flex items-center gap-2">
+                    <Brain className="h-5 w-5 text-muted-foreground" />
+                    <h2 className="font-semibold">خريطة ذهنية</h2>
+                  </div>
+                  <MindMap data={lectureRow.mindmapJson} />
+                </div>
+              ) : null}
 
               {/* AI Tutor */}
               <div className="rounded-2xl border border-border bg-card p-6">

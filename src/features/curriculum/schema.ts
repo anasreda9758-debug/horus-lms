@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm";
-import { boolean, index, integer, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { boolean, index, integer, jsonb, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 import { user } from "../auth/schema";
 import { subject } from "../hierarchy/schema";
 
@@ -33,6 +33,16 @@ export const lecture = pgTable(
     kind: text("kind"),
     content: text("content"),
     pdfFile: text("pdf_file"),
+    summaryJson: jsonb("summary_json").$type<{
+      overview: string;
+      keyPoints: string[];
+      clinicalPearls: string[];
+      references: string[];
+    }>(),
+    mindmapJson: jsonb("mindmap_json").$type<{
+      label: string;
+      children: { label: string; children?: { label: string }[] }[];
+    }>(),
     order: integer("order").notNull().default(0),
     durationMin: integer("duration_min"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
