@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+﻿import { describe, it, expect } from "vitest";
 import { createHmac } from "node:crypto";
 import { verifyHmac } from "@/shared/paymob";
 
@@ -41,7 +41,7 @@ describe("Paymob HMAC verification", () => {
     return createHmac("sha512", secret).update(hmacString).digest("hex");
   }
 
-  it("returns true for valid HMAC", () => {
+  it("returns true for valid HMAC", async () => {
     const body = {
       amount_cents: 11900,
       created_at: "2024-01-01T00:00:00Z",
@@ -67,12 +67,12 @@ describe("Paymob HMAC verification", () => {
     process.env.PAYMOB_HMAC_SECRET = secret;
 
     const bodyWithHmac = { ...body, hmac: buildHmac(body) };
-    expect(verifyHmac(bodyWithHmac)).toBe(true);
+    await expect(verifyHmac(bodyWithHmac)).resolves.toBe(true);
 
     process.env.PAYMOB_HMAC_SECRET = original ?? "";
   });
 
-  it("returns false for invalid HMAC", () => {
+  it("returns false for invalid HMAC", async () => {
     const original = process.env.PAYMOB_HMAC_SECRET;
     process.env.PAYMOB_HMAC_SECRET = secret;
 
@@ -81,17 +81,17 @@ describe("Paymob HMAC verification", () => {
       id: 12345,
       hmac: "invalid_hmac_value",
     };
-    expect(verifyHmac(body)).toBe(false);
+    await expect(verifyHmac(body)).resolves.toBe(false);
 
     process.env.PAYMOB_HMAC_SECRET = original ?? "";
   });
 
-  it("returns true when no HMAC secret configured (skip verification)", () => {
+  it("returns true when no HMAC secret configured (skip verification)", async () => {
     const original = process.env.PAYMOB_HMAC_SECRET;
     process.env.PAYMOB_HMAC_SECRET = "";
 
     const body = { id: 123 };
-    expect(verifyHmac(body)).toBe(true);
+    await expect(verifyHmac(body)).resolves.toBe(true);
 
     process.env.PAYMOB_HMAC_SECRET = original ?? "";
   });

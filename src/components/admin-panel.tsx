@@ -302,7 +302,6 @@ export function AdminPanel() {
   }, []);
 
   const fetchUsers = useCallback(async () => {
-    setUsersLoading(true);
     try {
       const res = await fetch("/api/admin/stats");
       if (res.ok) {
@@ -315,10 +314,22 @@ export function AdminPanel() {
   }, []);
 
   useEffect(() => {
-    fetchModules();
-    if (tab === "audit") fetchAudit();
-    if (tab === "dashboard") fetchStats();
-    if (tab === "users") fetchUsers();
+    let active = true;
+    const load = async () => {
+      const tasks: Promise<void>[] = [fetchModules()];
+      if (tab === "audit") tasks.push(fetchAudit());
+      if (tab === "dashboard") tasks.push(fetchStats());
+      if (tab === "users") {
+        setUsersLoading(true);
+        tasks.push(fetchUsers());
+      }
+      await Promise.all(tasks);
+      void active;
+    };
+    void load();
+    return () => {
+      active = false;
+    };
   }, [tab, fetchModules, fetchAudit, fetchStats, fetchUsers]);
 
   // ── Module CRUD ──

@@ -115,7 +115,7 @@ async function main() {
   });
 
   let totalGenerated = 0;
-  let totalSkipped = 0;
+  const totalSkipped = 0;
   let totalFailed = 0;
 
   for (const mod of modules) {

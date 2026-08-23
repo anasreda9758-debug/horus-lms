@@ -30,7 +30,7 @@ export async function logAudit(params: {
 
 export async function getAuditLogs(opts?: { limit?: number; entityType?: string; userId?: string }) {
   const limit = opts?.limit ?? 50;
-  let query = db.select().from(auditLog).$dynamic();
+  const query = db.select().from(auditLog).$dynamic();
 
   // Simple filtering — we'll use raw SQL for simplicity
   const rows = await db.execute(

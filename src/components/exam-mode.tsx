@@ -42,77 +42,28 @@ export function ExamMode({ folder }: { folder?: string }) {
   const [loading, setLoading] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const stationTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const stationStartRef = useRef<number>(Date.now());
+  const stationStartRef = useRef<number>(0);
 
-  // Global timer
-  useEffect(() => {
-    if (!exam || exam.status !== "in_progress") return;
+  const handleFinish = useCallback(async () => {
+    if (!exam) return;
+    if (timerRef.current) clearInterval(timerRef.current);
+    if (stationTimerRef.current) clearInterval(stationTimerRef.current);
 
-    timerRef.current = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          // Time's up — auto finish
-          handleFinish();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, [exam?.status]);
-
-  // Station timer
-  useEffect(() => {
-    if (!exam || exam.status !== "in_progress") return;
-
-    stationTimerRef.current = setInterval(() => {
-      setStationTimeLeft((prev) => {
-        if (prev <= 1) {
-          // Auto-advance to next station
-          handleSubmitAnswer();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => {
-      if (stationTimerRef.current) clearInterval(stationTimerRef.current);
-    };
-  }, [currentIdx, exam?.status]);
-
-  const startExam = async () => {
-    setLoading(true);
-    setError(null);
     try {
-      const res = await fetch("/api/ospe/exam", {
+      const res = await fetch(`/api/ospe/exam/${exam.examId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          folder: folder || undefined,
-          stationCount: 10,
-          timePerStationSec: 60,
-        }),
+        body: JSON.stringify({ action: "finish" }),
       });
-      if (!res.ok) {
+      if (res.ok) {
         const data = await res.json();
-        setError(data.error ?? "فشل إنشاء الامتحان");
-        return;
+        setResult(data);
+        setExam((prev) => (prev ? { ...prev, status: "completed" } : null));
       }
-      const data = await res.json();
-      setExam(data);
-      setTimeLeft(data.totalTimeLimitSec);
-      setStationTimeLeft(data.timePerStationSec);
-      stationStartRef.current = Date.now();
     } catch {
-      setError("تعذر الاتصال بالخادم");
-    } finally {
-      setLoading(false);
+      setError("تعذر إنهاء الامتحان");
     }
-  };
+  }, [exam]);
 
   const handleSubmitAnswer = useCallback(async () => {
     if (!exam || submitting) return;
@@ -147,28 +98,77 @@ export function ExamMode({ folder }: { folder?: string }) {
       handleFinish();
     }
     setSubmitting(false);
-  }, [exam, currentIdx, answer, submitting]);
+  }, [exam, currentIdx, answer, submitting, handleFinish]);
 
-  const handleFinish = useCallback(async () => {
-    if (!exam) return;
-    if (timerRef.current) clearInterval(timerRef.current);
-    if (stationTimerRef.current) clearInterval(stationTimerRef.current);
+  // Global timer
+  useEffect(() => {
+    if (!exam || exam.status !== "in_progress") return;
 
+    timerRef.current = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          // Time's up — auto finish
+          handleFinish();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [exam?.status, handleFinish]);
+
+  // Station timer
+  useEffect(() => {
+    if (!exam || exam.status !== "in_progress") return;
+
+    stationTimerRef.current = setInterval(() => {
+      setStationTimeLeft((prev) => {
+        if (prev <= 1) {
+          // Auto-advance to next station
+          handleSubmitAnswer();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => {
+      if (stationTimerRef.current) clearInterval(stationTimerRef.current);
+    };
+  }, [currentIdx, exam?.status, handleSubmitAnswer]);
+
+  const startExam = async () => {
+    setLoading(true);
+    setError(null);
     try {
-      const res = await fetch(`/api/ospe/exam/${exam.examId}`, {
+      const res = await fetch("/api/ospe/exam", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "finish" }),
+        body: JSON.stringify({
+          folder: folder || undefined,
+          stationCount: 10,
+          timePerStationSec: 60,
+        }),
       });
-      if (res.ok) {
+      if (!res.ok) {
         const data = await res.json();
-        setResult(data);
-        setExam((prev) => (prev ? { ...prev, status: "completed" } : null));
+        setError(data.error ?? "فشل إنشاء الامتحان");
+        return;
       }
+      const data = await res.json();
+      setExam(data);
+      setTimeLeft(data.totalTimeLimitSec);
+      setStationTimeLeft(data.timePerStationSec);
+      stationStartRef.current = Date.now();
     } catch {
-      setError("تعذر إنهاء الامتحان");
+      setError("تعذر الاتصال بالخادم");
+    } finally {
+      setLoading(false);
     }
-  }, [exam]);
+  };
 
   const formatTime = (sec: number) => {
     const m = Math.floor(sec / 60);
@@ -324,7 +324,7 @@ export function ExamMode({ folder }: { folder?: string }) {
             onClick={handleSubmitAnswer}
             disabled={submitting}
           >
-            {submitting ? "جارٍ الإرسال…" : currentIdx === exam.stations.length - 1 ? "إرسال و完结" : "المحطة التالية"}
+            {submitting ? "جارٍ الإرسال…" : currentIdx === exam.stations.length - 1 ? "إرسال وإنهاء" : "المحطة التالية"}
           </Button>
         </div>
       </div>

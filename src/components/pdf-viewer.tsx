@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
@@ -23,6 +23,8 @@ export function PdfViewer({
 }) {
   const [numPages, setNumPages] = useState(0);
   const [pageNumber, setPageNumber] = useState(1);
+  // Track the doc size we last jumped for, so a fresh load re-anchors the page
+  const [jumpedForNumPages, setJumpedForNumPages] = useState(0);
   const [scale, setScale] = useState(1.2);
   const [fullscreen, setFullscreen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -46,12 +48,11 @@ export function PdfViewer({
   }, []);
 
   // Jump to the start of the assigned range once the doc loads
-  useEffect(() => {
-    if (numPages > 0) {
-      setPageNumber(Math.min(rangeStart, numPages));
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [numPages]);
+  // (render-phase adjustment — avoids a cascading setState inside an effect)
+  if (numPages > 0 && jumpedForNumPages !== numPages) {
+    setJumpedForNumPages(numPages);
+    setPageNumber(Math.min(rangeStart, numPages));
+  }
 
   function prevPage() {
     setPageNumber((p) => Math.max(rangeStart, p - 1));

@@ -120,10 +120,17 @@ export function OspeQuizRunner({
     setIndex((i) => i + 1);
   }
 
+  // Reset bookmark optimistically when the question changes
+  // (render-phase adjustment — avoids a cascading setState inside an effect)
+  const [bookmarkedForQId, setBookmarkedForQId] = useState<string | undefined>(q?.id);
+  if (q?.id !== bookmarkedForQId) {
+    setBookmarkedForQId(q?.id);
+    setBookmarked(false);
+  }
+
   // Check bookmark status when question changes
   useEffect(() => {
     if (!q?.id) return;
-    setBookmarked(false);
     fetch(`/api/quiz/bookmark?questionId=${q.id}`)
       .then((r) => r.json())
       .then((d: { bookmarked: boolean }) => setBookmarked(d.bookmarked))

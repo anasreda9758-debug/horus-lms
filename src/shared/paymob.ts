@@ -132,14 +132,14 @@ export function getIframeUrl(paymentKey: string): string {
 /**
  * Verify the HMAC signature from a Paymob webhook.
  */
-export function verifyHmac(body: Record<string, any>): boolean {
+export async function verifyHmac(body: Record<string, any>): Promise<boolean> {
   const config = getPaymobConfig();
   if (!config.hmacSecret) {
     console.warn("[paymob] No HMAC secret configured — skipping verification");
     return true;
   }
 
-  const crypto = require("node:crypto") as typeof import("node:crypto");
+  const crypto = await import("node:crypto");
   const hmacFields = [
     "amount_cents",
     "created_at",

@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
   }
 
   // Verify HMAC
-  const hmacValid = verifyHmac(body);
+  const hmacValid = await verifyHmac(body);
   if (!hmacValid) {
     console.error("[webhook] HMAC verification failed");
     return NextResponse.json({ error: "invalid hmac" }, { status: 403 });

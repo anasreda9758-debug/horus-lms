@@ -28,12 +28,7 @@ export async function POST(request: NextRequest) {
   const isCorrect = selected.isCorrect;
   const correctOption = q.options.find((o) => o.isCorrect);
 
-  // Create a review-specific attempt if needed (to track review history)
-  const reviewBankId = q.bankId;
-  let reviewAttempt = await db.query.quizAttempt.findFirst({
-    where: eq(quizAttempt.userId, session.user.id),
-  });
-  // We use a lightweight approach: directly update SM-2 without creating attempt pollution
+  // Lightweight approach: directly update SM-2 without creating attempt pollution
   // Use timeSpentMs to calculate quality
   await updateQuestionReview(session.user.id, questionId, isCorrect, timeSpentMs ?? 0);
 
