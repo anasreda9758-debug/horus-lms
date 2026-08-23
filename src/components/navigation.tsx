@@ -17,6 +17,7 @@ import {
   Swords,
   Trophy,
   BarChart3,
+  RefreshCw,
 } from "lucide-react";
 import { SignOutButton } from "@/components/sign-out-button";
 
@@ -26,6 +27,8 @@ const navItems = [
   { href: "/flashcards", label: "البطاقات التعليمية", icon: Brain },
   { href: "/cases", label: "الحالات السريرية", icon: Stethoscope },
   { href: "/ospe", label: "محاكي OSPE", icon: FlaskConical },
+  { href: "/review", label: "مراجعة الأسئلة", icon: RefreshCw },
+  { href: "/quiz/analytics", label: "تحليلات الاختبارات", icon: BarChart3 },
   { href: "/quiz/history", label: "تاريخ الاختبارات", icon: BarChart3 },
   { href: "/battles", label: "تحدي الأقران", icon: Swords },
   { href: "/leaderboard", label: "لوحة المتصدرين", icon: Trophy },

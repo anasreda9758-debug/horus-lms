@@ -18,6 +18,10 @@ import {
   Users,
   ScrollText,
   Home,
+  BarChart3,
+  CreditCard,
+  GraduationCap,
+  Activity,
 } from "lucide-react";
 
 type Module = {
@@ -56,7 +60,17 @@ type AuditEntry = {
   createdAt: string;
 };
 
-type Tab = "curriculum" | "users" | "audit";
+type PlatformStats = {
+  users: { total: number; students: number };
+  content: { modules: number; lectures: number };
+  quizzes: { attempts: number; answers: number; correct: number };
+  subscriptions: { active: number };
+  recentActivity: { last7Days: number };
+  topModules: { name: string; slug: string; attempts: number }[];
+  topUsers: { name: string; email: string; quizzes: number; accuracy: number }[];
+};
+
+type Tab = "dashboard" | "curriculum" | "users" | "audit";
 
 // ── Module Form ──
 
@@ -215,7 +229,10 @@ function LectureForm({
 
 export function AdminPanel() {
   const router = useRouter();
-  const [tab, setTab] = useState<Tab>("curriculum");
+  const [tab, setTab] = useState<Tab>("dashboard");
+
+  // Dashboard state
+  const [stats, setStats] = useState<PlatformStats | null>(null);
 
   // Curriculum state
   const [modules, setModules] = useState<Module[]>([]);
@@ -229,6 +246,9 @@ export function AdminPanel() {
 
   // Audit state
   const [auditLogs, setAuditLogs] = useState<AuditEntry[]>([]);
+  // Users state
+  const [usersList, setUsersList] = useState<{ id: string; name: string | null; email: string; role: string; createdAt: string; quizzes: number; accuracy: number }[]>([]);
+  const [usersLoading, setUsersLoading] = useState(false);
 
   const fetchModules = useCallback(async () => {
     const res = await fetch("/api/admin/modules");
@@ -254,10 +274,34 @@ export function AdminPanel() {
     }
   }, []);
 
+  const fetchStats = useCallback(async () => {
+    const res = await fetch("/api/admin/stats");
+    if (res.ok) {
+      const data = await res.json();
+      setStats(data);
+      if (data.topUsers) setUsersList(data.topUsers.map((u: any) => ({ id: u.email, name: u.name, email: u.email, role: "student", createdAt: "", quizzes: u.quizzes, accuracy: u.accuracy })));
+    }
+  }, []);
+
+  const fetchUsers = useCallback(async () => {
+    setUsersLoading(true);
+    try {
+      const res = await fetch("/api/admin/stats");
+      if (res.ok) {
+        const data = await res.json();
+        if (data.topUsers) setUsersList(data.topUsers.map((u: any) => ({ id: u.email, name: u.name, email: u.email, role: "student", createdAt: "", quizzes: u.quizzes, accuracy: u.accuracy })));
+      }
+    } finally {
+      setUsersLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     fetchModules();
     if (tab === "audit") fetchAudit();
-  }, [tab, fetchModules, fetchAudit]);
+    if (tab === "dashboard") fetchStats();
+    if (tab === "users") fetchUsers();
+  }, [tab, fetchModules, fetchAudit, fetchStats, fetchUsers]);
 
   // ── Module CRUD ──
 
@@ -326,6 +370,7 @@ export function AdminPanel() {
       {/* Tabs */}
       <div className="mb-6 flex gap-1 rounded-xl border border-border bg-card p-1">
         {([
+          { key: "dashboard", label: "لوحة القيادة", icon: BarChart3 },
           { key: "curriculum", label: "المنهج", icon: BookOpen },
           { key: "users", label: "المستخدمين", icon: Users },
           { key: "audit", label: "سجل التدقيق", icon: ScrollText },
@@ -342,6 +387,82 @@ export function AdminPanel() {
           </button>
         ))}
       </div>
+
+      {/* ── Dashboard Tab ── */}
+      {tab === "dashboard" && (
+        <div>
+          <div className="mb-6 flex items-center justify-between">
+            <h2 className="text-lg font-semibold">لوحة القيادة</h2>
+            <Button size="sm" variant="outline" onClick={fetchStats}>تحديث</Button>
+          </div>
+
+          {stats ? (
+            <>
+              <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <DashCard icon={Users} label="المستخدمين" value={stats.users.total} sub={`${stats.users.students} طالب`} color="text-blue-600 bg-blue-50 dark:bg-blue-950/40" />
+                <DashCard icon={GraduationCap} label="المحاضرات" value={stats.content.lectures} sub={`${stats.content.modules} موديول`} color="text-purple-600 bg-purple-50 dark:bg-purple-950/40" />
+                <DashCard icon={BarChart3} label="اختبارات مكتملة" value={stats.quizzes.attempts} sub={`${stats.quizzes.correct}/${stats.quizzes.answers} صحيحة`} color="text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40" />
+                <DashCard icon={CreditCard} label="اشتراكات نشطة" value={stats.subscriptions.active} sub={`${stats.recentActivity.last7Days} اختبار آخر 7 أيام`} color="text-amber-600 bg-amber-50 dark:bg-amber-950/40" />
+              </div>
+
+              <div className="grid gap-6 lg:grid-cols-2">
+                {/* Top Modules */}
+                <div className="rounded-2xl border border-border bg-card p-6">
+                  <h3 className="mb-4 font-semibold">أكثر الموديولات استخداماً</h3>
+                  {stats.topModules.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">لا توجد اختبارات بعد.</p>
+                  ) : (
+                    <ul className="space-y-3">
+                      {stats.topModules.map((m) => (
+                        <li key={m.slug}>
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="font-medium">{m.name}</span>
+                            <span className="text-muted-foreground">{m.attempts} اختبار</span>
+                          </div>
+                          <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                            <div
+                              className="h-full rounded-full bg-primary/70"
+                              style={{ width: `${(m.attempts / (stats.topModules[0]?.attempts || 1)) * 100}%` }}
+                            />
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+
+                {/* Top Users */}
+                <div className="rounded-2xl border border-border bg-card p-6">
+                  <h3 className="mb-4 font-semibold">أكثر المستخدمين نشاطاً</h3>
+                  {stats.topUsers.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">لا يوجد مستخدمين بعد.</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {stats.topUsers.map((u) => (
+                        <div key={u.email} className="flex items-center justify-between rounded-lg bg-muted/50 p-3">
+                          <div>
+                            <p className="text-sm font-medium">{u.name}</p>
+                            <p className="text-xs text-muted-foreground">{u.email}</p>
+                          </div>
+                          <div className="text-left">
+                            <p className="text-sm font-medium">{u.quizzes} اختبار</p>
+                            <p className="text-xs text-muted-foreground">{u.accuracy}% صحة</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="rounded-2xl border border-border bg-card p-12 text-center">
+              <Activity className="mx-auto mb-4 h-12 w-12 text-muted-foreground/40" />
+              <p className="text-muted-foreground">جاري التحميل...</p>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* ── Curriculum Tab ── */}
       {tab === "curriculum" && (
@@ -465,12 +586,53 @@ export function AdminPanel() {
       {/* ── Users Tab ── */}
       {tab === "users" && (
         <div>
-          <h2 className="mb-4 text-lg font-semibold">المستخدمين</h2>
-          <p className="text-sm text-muted-foreground">إدارة المستخدمين والاشتراكات من صفحة الإدارة الرئيسية.</p>
-          <Link href="/admin" className="mt-4 inline-flex items-center gap-2 text-sm text-primary hover:underline">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-lg font-semibold">المستخدمين</h2>
+            <Button size="sm" variant="outline" onClick={fetchUsers} disabled={usersLoading}>تحديث</Button>
+          </div>
+          <p className="mb-4 text-sm text-muted-foreground">
+            إدارة المستخدمين والاشتراكات من صفحة الإدارة الرئيسية.
+          </p>
+          <Link href="/admin" className="mb-6 inline-flex items-center gap-2 text-sm text-primary hover:underline">
             <Users className="h-4 w-4" />
             الانتقال للإدارة الرئيسية
           </Link>
+
+          {usersList.length > 0 && (
+            <div className="mt-6">
+              <h3 className="mb-3 text-sm font-medium text-muted-foreground">أكثر المستخدمين نشاطاً في الاختبارات</h3>
+              <div className="rounded-xl border border-border bg-card overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border bg-muted/50">
+                      <th className="px-4 py-3 text-start font-medium text-muted-foreground">المستخدم</th>
+                      <th className="px-4 py-3 text-start font-medium text-muted-foreground">البريد</th>
+                      <th className="px-4 py-3 text-center font-medium text-muted-foreground">اختبارات</th>
+                      <th className="px-4 py-3 text-center font-medium text-muted-foreground">نسبة الصحة</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {usersList.map((u) => (
+                      <tr key={u.email} className="border-b border-border last:border-0">
+                        <td className="px-4 py-3 font-medium">{u.name}</td>
+                        <td className="px-4 py-3 text-muted-foreground">{u.email}</td>
+                        <td className="px-4 py-3 text-center">{u.quizzes}</td>
+                        <td className="px-4 py-3 text-center">
+                          <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                            u.accuracy >= 80 ? "bg-emerald-500/10 text-emerald-600" :
+                            u.accuracy >= 50 ? "bg-amber-500/10 text-amber-600" :
+                            "bg-red-500/10 text-red-600"
+                          }`}>
+                            {u.accuracy}%
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -511,6 +673,33 @@ export function AdminPanel() {
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+function DashCard({
+  icon: Icon,
+  label,
+  value,
+  sub,
+  color,
+}: {
+  icon: React.ElementType;
+  label: string;
+  value: number;
+  sub?: string;
+  color: string;
+}) {
+  return (
+    <div className="rounded-2xl border border-border bg-card p-4">
+      <div className="mb-2 flex items-center gap-2">
+        <div className={`inline-flex h-8 w-8 items-center justify-center rounded-lg ${color}`}>
+          <Icon className="h-4 w-4" />
+        </div>
+        <span className="text-xs font-medium text-muted-foreground">{label}</span>
+      </div>
+      <p className="text-2xl font-bold">{value.toLocaleString()}</p>
+      {sub && <p className="mt-0.5 text-xs text-muted-foreground">{sub}</p>}
     </div>
   );
 }

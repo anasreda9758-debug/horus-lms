@@ -192,7 +192,7 @@ export async function finishAttempt(userId: string, attemptId: string) {
   }
 
   const answers = await db
-    .select({ isCorrect: quizAnswer.isCorrect, questionId: quizAnswer.questionId })
+    .select({ isCorrect: quizAnswer.isCorrect, questionId: quizAnswer.questionId, timeSpentMs: quizAnswer.timeSpentMs })
     .from(quizAnswer)
     .where(eq(quizAnswer.attemptId, attemptId));
   const score = answers.filter((a) => a.isCorrect).length;
@@ -205,7 +205,7 @@ export async function finishAttempt(userId: string, attemptId: string) {
 
   // Update spaced-repetition for each answered question
   for (const ans of answers) {
-    await updateQuestionReview(userId, ans.questionId, ans.isCorrect);
+    await updateQuestionReview(userId, ans.questionId, ans.isCorrect, ans.timeSpentMs);
   }
 
   return {
@@ -226,13 +226,16 @@ export async function finishAttempt(userId: string, attemptId: string) {
  *   incorrect + close     → quality 1
  *   incorrect              → quality 0
  */
-function correctToQuality(isCorrect: boolean, _timeMs: number): number {
+function correctToQuality(isCorrect: boolean, timeMs: number): number {
   if (!isCorrect) return 0;
-  return 4; // default quality for correct answer
+  const sec = timeMs / 1000;
+  if (sec < 5) return 5;  // correct + fast
+  if (sec < 15) return 4; // correct + normal
+  return 3;                // correct + slow
 }
 
-async function updateQuestionReview(userId: string, questionId: string, isCorrect: boolean) {
-  const quality = correctToQuality(isCorrect, 0);
+async function updateQuestionReview(userId: string, questionId: string, isCorrect: boolean, timeMs: number) {
+  const quality = correctToQuality(isCorrect, timeMs);
 
   const [existing] = await db
     .select()
@@ -393,4 +396,146 @@ export async function getModuleAccuracy(userId: string) {
     total: m.total,
     percent: m.total ? Math.round((m.score / m.total) * 100) : 0,
   }));
+}
+
+// ── Analytics ──
+
+export async function getQuizAnalytics(userId: string) {
+  // All completed attempts
+  const attempts = await db
+    .select({
+      id: quizAttempt.id,
+      score: quizAttempt.score,
+      total: quizAttempt.total,
+      difficulty: quizAttempt.difficulty,
+      elapsedSec: quizAttempt.elapsedSec,
+      startedAt: quizAttempt.startedAt,
+      completedAt: quizAttempt.completedAt,
+      bankTitle: questionBank.title,
+      bankSlug: questionBank.slug,
+      moduleName: curriculumModule.name,
+      moduleSlug: curriculumModule.slug,
+    })
+    .from(quizAttempt)
+    .innerJoin(questionBank, eq(quizAttempt.bankId, questionBank.id))
+    .innerJoin(curriculumModule, eq(questionBank.moduleId, curriculumModule.id))
+    .where(and(eq(quizAttempt.userId, userId), eq(quizAttempt.status, "completed")))
+    .orderBy(desc(quizAttempt.completedAt));
+
+  // All answers with timing
+  const allAnswers = await db
+    .select({
+      isCorrect: quizAnswer.isCorrect,
+      timeSpentMs: quizAnswer.timeSpentMs,
+      difficulty: question.difficulty,
+      bankSlug: questionBank.slug,
+      moduleName: curriculumModule.name,
+      moduleSlug: curriculumModule.slug,
+    })
+    .from(quizAnswer)
+    .innerJoin(quizAttempt, eq(quizAnswer.attemptId, quizAttempt.id))
+    .innerJoin(question, eq(quizAnswer.questionId, question.id))
+    .innerJoin(questionBank, eq(question.bankId, questionBank.id))
+    .innerJoin(curriculumModule, eq(questionBank.moduleId, curriculumModule.id))
+    .where(eq(quizAttempt.userId, userId));
+
+  // Accuracy over time (group by date)
+  const byDate = new Map<string, { correct: number; total: number }>();
+  for (const a of attempts) {
+    const date = (a.completedAt ?? a.startedAt).toISOString().slice(0, 10);
+    const cur = byDate.get(date) ?? { correct: 0, total: 0 };
+    cur.correct += a.score;
+    cur.total += a.total;
+    byDate.set(date, cur);
+  }
+  const accuracyOverTime = [...byDate.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .slice(-14) // last 14 days
+    .map(([date, d]) => ({
+      date,
+      percent: d.total ? Math.round((d.correct / d.total) * 100) : 0,
+      correct: d.correct,
+      total: d.total,
+    }));
+
+  // Per-module accuracy
+  const moduleMap = new Map<string, { name: string; correct: number; total: number; avgTimeMs: number; count: number }>();
+  for (const a of allAnswers) {
+    const key = a.moduleSlug;
+    const cur = moduleMap.get(key) ?? { name: a.moduleName, correct: 0, total: 0, avgTimeMs: 0, count: 0 };
+    cur.total++;
+    if (a.isCorrect) cur.correct++;
+    cur.avgTimeMs += a.timeSpentMs;
+    cur.count++;
+    moduleMap.set(key, cur);
+  }
+  const perModule = [...moduleMap.entries()].map(([slug, m]) => ({
+    moduleSlug: slug,
+    moduleName: m.name,
+    correct: m.correct,
+    total: m.total,
+    percent: m.total ? Math.round((m.correct / m.total) * 100) : 0,
+    avgTimeMs: m.count ? Math.round(m.avgTimeMs / m.count) : 0,
+  }));
+
+  // Difficulty breakdown
+  const diffMap = new Map<string, { correct: number; total: number }>();
+  for (const a of allAnswers) {
+    const d = a.difficulty ?? "medium";
+    const cur = diffMap.get(d) ?? { correct: 0, total: 0 };
+    cur.total++;
+    if (a.isCorrect) cur.correct++;
+    diffMap.set(d, cur);
+  }
+  const byDifficulty = [...diffMap.entries()].map(([diff, d]) => ({
+    difficulty: diff,
+    correct: d.correct,
+    total: d.total,
+    percent: d.total ? Math.round((d.correct / d.total) * 100) : 0,
+  }));
+
+  // Timing distribution (avg ms per question by difficulty)
+  const timingByDiff = new Map<string, { sum: number; count: number }>();
+  for (const a of allAnswers) {
+    const d = a.difficulty ?? "medium";
+    const cur = timingByDiff.get(d) ?? { sum: 0, count: 0 };
+    cur.sum += a.timeSpentMs;
+    cur.count++;
+    timingByDiff.set(d, cur);
+  }
+  const avgTimeByDifficulty = [...timingByDiff.entries()].map(([diff, t]) => ({
+    difficulty: diff,
+    avgMs: t.count ? Math.round(t.sum / t.count) : 0,
+    avgSec: t.count ? Math.round(t.sum / t.count / 1000) : 0,
+  }));
+
+  // Overall stats
+  const totalAttempts = attempts.length;
+  const totalAnswered = allAnswers.length;
+  const totalCorrect = allAnswers.filter((a) => a.isCorrect).length;
+  const avgPercent = totalAttempts > 0
+    ? Math.round(attempts.reduce((s, a) => s + (a.total ? (a.score / a.total) * 100 : 0), 0) / totalAttempts)
+    : 0;
+  const bestPercent = attempts.length > 0
+    ? Math.max(...attempts.map((a) => (a.total ? Math.round((a.score / a.total) * 100) : 0)))
+    : 0;
+  const avgTimePerQuestion = totalAnswered > 0
+    ? Math.round(allAnswers.reduce((s, a) => s + a.timeSpentMs, 0) / totalAnswered / 1000)
+    : 0;
+
+  return {
+    overall: { totalAttempts, totalAnswered, totalCorrect, avgPercent, bestPercent, avgTimePerQuestion },
+    accuracyOverTime,
+    perModule,
+    byDifficulty,
+    avgTimeByDifficulty,
+  };
+}
+
+export async function getDueReviewCount(userId: string) {
+  const [result] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(questionReview)
+    .where(and(eq(questionReview.userId, userId), lte(questionReview.nextReview, new Date())));
+  return result?.count ?? 0;
 }
