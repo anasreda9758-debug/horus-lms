@@ -23,6 +23,7 @@ export async function GET(request: NextRequest) {
 
   const rows = await db.execute(sql`
     SELECT l.id, l.title, l.slug, l.summary, l."subject", l.kind, l.content, l.pdf_file,
+      l.pdf_page_start, l.pdf_page_end,
       l."order", l.duration_min, l.created_at, l.updated_at
     FROM lecture l
     WHERE l.module_id = ${moduleId}
@@ -40,6 +41,8 @@ export async function GET(request: NextRequest) {
     hasPdf: !!r.pdf_file,
     order: r.order,
     durationMin: r.duration_min,
+    pdfPageStart: r.pdf_page_start,
+    pdfPageEnd: r.pdf_page_end,
     createdAt: r.created_at,
     updatedAt: r.updated_at,
   }));
@@ -116,11 +119,16 @@ export async function PUT(request: NextRequest) {
   if (!existing) return NextResponse.json({ error: "not found" }, { status: 404 });
 
   const updates: Record<string, any> = {};
-  const allowed = ["title", "slug", "summary", "subject", "kind", "content", "pdfFile", "durationMin"];
+  const allowed = ["title", "slug", "summary", "subject", "kind", "content", "pdfFile", "durationMin", "pdfPageStart", "pdfPageEnd"];
+  const dbKeyMap: Record<string, string> = {
+    pdfFile: "pdf_file",
+    durationMin: "duration_min",
+    pdfPageStart: "pdf_page_start",
+    pdfPageEnd: "pdf_page_end",
+  };
   for (const key of allowed) {
     if (body[key] !== undefined) {
-      const dbKey = key === "pdfFile" ? "pdf_file" : key === "durationMin" ? "duration_min" : key;
-      updates[dbKey] = body[key];
+      updates[dbKeyMap[key] ?? key] = body[key];
     }
   }
   if (body.order !== undefined) updates["order"] = body.order;

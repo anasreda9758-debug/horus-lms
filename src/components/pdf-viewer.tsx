@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
@@ -10,13 +10,28 @@ import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Download, Maximize2, Minimi
 // Set worker source
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
-export function PdfViewer({ lectureId, title }: { lectureId: string; title: string }) {
+export function PdfViewer({
+  lectureId,
+  title,
+  pageStart,
+  pageEnd,
+}: {
+  lectureId: string;
+  title: string;
+  pageStart?: number | null;
+  pageEnd?: number | null;
+}) {
   const [numPages, setNumPages] = useState(0);
   const [pageNumber, setPageNumber] = useState(1);
   const [scale, setScale] = useState(1.2);
   const [fullscreen, setFullscreen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Effective range within the physical PDF (1-based, inclusive)
+  const rangeStart = pageStart && pageStart > 0 ? pageStart : 1;
+  const hasRange = !!(pageStart && pageEnd && pageEnd >= pageStart);
+  const rangeEnd = hasRange ? Math.min(pageEnd as number, numPages || (pageEnd as number)) : null;
 
   const onDocumentLoadSuccess = useCallback(({ numPages: n }: { numPages: number }) => {
     setNumPages(n);
@@ -30,12 +45,20 @@ export function PdfViewer({ lectureId, title }: { lectureId: string; title: stri
     console.error("PDF load error:", err);
   }, []);
 
+  // Jump to the start of the assigned range once the doc loads
+  useEffect(() => {
+    if (numPages > 0) {
+      setPageNumber(Math.min(rangeStart, numPages));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [numPages]);
+
   function prevPage() {
-    setPageNumber((p) => Math.max(1, p - 1));
+    setPageNumber((p) => Math.max(rangeStart, p - 1));
   }
 
   function nextPage() {
-    setPageNumber((p) => Math.min(numPages, p + 1));
+    setPageNumber((p) => Math.min(rangeEnd ?? numPages, p + 1));
   }
 
   function zoomIn() {
@@ -47,6 +70,10 @@ export function PdfViewer({ lectureId, title }: { lectureId: string; title: stri
   }
 
   const pdfUrl = `/api/content/pdf/${lectureId}`;
+  const minPage = rangeStart;
+  const maxPage = rangeEnd ?? numPages;
+  const relative = pageNumber - minPage + 1;
+  const totalInRange = hasRange ? maxPage - minPage + 1 : numPages;
 
   return (
     <div className={`flex flex-col ${fullscreen ? "fixed inset-0 z-50 bg-background" : ""}`}>
@@ -65,18 +92,24 @@ export function PdfViewer({ lectureId, title }: { lectureId: string; title: stri
         </div>
 
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" onClick={prevPage} disabled={pageNumber <= 1} title="السابق">
+          <Button variant="ghost" size="icon" onClick={prevPage} disabled={pageNumber <= minPage} title="السابق">
             <ChevronRight className="h-4 w-4" />
           </Button>
-          <span className="text-sm text-muted-foreground">
-            {pageNumber} / {numPages}
+          <span className="text-sm text-muted-foreground" dir="ltr">
+            {hasRange ? `${relative} / ${totalInRange}` : `${pageNumber} / ${numPages}`}
+            {hasRange ? <span className="mx-1 text-xs opacity-60">(PDF: {pageNumber})</span> : null}
           </span>
-          <Button variant="ghost" size="icon" onClick={nextPage} disabled={pageNumber >= numPages} title="التالي">
+          <Button variant="ghost" size="icon" onClick={nextPage} disabled={pageNumber >= maxPage} title="التالي">
             <ChevronLeft className="h-4 w-4" />
           </Button>
         </div>
 
         <div className="flex items-center gap-1">
+          {!loading && !error && hasRange && (
+            <span className="rounded-full bg-primary/10 px-3 py-1 text-xs text-primary">
+              صفحات المحاضرة: {rangeStart}–{maxPage}
+            </span>
+          )}
           <a href={pdfUrl} download className="inline-flex items-center justify-center rounded-md h-9 w-9 text-muted-foreground hover:bg-accent hover:text-accent-foreground" title="تحميل">
             <Download className="h-4 w-4" />
           </a>
@@ -111,7 +144,7 @@ export function PdfViewer({ lectureId, title }: { lectureId: string; title: stri
           error=""
         >
           <Page
-            pageNumber={pageNumber}
+            pageNumber={Math.max(1, Math.min(pageNumber, numPages || 1))}
             scale={scale}
             renderTextLayer={true}
             renderAnnotationLayer={true}

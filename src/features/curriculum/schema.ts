@@ -33,6 +33,8 @@ export const lecture = pgTable(
     kind: text("kind"),
     content: text("content"),
     pdfFile: text("pdf_file"),
+    pdfPageStart: integer("pdf_page_start"),
+    pdfPageEnd: integer("pdf_page_end"),
     summaryJson: jsonb("summary_json").$type<{
       overview: string;
       keyPoints: string[];

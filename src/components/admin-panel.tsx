@@ -46,6 +46,8 @@ type Lecture = {
   hasPdf: boolean;
   order: number;
   durationMin: number | null;
+  pdfPageStart?: number | null;
+  pdfPageEnd?: number | null;
 };
 
 type AuditEntry = {
@@ -161,6 +163,8 @@ function LectureForm({
   const [summary, setSummary] = useState(initial?.summary ?? "");
   const [kind, setKind] = useState(initial?.kind ?? "lecture");
   const [durationMin, setDurationMin] = useState(initial?.durationMin?.toString() ?? "");
+  const [pageStart, setPageStart] = useState(initial?.pdfPageStart?.toString() ?? "");
+  const [pageEnd, setPageEnd] = useState(initial?.pdfPageEnd?.toString() ?? "");
   const [busy, setBusy] = useState(false);
 
   async function submit() {
@@ -174,6 +178,8 @@ function LectureForm({
         summary,
         kind,
         durationMin: durationMin ? Number(durationMin) : null,
+        pdfPageStart: pageStart ? Number(pageStart) : null,
+        pdfPageEnd: pageEnd ? Number(pageEnd) : null,
         id: initial?.id,
       });
     } finally {
@@ -210,6 +216,18 @@ function LectureForm({
           <label className="text-xs text-muted-foreground">المدة (دقيقة)</label>
           <input type="number" className="mt-1 w-20 rounded-lg border border-border bg-background px-3 py-2 text-sm" value={durationMin} onChange={(e) => setDurationMin(e.target.value)} />
         </div>
+        {initial?.hasPdf && (
+          <>
+            <div>
+              <label className="text-xs text-muted-foreground">صفحة البداية</label>
+              <input type="number" min={1} className="mt-1 w-20 rounded-lg border border-border bg-background px-3 py-2 text-sm" value={pageStart} onChange={(e) => setPageStart(e.target.value)} placeholder="—" />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground">صفحة النهاية</label>
+              <input type="number" min={1} className="mt-1 w-20 rounded-lg border border-border bg-background px-3 py-2 text-sm" value={pageEnd} onChange={(e) => setPageEnd(e.target.value)} placeholder="—" />
+            </div>
+          </>
+        )}
       </div>
       <div className="flex gap-2">
         <Button size="sm" onClick={submit} disabled={busy || !title.trim()}>

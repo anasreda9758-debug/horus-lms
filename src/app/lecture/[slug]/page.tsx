@@ -160,7 +160,12 @@ export default async function LecturePage({
                     <FileText className="h-5 w-5 text-muted-foreground" />
                     <h2 className="font-semibold">الملف الأصلي (PDF)</h2>
                   </div>
-                  <PdfViewer lectureId={lectureRow.id} title={lectureRow.title} />
+                  <PdfViewer
+                    lectureId={lectureRow.id}
+                    title={lectureRow.title}
+                    pageStart={lectureRow.pdfPageStart}
+                    pageEnd={lectureRow.pdfPageEnd}
+                  />
                 </div>
               ) : null}
 
