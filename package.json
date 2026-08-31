@@ -24,7 +24,10 @@
     "e2e": "node scripts/e2e.mjs",
     "perf": "node scripts/perf.mjs",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "audit:content-mapping": "tsx scripts/content-mapping-audit.ts",
+    "apply:pdf-mappings": "tsx scripts/apply-pdf-mappings.ts",
+    "extract:pdf-content": "tsx scripts/extract-pdf-content.ts"
   },
   "dependencies": {
     "@ai-sdk/openai-compatible": "^3.0.30",
