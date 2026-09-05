@@ -131,13 +131,47 @@ export function TutorChat({ lectureId }: { lectureId: string }) {
     );
   }
 
+  function handleSuggestionClick(suggestionText: string) {
+    // Only set the input, do NOT send automatically
+    setInput(suggestionText);
+  }
+
   return (
     <div className="rounded-xl bg-card p-6 ring-1 ring-foreground/10">
       <div className="flex h-96 flex-col gap-3 overflow-y-auto pe-2">
         {messages.length === 0 ? (
-          <p className="m-auto text-sm text-muted-foreground">
-            ابدأ بسؤال عن محتوى هذه المحاضرة…
-          </p>
+          <div className="flex flex-col gap-3">
+            <p className="text-sm text-muted-foreground">
+              ابدأ بسؤال عن محتوى هذه المحاضرة…
+            </p>
+            <div className="flex flex-col gap-2">
+              <p className="text-xs font-semibold text-muted-foreground">اقتراحات:</p>
+              <Button
+                variant="outline"
+                size="sm"
+                className="justify-start text-xs h-auto py-1"
+                onClick={() => handleSuggestionClick("ملخص المحاضرة")}
+              >
+                📝 ملخص المحاضرة
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="justify-start text-xs h-auto py-1"
+                onClick={() => handleSuggestionClick("اشرح المصطلحات المهمة")}
+              >
+                📚 اشرح المصطلحات المهمة
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="justify-start text-xs h-auto py-1"
+                onClick={() => handleSuggestionClick("أسئلة امتحان محتملة")}
+              >
+                ❓ أسئلة امتحان محتملة
+              </Button>
+            </div>
+          </div>
         ) : (
           messages.map((m, i) => (
             <div key={i} className="flex flex-col gap-1">
@@ -231,6 +265,6 @@ export function TutorChat({ lectureId }: { lectureId: string }) {
           </Button>
         </div>
       ) : null}
-    </div>
+   </div>
   );
 }

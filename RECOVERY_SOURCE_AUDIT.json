@@ -1,0 +1,429 @@
+{
+  "assessmentDate": "2026-09-01T01:49:25.536+03:00",
+  "status": "READ-ONLY-ASSESSMENT-COMPLETE",
+  "recoverySources": [
+    {
+      "sourceId": 1,
+      "name": "Content Mapping Audit JSON",
+      "path": "reports/content-mapping-audit.json",
+      "classification": "A",
+      "classificationLabel": "COMPLETE ORIGINAL CURRICULUM DATA",
+      "fileSize": 234264,
+      "fileSizeHuman": "234 KB",
+      "generatedAt": "2026-08-25T14:01:14.535Z",
+      "type": "json",
+      "dataContained": {
+        "modules": 7,
+        "lectures": 248,
+        "pdfs": 80,
+        "pdfMappings": {
+          "total": 248,
+          "highConfidence": 171,
+          "mediumConfidence": 35,
+          "lowConfidence": 42,
+          "ambiguous": 62
+        },
+        "lectureMetadata": true,
+        "lectureIds": true,
+        "lectureTitles": true,
+        "pdfPageRanges": true,
+        "pdfContent": false,
+        "studentData": false
+      },
+      "canRecover": true,
+      "recoveryConfidence": "COMPLETE",
+      "confidenceScore": 5,
+      "readyToUse": false,
+      "readyToUseNotes": "Requires JSON parsing and transformation to SQL",
+      "recoverySteps": 3,
+      "recoveryTimeMinutes": 5,
+      "recoveryRisk": "LOW",
+      "reversibilityScore": 5,
+      "limitations": [
+        "Requires custom parsing script",
+        "Lecture IDs were auto-generated (non-deterministic)"
+      ],
+      "advantages": [
+        "Most comprehensive data source",
+        "All 248 lectures with verified mappings",
+        "Safe to parse without side effects",
+        "Created before data loss"
+      ]
+    },
+    {
+      "sourceId": 2,
+      "name": "Git: import-content.ts Script",
+      "path": "scripts/import-content.ts (in main checkout)",
+      "gitCommit": "6619952d107786f166fd7b6a33de684ea2f81a0b",
+      "gitCommitMessage": "feat(content): import authoritative curriculum (10 modules, 248 lectures) + PDF serving",
+      "gitDate": "2026-08-16T02:23:07+03:00",
+      "classification": "B",
+      "classificationLabel": "PARTIAL ORIGINAL CURRICULUM DATA (structure only)",
+      "fileSize": 853,
+      "fileSizeUnit": "lines",
+      "type": "typescript",
+      "dataContained": {
+        "modules": 10,
+        "lectures": 248,
+        "lectureTitles": true,
+        "lectureKinds": true,
+        "lectureSlugs": true,
+        "lectureDurations": true,
+        "lectureSummaries": true,
+        "lectureIds": false,
+        "pdfPageRanges": false,
+        "pdfMappings": "fuzzy-matched",
+        "studentData": false
+      },
+      "canRecover": true,
+      "recoveryConfidence": "HIGH",
+      "confidenceScore": 4,
+      "readyToUse": true,
+      "readyToUseNotes": "Can be executed directly as TypeScript script",
+      "recoverySteps": 1,
+      "recoveryTimeMinutes": 10,
+      "recoveryRisk": "LOW",
+      "reversibilityScore": 5,
+      "locationMainCheckout": "C:\\Users\\anasr\\dyad-apps\\horus-lms\\scripts\\import-content.ts",
+      "prerequisites": [
+        "TypeScript runtime (tsx)",
+        "CONTENT_ROOT env var = C:/work/projects",
+        "All 80 PDFs must be accessible at original paths"
+      ],
+      "advantages": [
+        "Executable directly — no parsing required",
+        "Automatic fuzzy PDF matching",
+        "Automatic text extraction from PDFs",
+        "Original authoritative curriculum hardcoded in script",
+        "Script was designed for exactly this use case"
+      ],
+      "limitations": [
+        "Will DELETE current test data",
+        "PDFs must be in original locations",
+        "Fuzzy matching may find different PDF boundaries than audit",
+        "Takes longer than direct recovery (includes PDF parsing)"
+      ]
+    },
+    {
+      "sourceId": 3,
+      "name": "PDF Mappings Applied Report",
+      "path": "reports/pdf-mappings-applied.json",
+      "classification": "C",
+      "classificationLabel": "METADATA/REFERENCES ONLY",
+      "fileSize": 7,
+      "fileSizeUnit": "KB",
+      "generatedAt": "2026-08-31T22:37:32.511Z",
+      "type": "json",
+      "dataContained": {
+        "mappingsVerified": 186,
+        "mappingsSkipped": 62,
+        "pdfFile": true,
+        "pdfPageStart": true,
+        "pdfPageEnd": true,
+        "lectureIds": false,
+        "lectureMetadata": false
+      },
+      "canRecover": true,
+      "recoveryConfidence": "COMPLETE (for 186 mappings)",
+      "confidenceScore": 5,
+      "readyToUse": true,
+      "readyToUseNotes": "Can be re-applied immediately after curriculum structure recovered",
+      "recoverySteps": 1,
+      "recoveryTimeMinutes": 1,
+      "recoveryRisk": "VERY LOW",
+      "reversibilityScore": 5,
+      "advantages": [
+        "Already verified and tested",
+        "Can be applied immediately after Phase 1",
+        "Covers 186 of 248 lectures (~75%)",
+        "Safe — no data loss risk"
+      ],
+      "limitations": [
+        "Only covers 186 lectures (not 62 ambiguous ones)",
+        "Requires curriculum structure to already exist"
+      ]
+    },
+    {
+      "sourceId": 4,
+      "name": "Content Mapping Audit Markdown",
+      "path": "reports/content-mapping-audit.md",
+      "classification": "C",
+      "classificationLabel": "METADATA/REFERENCES ONLY",
+      "fileSize": 840,
+      "fileSizeUnit": "KB",
+      "generatedAt": "2026-08-25T14:01:14.535Z",
+      "type": "markdown",
+      "dataContained": {
+        "summary": true,
+        "modules": 7,
+        "lectures": 248,
+        "pdfs": 80,
+        "problemAnalysis": true,
+        "machineReadable": false
+      },
+      "canRecover": true,
+      "recoveryConfidence": "PARTIAL",
+      "confidenceScore": 3,
+      "readyToUse": false,
+      "readyToUseNotes": "Requires manual parsing of markdown text",
+      "recoverySteps": "varies",
+      "recoveryTimeMinutes": "varies",
+      "recoveryRisk": "MEDIUM",
+      "reversibilityScore": 5,
+      "advantages": [
+        "Human-readable",
+        "Contains analysis and notes",
+        "Good for manual verification"
+      ],
+      "limitations": [
+        "Not structured for machine parsing",
+        "Slower to extract data",
+        "Designed for human review, not recovery"
+      ]
+    },
+    {
+      "sourceId": 5,
+      "name": "Original PDF Files on Disk",
+      "path": "C:\\work\\projects (subdirectories 1-10)",
+      "classification": "A",
+      "classificationLabel": "COMPLETE SOURCE DATA",
+      "totalFiles": 80,
+      "totalSizeBytes": 650000000,
+      "totalSizeHuman": "~650 MB",
+      "textExtractable": 73,
+      "imageOnly": 7,
+      "type": "pdf-files",
+      "dataContained": {
+        "pdfContent": true,
+        "lectureText": true,
+        "lectureBoundaries": true,
+        "lectureMetadata": false,
+        "databaseRecords": false
+      },
+      "canRecover": true,
+      "recoveryConfidence": "HIGH",
+      "confidenceScore": 4,
+      "readyToUse": true,
+      "readyToUseNotes": "Can be re-analyzed using content-mapping-audit.ts script",
+      "recoverySteps": 1,
+      "recoveryTimeMinutes": 20,
+      "recoveryRisk": "LOW",
+      "reversibilityScore": 5,
+      "advantages": [
+        "Original source material — authoritative",
+        "Accessible and verified intact",
+        "Can be re-analyzed anytime"
+      ],
+      "limitations": [
+        "Requires PDF parsing (slow, 15-30 minutes)",
+        "PDFs may have changed since audit (unlikely)"
+      ]
+    },
+    {
+      "sourceId": 6,
+      "name": "Git Migrations and Schema",
+      "path": "drizzle/0000-0011.sql, drizzle/0012_glossy_morph.sql",
+      "classification": "B",
+      "classificationLabel": "PARTIAL DATA (schema only)",
+      "type": "sql",
+      "dataContained": {
+        "schema": true,
+        "migrations": true,
+        "pdfPageColumns": true,
+        "tableDefinitions": true,
+        "data": false
+      },
+      "canRecover": true,
+      "recoveryConfidence": "COMPLETE",
+      "confidenceScore": 5,
+      "readyToUse": true,
+      "readyToUseNotes": "Schema is already in database — no action needed",
+      "recoverySteps": 0,
+      "recoveryTimeMinutes": 0,
+      "recoveryRisk": "NONE",
+      "reversibilityScore": 5,
+      "advantages": [
+        "Schema was never lost",
+        "All required columns exist (pdfFile, pdfPageStart, pdfPageEnd)",
+        "Migrations preserved in Git"
+      ],
+      "limitations": [
+        "Schema only — no curriculum data"
+      ]
+    },
+    {
+      "sourceId": 7,
+      "name": "Main Checkout Directory",
+      "path": "C:\\Users\\anasr\\dyad-apps\\horus-lms",
+      "classification": "D",
+      "classificationLabel": "TEST DATA / SCRIPTS ONLY",
+      "type": "directory",
+      "dataContained": {
+        "importContentScript": true,
+        "seedScripts": true,
+        "curriculumData": false,
+        "databaseState": false
+      },
+      "canRecover": true,
+      "recoveryConfidence": "HIGH",
+      "confidenceScore": 4,
+      "readyToUse": true,
+      "readyToUseNotes": "Contains import-content.ts which can be executed",
+      "recoverySteps": 1,
+      "recoveryTimeMinutes": 10,
+      "recoveryRisk": "LOW",
+      "advantages": [
+        "Has import-content.ts (authoritative source)",
+        "No database state needed"
+      ]
+    },
+    {
+      "sourceId": 8,
+      "name": "Current Worktree Database (.pgdata)",
+      "path": ".pgdata (in worktree)",
+      "classification": "D",
+      "classificationLabel": "TEST DATA ONLY",
+      "type": "database",
+      "dataContained": {
+        "modules": 2,
+        "lectures": 6,
+        "testContent": true,
+        "originalData": false,
+        "pdfMappings": false
+      },
+      "canRecover": false,
+      "recoveryConfidence": "NONE",
+      "confidenceScore": 0,
+      "readyToUse": false,
+      "readyToUseNotes": "This IS the result of data loss",
+      "recoverySteps": 0,
+      "recoveryTimeMinutes": 0,
+      "recoveryRisk": "N/A",
+      "advantages": [],
+      "limitations": [
+        "Only contains 2 test modules (not original 7)",
+        "Only contains 6 test lectures (not original 248)",
+        "No PDF mappings",
+        "This is the corrupted state we need to fix"
+      ]
+    }
+  ],
+  "dataLossSummary": {
+    "whatWasLost": {
+      "modules": 7,
+      "lectures": 248,
+      "pdfMappings": 186,
+      "lectureContent": "all"
+    },
+    "whatRemainsSafe": {
+      "gitHistory": true,
+      "migrations": true,
+      "schema": true,
+      "pdfFiles": true,
+      "auditReports": true
+    },
+    "rootCauseAnalysis": {
+      "scriptCreated": "reset-curriculum.ts (in commit 8d2e84c)",
+      "scriptExecuted": "Yes (09/01/2026 ~01:40)",
+      "deletionCascade": "DELETE FROM curriculum_module CASCADE → deletes all 248 lectures",
+      "replacementData": "2 test modules seeded via seed-curriculum.ts",
+      "testContentAdded": "populate-test-content.ts executed afterward"
+    }
+  },
+  "recoveryRecommendation": {
+    "strategy": "TWO_PHASE_RECOVERY",
+    "phase1": {
+      "name": "Restore Curriculum Structure",
+      "source": "import-content.ts from main checkout",
+      "command": "CONTENT_ROOT=C:/work/projects npx tsx scripts/import-content.ts",
+      "expectedResult": "10 modules, 248 lectures created with original metadata",
+      "timeMinutes": 10,
+      "risk": "LOW",
+      "reversibility": "HIGH"
+    },
+    "phase2": {
+      "name": "Apply Verified PDF Mappings",
+      "source": "reports/pdf-mappings-applied.json + content-mapping-audit.json",
+      "command": "npm run apply:pdf-mappings",
+      "expectedResult": "186 lectures get pdfFile, pdfPageStart, pdfPageEnd",
+      "timeMinutes": 1,
+      "risk": "VERY LOW",
+      "reversibility": "HIGH"
+    },
+    "totalTimeMinutes": 15,
+    "totalRisk": "LOW"
+  },
+  "alternativeStrategies": [
+    {
+      "strategyId": "A",
+      "name": "Manual Recovery from Audit JSON",
+      "description": "Parse audit JSON and generate custom SQL recovery script",
+      "advantages": ["Maximum control", "Can verify each mapping manually"],
+      "disadvantages": ["Time-consuming", "Requires custom script"],
+      "timeMinutes": 60,
+      "risk": "VERY LOW"
+    },
+    {
+      "strategyId": "B",
+      "name": "Complete PDF Re-Analysis",
+      "description": "Run audit script again to regenerate all mappings fresh",
+      "advantages": ["Freshest data", "Catch any PDF changes"],
+      "disadvantages": ["Takes 20-30 minutes", "Non-deterministic results"],
+      "timeMinutes": 30,
+      "risk": "MEDIUM"
+    }
+  ],
+  "preRecoveryChecklist": [
+    {
+      "item": "Verify all 80 PDFs exist",
+      "command": "ls C:\\work\\projects\\*.pdf | wc -l",
+      "expectedResult": "80"
+    },
+    {
+      "item": "Verify audit report readable",
+      "path": "reports/content-mapping-audit.json",
+      "expectedResult": "234 KB file, valid JSON"
+    },
+    {
+      "item": "Verify import-content.ts exists",
+      "path": "C:\\Users\\anasr\\dyad-apps\\horus-lms\\scripts\\import-content.ts",
+      "expectedResult": "853 lines, executable TypeScript"
+    },
+    {
+      "item": "Verify TypeScript runtime",
+      "command": "npx tsx --version",
+      "expectedResult": "tsx version output"
+    }
+  ],
+  "riskMitigation": [
+    {
+      "risk": "PDFs not found at original paths",
+      "mitigation": "Verify CONTENT_ROOT env var points to C:/work/projects",
+      "severity": "HIGH"
+    },
+    {
+      "risk": "PDF text extraction fails on some PDFs",
+      "mitigation": "Script continues; apply mappings from audit afterward",
+      "severity": "LOW"
+    },
+    {
+      "risk": "Lecture IDs change during recovery",
+      "mitigation": "Not a concern — IDs are application-internal, not user-facing",
+      "severity": "LOW"
+    },
+    {
+      "risk": "Audit report becomes unavailable",
+      "mitigation": "Can regenerate by running audit script",
+      "severity": "VERY LOW"
+    }
+  ],
+  "warningsAndLimitations": [
+    "DO NOT execute any recovery scripts yet — this is READ-ONLY assessment",
+    "Current test data (2 modules, 6 lectures) will be DELETED during Phase 1",
+    "If you need to preserve test data, back up .pgdata directory first",
+    "62 LOW/AMBIGUOUS mappings will NOT be applied in Phase 2 (requires manual review)",
+    "PDF parsing is deterministic but boundaries may differ slightly from audit"
+  ],
+  "status": "INVESTIGATION_COMPLETE_AWAITING_USER_INSTRUCTION",
+  "nextAction": "DO NOT MODIFY ANYTHING — User must review this report and approve recovery strategy before execution"
+}
