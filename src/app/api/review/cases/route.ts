@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
     const caseId = await createClinicalCase(session.user.id, lectureId, data);
     return NextResponse.json({ caseId, case: data.case, questions: data.questions, source: "lecture" });
   };
-  if (!process.env.GROQ_API_KEY) return createLocalCase();
+  if (process.env.USE_HOSTED_AI !== "true" || !process.env.GROQ_API_KEY) return createLocalCase();
 
   try {
     const { data, inputTokens, outputTokens } = await generateJson<{

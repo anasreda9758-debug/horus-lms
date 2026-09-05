@@ -12,14 +12,14 @@
   <text x="1108" y="86" text-anchor="end" font-size="26" fill="#34d399" font-weight="700">Respiratory System (RS-201)</text>
   <text x="1130" y="190" text-anchor="end" font-size="40" fill="#ffffff" font-weight="800"><tspan x="1130" dy="0">Factors affecting pulmonary ventilation</tspan></text>
   <circle cx="1138" cy="260" r="7" fill="#34d399"/>
-  <text x="1130" y="268" text-anchor="end" font-size="27" fill="#e2e8f0" font-weight="600">  Diameter of air ways   resistance.</text>
+  <text x="1130" y="268" text-anchor="end" font-size="27" fill="#e2e8f0" font-weight="600">Pulmonary ventilation</text>
   <circle cx="1138" cy="316" r="7" fill="#34d399"/>
-  <text x="1130" y="324" text-anchor="end" font-size="27" fill="#e2e8f0" font-weight="600"> It is the pressure inside the lung alveoli.</text>
+  <text x="1130" y="324" text-anchor="end" font-size="27" fill="#e2e8f0" font-weight="600">Factors affecting pulmonary ventilation</text>
   <circle cx="1138" cy="372" r="7" fill="#34d399"/>
-  <text x="1130" y="380" text-anchor="end" font-size="27" fill="#e2e8f0" font-weight="600"> During expiration + 2 mmHg.</text>
+  <text x="1130" y="380" text-anchor="end" font-size="27" fill="#e2e8f0" font-weight="600">1) Resistance of air passage</text>
   <circle cx="1138" cy="428" r="7" fill="#34d399"/>
-  <text x="1130" y="436" text-anchor="end" font-size="27" fill="#e2e8f0" font-weight="600">Causes of intrapleural pressure: • Continuous traction of the</text>
+  <text x="1130" y="436" text-anchor="end" font-size="27" fill="#e2e8f0" font-weight="600"> Sympathetic stimulation: Bronchodilatation →↓ resistance to</text>
   <circle cx="1138" cy="484" r="7" fill="#34d399"/>
-  <text x="1130" y="492" text-anchor="end" font-size="27" fill="#e2e8f0" font-weight="600"> Decrease of surfactant e.g respiratory distress syndrome</text>
+  <text x="1130" y="492" text-anchor="end" font-size="27" fill="#e2e8f0" font-weight="600"> Parasympathetic stimulation: bronchoconstriction →↑</text>
   <text x="1130" y="588" text-anchor="end" font-size="22" fill="#64748b">Horus MED · ملخص المحاضرة</text>
 </svg>

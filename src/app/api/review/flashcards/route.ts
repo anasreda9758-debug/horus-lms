@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
     const count = await createFlashcards(session.user.id, lectureId, cards);
     return NextResponse.json({ count, source: "lecture" });
   };
-  if (!process.env.GROQ_API_KEY) return createLocalCards();
+  if (process.env.USE_HOSTED_AI !== "true" || !process.env.GROQ_API_KEY) return createLocalCards();
 
   try {
     const { data, inputTokens, outputTokens } = await generateJson<{ front: string; back: string }[]>({
@@ -98,11 +98,24 @@ export async function GET() {
   }
   const cards = await getDueFlashcards(session.user.id);
   return NextResponse.json({
-    cards: cards.map((c) => ({
-      id: c.id,
-      front: c.front,
-      back: c.back,
-      lectureTitle: c.lecture?.title ?? null,
-    })),
+    cards: cards.map((c) => {
+      // Legacy offline cards used a generic "key point 1" front. Keep their
+      // review schedule intact but present the same stored source through the
+      // clearer question style used by current cards.
+      const legacyIndex = c.front.match(/\s—\skey point\s(\d+)$/i)?.[1];
+      const refreshed = legacyIndex && c.lecture
+        ? createSourceFlashcards(
+            c.lecture.title,
+            c.lecture.content ?? "",
+            c.lecture.summaryJson,
+          )[Number(legacyIndex) - 1]
+        : null;
+      return {
+        id: c.id,
+        front: refreshed?.front ?? c.front,
+        back: refreshed?.back ?? c.back,
+        lectureTitle: c.lecture?.title ?? null,
+      };
+    }),
   });
 }

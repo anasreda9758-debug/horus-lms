@@ -9,6 +9,7 @@ import { lecture } from "@/features/curriculum/schema";
 import { getRAGIndex, retrieve } from "@/features/rag";
 import { tutorChatSchema } from "@/shared/validation";
 import { updateStreak } from "@/features/gamification/queries";
+import { createSourceTutorReply } from "@/features/review/source-generators";
 
 // ── Principle 1: Role Playing ──────────────────────────────────────────────
 function buildSystemPrompt(
@@ -137,12 +138,15 @@ export async function POST(request: NextRequest) {
   if (!lectureRow || !lectureRow.module) {
     return NextResponse.json({ error: "lecture not found" }, { status: 400 });
   }
-  const premium = await hasAnySubscription(session.user.id);
+  // Local source-grounded study tools are the default. A hosted model is an
+  // explicit opt-in, never an accidental dependency just because a key exists.
+  const useHostedModel = process.env.USE_HOSTED_AI === "true" && Boolean(process.env.GROQ_API_KEY);
+  const premium = useHostedModel && await hasAnySubscription(session.user.id);
   if (!lectureRow.module.isFree && !(await hasModuleAccess(session.user.id, lectureRow.module))) {
     return NextResponse.json({ error: "premium required" }, { status: 403 });
   }
 
-  if (!premium) {
+  if (useHostedModel && !premium) {
     const usedToday = await getAiUsageToday(session.user.id);
     if (usedToday >= FREE_DAILY_LIMIT) {
       return NextResponse.json(
@@ -157,6 +161,25 @@ export async function POST(request: NextRequest) {
 
   try {
     const lastUserMsg = messages[messages.length - 1].content;
+    // The study assistant remains useful without a paid/hosted model. This
+    // fallback only reorganizes the verified lecture text already in the DB.
+    if (!useHostedModel) {
+      const answer = createSourceTutorReply(
+        lectureRow.title,
+        lectureRow.content ?? "",
+        lectureRow.summaryJson,
+        lastUserMsg,
+      );
+      return new Response(answer, {
+        headers: {
+          "Content-Type": "text/plain; charset=utf-8",
+          "X-Sources": JSON.stringify([{
+            lectureTitle: lectureRow.title,
+            moduleSlug: lectureRow.module.slug,
+          }]),
+        },
+      });
+    }
     const queryType = detectQueryType(lastUserMsg);
 
     const ragIndex = await getRAGIndex();

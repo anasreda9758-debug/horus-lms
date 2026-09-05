@@ -17,6 +17,7 @@
     "db:seed:admin": "tsx scripts/seed-admin.ts",
     "db:seed:curriculum": "tsx scripts/seed-curriculum.ts",
     "db:seed:quiz": "tsx scripts/seed-quiz.ts",
+    "db:seed:source-quiz": "node --env-file=.env scripts/generate-source-quizzes.mjs",
     "db:seed:plans": "tsx scripts/seed-plans.ts",
     "db:seed:testusers": "tsx scripts/seed-test-users.ts",
     "db:backup": "node scripts/backup.mjs backup",

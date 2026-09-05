@@ -12,14 +12,14 @@
   <text x="1108" y="86" text-anchor="end" font-size="26" fill="#f472b6" font-weight="700">Pharmacology, Molecular Biology &amp; Physiology (PPG-102)</text>
   <text x="1130" y="190" text-anchor="end" font-size="46" fill="#ffffff" font-weight="800"><tspan x="1130" dy="0">Drug distribution</tspan></text>
   <circle cx="1138" cy="260" r="7" fill="#f472b6"/>
-  <text x="1130" y="268" text-anchor="end" font-size="27" fill="#e2e8f0" font-weight="600">- A total Vd 5-15 L: means that the drug is restricted to the</text>
+  <text x="1130" y="268" text-anchor="end" font-size="27" fill="#e2e8f0" font-weight="600">DISTRIBUTION OF DRUGS</text>
   <circle cx="1138" cy="316" r="7" fill="#f472b6"/>
-  <text x="1130" y="324" text-anchor="end" font-size="27" fill="#e2e8f0" font-weight="600"> Calculation of the total amount of drug in the body by</text>
+  <text x="1130" y="324" text-anchor="end" font-size="27" fill="#e2e8f0" font-weight="600">Distribution of drugs: the process by which a drug leaves the</text>
   <circle cx="1138" cy="372" r="7" fill="#f472b6"/>
-  <text x="1130" y="380" text-anchor="end" font-size="27" fill="#e2e8f0" font-weight="600"> Most drugs when introduced into the body are bound to plasma</text>
+  <text x="1130" y="380" text-anchor="end" font-size="27" fill="#e2e8f0" font-weight="600">Sites of drug distribution: Standard values</text>
   <circle cx="1138" cy="428" r="7" fill="#f472b6"/>
-  <text x="1130" y="436" text-anchor="end" font-size="27" fill="#e2e8f0" font-weight="600"> The extent of plasma protein binding is highly variable</text>
+  <text x="1130" y="436" text-anchor="end" font-size="27" fill="#e2e8f0" font-weight="600"> Plasma: 3 liters</text>
   <circle cx="1138" cy="484" r="7" fill="#f472b6"/>
-  <text x="1130" y="492" text-anchor="end" font-size="27" fill="#e2e8f0" font-weight="600"> When the drug has high plasma protein binding (e.g.</text>
+  <text x="1130" y="492" text-anchor="end" font-size="27" fill="#e2e8f0" font-weight="600"> Extracellular water: 9 liters</text>
   <text x="1130" y="588" text-anchor="end" font-size="22" fill="#64748b">Horus MED · ملخص المحاضرة</text>
 </svg>

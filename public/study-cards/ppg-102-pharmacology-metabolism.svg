@@ -12,14 +12,14 @@
   <text x="1108" y="86" text-anchor="end" font-size="26" fill="#f472b6" font-weight="700">Pharmacology, Molecular Biology &amp; Physiology (PPG-102)</text>
   <text x="1130" y="190" text-anchor="end" font-size="46" fill="#ffffff" font-weight="800"><tspan x="1130" dy="0">Metabolism</tspan></text>
   <circle cx="1138" cy="260" r="7" fill="#f472b6"/>
-  <text x="1130" y="268" text-anchor="end" font-size="27" fill="#e2e8f0" font-weight="600">◆ METABOLISM OF DRUGS (biotransformation)  The liver is the</text>
+  <text x="1130" y="268" text-anchor="end" font-size="27" fill="#e2e8f0" font-weight="600"> The liver: the major site of drug metabolism but other</text>
   <circle cx="1138" cy="316" r="7" fill="#f472b6"/>
-  <text x="1130" y="324" text-anchor="end" font-size="27" fill="#e2e8f0" font-weight="600">enalapril (inactive drug) is metabolized to enalaprilat</text>
+  <text x="1130" y="324" text-anchor="end" font-size="27" fill="#e2e8f0" font-weight="600"> Some drugs: not metabolized at all and excreted unchanged</text>
   <circle cx="1138" cy="372" r="7" fill="#f472b6"/>
-  <text x="1130" y="380" text-anchor="end" font-size="27" fill="#e2e8f0" font-weight="600">- The individual enzymes within each subfamily are denoted by</text>
+  <text x="1130" y="380" text-anchor="end" font-size="27" fill="#e2e8f0" font-weight="600">(inactive drug): metabolized to enalaprilat (active</text>
   <circle cx="1138" cy="428" r="7" fill="#f472b6"/>
-  <text x="1130" y="436" text-anchor="end" font-size="27" fill="#e2e8f0" font-weight="600"> Microsomal inhibitors ↓ rate of metabolism of some drugs</text>
+  <text x="1130" y="436" text-anchor="end" font-size="27" fill="#e2e8f0" font-weight="600">Biochemical reactions involved in drug metabolism</text>
   <circle cx="1138" cy="484" r="7" fill="#f472b6"/>
-  <text x="1130" y="492" text-anchor="end" font-size="27" fill="#e2e8f0" font-weight="600">Hepatic first-pass metabolism:  Complete: lidocaine.</text>
+  <text x="1130" y="492" text-anchor="end" font-size="27" fill="#e2e8f0" font-weight="600">The majority of phase I reactions: done by the cytochrome P450</text>
   <text x="1130" y="588" text-anchor="end" font-size="22" fill="#64748b">Horus MED · ملخص المحاضرة</text>
 </svg>

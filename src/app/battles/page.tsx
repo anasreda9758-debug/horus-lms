@@ -43,14 +43,14 @@ export default function BattlesPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/quiz/questions")
+    fetch("/api/battles/banks")
       .then((r) => r.json())
       .then((data) => {
         const b = data.banks ?? [];
         setBanks(b);
         if (b.length > 0 && !bankSlug) setBankSlug(b[0].slug);
       })
-      .catch(() => {});
+      .catch(() => setError("تعذر تحميل بنوك الأسئلة."));
     fetch("/api/battles")
       .then((r) => r.json())
       .then((data) => setHistory(data.battles ?? []))
@@ -67,6 +67,10 @@ export default function BattlesPage() {
         body: JSON.stringify({ action: "create", bankSlug, questionCount }),
       });
       const data = await res.json();
+      if (!res.ok) {
+        setError(data.error ?? "فشل إنشاء التحدي");
+        return;
+      }
       if (data.battleId) {
         const bRes = await fetch(`/api/battles?id=${data.battleId}`);
         const bData = await bRes.json();
@@ -176,21 +180,27 @@ export default function BattlesPage() {
           <div className="space-y-4">
             <div>
               <label className="mb-1 block text-sm font-medium">الموديول</label>
-              <select
-                value={bankSlug}
-                onChange={(e) => setBankSlug(e.target.value)}
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-              >
-                {Object.entries(grouped).map(([modName, modBanks]) => (
-                  <optgroup key={modName} label={modName}>
-                    {modBanks.map((b) => (
-                      <option key={b.moduleSlug} value={b.moduleSlug}>
-                        {b.moduleName}
-                      </option>
-                    ))}
-                  </optgroup>
-                ))}
-              </select>
+              {banks.length ? (
+                <select
+                  value={bankSlug}
+                  onChange={(e) => setBankSlug(e.target.value)}
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                >
+                  {Object.entries(grouped).map(([modName, modBanks]) => (
+                    <optgroup key={modName} label={modName}>
+                      {modBanks.map((b) => (
+                        <option key={b.slug} value={b.slug}>
+                          {b.title} · {b.questionCount} سؤال
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
+              ) : (
+                <p className="rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground">
+                  لا توجد أسئلة جاهزة بعد.
+                </p>
+              )}
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium">عدد الأسئلة</label>

@@ -24,25 +24,18 @@ export function TutorChat({ lectureId }: { lectureId: string }) {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, streaming]);
 
-  async function send(overrideMessages?: Message[]) {
-    const history = overrideMessages ?? messages;
-    const lastMsg = overrideMessages
-      ? overrideMessages[overrideMessages.length - 1]
-      : { role: "user" as const, content: input.trim() };
-
-    const content = overrideMessages ? lastMsg.content : input.trim();
+  async function send(replayMessages?: Message[]) {
+    const content = replayMessages
+      ? replayMessages[replayMessages.length - 1]?.content ?? ""
+      : input.trim();
     if (!content || busy) return;
 
-    const userMsg: Message = overrideMessages
-      ? lastMsg
-      : { role: "user", content };
-
-    const chatHistory = overrideMessages
-      ? history.slice(0, -1)
-      : [...history, userMsg];
-
-    if (!overrideMessages) {
-      setMessages([...chatHistory, userMsg]);
+    // Keep exactly one copy of the user's message. The previous version added
+    // it to the history and then appended it once again, which produced the
+    // duplicated black bubbles visible in the tutor.
+    const outgoing: Message[] = replayMessages ?? [...messages, { role: "user", content }];
+    setMessages(outgoing);
+    if (!replayMessages) {
       setInput("");
     }
     setBusy(true);
@@ -55,7 +48,7 @@ export function TutorChat({ lectureId }: { lectureId: string }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           lectureId,
-          messages: chatHistory.map((m) => ({ role: m.role, content: m.content })),
+          messages: outgoing.map((m) => ({ role: m.role, content: m.content })),
         }),
       });
 
@@ -77,32 +70,21 @@ export function TutorChat({ lectureId }: { lectureId: string }) {
         if (srcHeader) sources = JSON.parse(srcHeader);
       } catch {}
 
-      // Stream the response body
-      const reader = res.body?.getReader();
-      const decoder = new TextDecoder();
-      let fullText = "";
-
-      if (reader) {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          const chunk = decoder.decode(value, { stream: true });
-          // AI SDK data stream format: lines starting with "0:" contain text
-          for (const line of chunk.split("\n")) {
-            if (line.startsWith("0:")) {
-              const text = line.slice(2);
-              fullText += text;
-              setStreaming(fullText);
-            }
-          }
-        }
-      }
+      // `toTextStreamResponse()` returns plain text, whereas data-stream
+      // responses use `0:"..."` lines. Support both formats so a valid local
+      // fallback cannot disappear silently in the chat window.
+      const rawText = await res.text();
+      const encodedLines = rawText.split("\n").filter((line) => line.startsWith("0:"));
+      const fullText = encodedLines.length
+        ? encodedLines.map((line) => {
+            try { return JSON.parse(line.slice(2)); } catch { return line.slice(2); }
+          }).join("")
+        : rawText.trim();
 
       if (fullText) {
-        setMessages((prev) => {
-          const base = overrideMessages ? prev.slice(0, -1) : prev;
-          return [...base, { role: "assistant", content: fullText, sources, rating: null }];
-        });
+        setMessages((prev) => [...prev, { role: "assistant", content: fullText, sources, rating: null }]);
+      } else {
+        setError("لم يصل رد مقروء من المعلم. حاول مرة أخرى.");
       }
     } catch {
       setError("تعذّر الاتصال بالمعلم الذكي.");
@@ -116,12 +98,10 @@ export function TutorChat({ lectureId }: { lectureId: string }) {
     const msg = messages[idx];
     if (msg.role !== "assistant") return;
     // Remove this message and everything after, then resend from the user message before it
-    const trimmed = messages.slice(0, idx);
-    setMessages(trimmed);
-    // Find the user message before this assistant message
-    const userMsg = trimmed[trimmed.length - 1];
+    const replay = messages.slice(0, idx);
+    const userMsg = replay[replay.length - 1];
     if (userMsg?.role === "user") {
-      send([...trimmed.slice(0, -1), userMsg]);
+      void send(replay);
     }
   }
 
@@ -176,6 +156,7 @@ export function TutorChat({ lectureId }: { lectureId: string }) {
           messages.map((m, i) => (
             <div key={i} className="flex flex-col gap-1">
               <div
+                dir="auto"
                 className={`max-w-[85%] rounded-xl px-4 py-2 text-sm leading-relaxed ${
                   m.role === "user"
                     ? "self-end bg-primary text-primary-foreground"

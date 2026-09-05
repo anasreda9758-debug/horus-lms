@@ -60,7 +60,7 @@ function MindmapTree({
             ▶
           </span>
         )}
-        <span className={isRoot ? "" : "text-sm font-medium"}>
+        <span dir="auto" className={isRoot ? "" : "text-sm font-medium"}>
           {node.label}
         </span>
       </button>

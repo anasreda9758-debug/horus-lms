@@ -122,99 +122,166 @@ function looksLikeHeading(line) {
   return false;
 }
 
+function cleanLine(value) {
+  return value
+    .replace(/^[◆■▌•▪◦●▪\-–—]+\s*/, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function identity(value) {
+  return cleanLine(value).toLowerCase().replace(/[^a-z\u0600-\u06ff]/g, "");
+}
+
+function compact(value, max = 150) {
+  const line = cleanLine(value).replace(/\.{3,}/g, "…");
+  return line.length > max ? `${line.slice(0, max - 1).trim()}…` : line;
+}
+
+function isShortConcept(line) {
+  const value = cleanLine(line);
+  if (value.length < 3 || value.length > 80 || JUNK.test(value)) return false;
+  if (looksLikeHeading(value)) return true;
+  if (/^(?:The\s+)?[A-Z][A-Za-z0-9()/-]*(?:\s+[A-Za-z][A-Za-z0-9()/-]*){0,6}:?$/.test(value)) return true;
+  return /^(graded response|quantal response|full agonist|partial agonist|agonist effect|antagonist effect|efficacy|potency|safety|diagnosis|treatment|management|classification|function|functions|types?|causes?|symptoms?|signs?|mechanism|complications?)\:?$/i.test(value);
+}
+
+function isMajorSection(line) {
+  const value = cleanLine(line);
+  if (value.length < 4 || value.length > 110) return false;
+  if (/[A-Z]/.test(value) && value === value.toUpperCase()) return true;
+  return /^(types?|classification|introduction|definition|anatomy|histology|physiology|pharmacology|pathophysiology|etiology|mechanism|management|diagnosis|treatment|effectiveness|complications?|causes?|symptoms?|signs?|functions?)\b/i.test(value);
+}
+
+function conceptWithDetail(line) {
+  const value = compact(line);
+  const match = value.match(/^(.{3,72}?)(?:\s*:\s*|\s+(?:is|are|means|refers to|includes|consists of|causes|prevents|increases|decreases)\s+)(.+)$/i);
+  if (!match) return null;
+  const [, term, detail] = match;
+  if (
+    term.split(/\s+/).length > 8 ||
+    term.length > 52 ||
+    detail.length < 8 ||
+    /^(the response|a drug|the drug|the patient|this lecture)$/i.test(term.trim())
+  ) return null;
+  return `${compact(term, 60)}: ${compact(detail, 105)}`;
+}
+
+function conceptKey(value) {
+  return identity(value.split(":", 1)[0]);
+}
+
+function sourceLines(text) {
+  const raw = text
+    .split(/\r?\n/)
+    .map((source) => ({
+      line: cleanLine(source),
+      bullet: /^[\s◆■▌•▪◦●▪\-–—]/.test(source),
+    }))
+    .filter(({ line }) => line && !JUNK.test(line));
+  const lines = [];
+  for (const { line, bullet } of raw) {
+    const previous = lines[lines.length - 1];
+    // PDF extraction often wraps a single bullet onto two lines. Join only a
+    // lower-case continuation so independent bullets stay separate.
+    if (previous && !bullet && !/[.!?:؛]$/.test(previous) && /^[a-z\u0600-\u06ff]/.test(line) && !isShortConcept(line)) {
+      lines[lines.length - 1] = compact(`${previous} ${line}`, 360);
+    } else {
+      lines.push(line);
+    }
+  }
+  return lines;
+}
+
 function buildMindmap(title, text) {
-  const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
-  const headings = [];
-  lines.forEach((line, i) => {
-    if (!looksLikeHeading(line)) return;
-    const prev = lines[i - 1] ?? "";
-    const next = lines[i + 1] ?? "";
-    // a real heading tends to sit near body text, not isolated noise
-    if (prev.length > 0 || next.length > 0) headings.push(line);
-  });
+  const lines = sourceLines(text);
+  const sections = [];
+  let current = null;
+  const seenSections = new Set();
 
-  // de-noise: drop near-duplicates and pure numbers
-  const seen = new Set();
-  const clean = [];
-  for (const h of headings) {
-    const key = h.toLowerCase().replace(/[^a-z\u0600-\u06ff]/g, "");
-    if (!key || key.length < 4 || seen.has(key)) continue;
-    seen.add(key);
-    clean.push(h);
-  }
+  const startSection = (label) => {
+    const cleaned = compact(label, 100).replace(/:$/, "");
+    const key = identity(cleaned);
+    if (!key || seenSections.has(key) || sections.length >= 6) return current;
+    current = { label: cleaned, children: [] };
+    sections.push(current);
+    seenSections.add(key);
+    return current;
+  };
 
-  const rootChildren = [];
-  const MAX_SECTIONS = 7;
-  for (let i = 0; i < clean.length && rootChildren.length < MAX_SECTIONS; i++) {
-    const label = clean[i];
-    // collect following heading lines until next candidate becomes too far
-    const subs = [];
-    for (let j = i + 1; j < Math.min(i + 6, clean.length) && subs.length < 4; j++) {
-      if (clean[j].length <= label.length * 2.2) subs.push(clean[j]);
+  for (const line of lines) {
+    if (isMajorSection(line)) {
+      startSection(line);
+      continue;
     }
-    rootChildren.push(
-      subs.length ? { label, children: subs.map((s) => ({ label: s })) } : { label },
-    );
-  }
 
-  // Fallback: proportional chunks of the text
-  if (rootChildren.length < 3) {
-    const sentences = text
-      .split(/(?<=[.!?۔])\s+/)
-      .map((s) => s.trim())
-      .filter((s) => s.length > 25 && s.length < 140);
-    const step = Math.max(1, Math.floor(sentences.length / 5));
-    rootChildren.length = 0;
-    for (let i = 0; i < sentences.length && rootChildren.length < 5; i += step) {
-      const raw = sentences[i].replace(/\s+/g, " ");
-      const label = raw.length > 80 ? raw.slice(0, 77) + "…" : raw;
-      rootChildren.push({ label });
+    const detailed = conceptWithDetail(line);
+    const shortConcept = isShortConcept(line);
+    if (!current && (detailed || shortConcept)) startSection("Key concepts");
+    if (!current) continue;
+
+    const label = detailed ?? (shortConcept ? compact(line, 115).replace(/:$/, "") : null);
+    if (!label) {
+      if (current.children.length > 0 && /^(it is|it can|very |the response|a drug)/i.test(line)) {
+        const last = current.children[current.children.length - 1];
+        if (!last.label.includes(":")) {
+          last.label = compact(`${last.label}: ${line}`, 150);
+        }
+      }
+      continue;
+    }
+    const key = conceptKey(label);
+    const hasDuplicate = current.children.some((child) => conceptKey(child.label) === key);
+    if (!hasDuplicate && current.children.length < 5) {
+      current.children.push({ label });
     }
   }
 
-  // OSPE/practical sheets often consist of short labels instead of sentences.
-  // Preserve those verified labels rather than returning an empty study map.
-  if (rootChildren.length < 3) {
-    const seenLabels = new Set();
-    rootChildren.length = 0;
+  const usefulSections = sections
+    .map((section) => ({
+      ...section,
+      children: section.children.filter((child) => child.label.length >= 3),
+    }))
+    .filter((section) => section.children.length > 0);
+
+  // If the source has no clear headings (common in scanned practical sheets),
+  // expose clean, short labels rather than dumping arbitrary text fragments.
+  if (usefulSections.length < 3) {
+    const labels = [];
+    const seen = new Set();
     for (const line of lines) {
-      const label = line.replace(/\s+/g, " ").trim();
-      const key = label.toLowerCase().replace(/[^a-z\u0600-\u06ff]/g, "");
-      if (
-        label.length < 4 ||
-        label.length > 90 ||
-        JUNK.test(label) ||
-        /^identify\b/i.test(label) ||
-        seenLabels.has(key)
-      ) continue;
-      seenLabels.add(key);
-      rootChildren.push({ label });
-      if (rootChildren.length === 5) break;
+      const candidate = conceptWithDetail(line) ?? (isShortConcept(line) ? compact(line, 120) : null);
+      const key = candidate && identity(candidate);
+      if (!candidate || !key || seen.has(key)) continue;
+      seen.add(key);
+      labels.push({ label: candidate });
+      if (labels.length === 5) break;
     }
+    if (labels.length >= 3) return { label: title.slice(0, 90), children: labels };
   }
 
-  return { label: title.slice(0, 90), children: rootChildren };
+  return {
+    label: title.slice(0, 90),
+    children: usefulSections.slice(0, 5),
+  };
 }
 
 // A source-grounded offline summary. It is intentionally extractive: unlike an
 // LLM it cannot invent clinical advice, which keeps the no-cost pipeline safe.
 function buildSummary(title, text, map) {
-  const sentences = text
-    .replace(/\s+/g, " ")
-    .split(/(?<=[.!?])\s+/)
-    .map((sentence) => sentence.trim())
-    .filter((sentence) => sentence.length >= 45 && sentence.length <= 420)
-    .filter((sentence) => !JUNK.test(sentence));
-  const overviewParts = sentences.slice(0, 2);
-  const overview = overviewParts.length
-    ? overviewParts.join(" ")
-    : `${title}: this study guide is based on the verified lecture pages.`;
-  const keyPoints = (map.children ?? [])
-    .map((node) => node.label)
-    .filter((label) => label && label.length >= 4)
+  const leaves = (map.children ?? []).flatMap((node) =>
+    node.children?.length ? node.children.map((child) => child.label) : [node.label],
+  );
+  const keyPoints = [...new Set(leaves.map((label) => compact(label, 160)))]
+    .filter((label) => label.length >= 4)
     .slice(0, 7);
-  const clinicalPearls = sentences
-    .filter((sentence) => /clinical|diagnos|treat|management|risk|complication|contraindicat/i.test(sentence))
+  const sections = (map.children ?? []).map((node) => node.label).filter(Boolean).slice(0, 4);
+  const overview = sections.length
+    ? `This lecture focuses on ${sections.join(", ")}.`
+    : `${title}: this study guide is based on the verified lecture pages.`;
+  const clinicalPearls = sourceLines(text)
+    .filter((line) => /clinical|diagnos|treat|management|risk|complication|contraindicat/i.test(line))
+    .map((line) => compact(line, 180))
     .slice(0, 3);
   return { overview, keyPoints, clinicalPearls, references: [] };
 }

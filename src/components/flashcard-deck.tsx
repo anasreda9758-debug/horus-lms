@@ -90,7 +90,7 @@ export function FlashcardDeck({ lectures }: { lectures: ReviewLecture[] }) {
           <p className="mt-3 text-sm text-emerald-600">{notice}</p>
         ) : (
           <p className="mt-3 text-sm text-muted-foreground">
-            يولّد النموذج 12 بطاقة من محتوى المحاضرة، تُجدول تلقائيًا (مرة أخرى بعد يوم، جيد بعد 3 أيام، سهل بعد 7).
+            تُنشأ حتى 12 بطاقة من محتوى المحاضرة، وتُجدول تلقائيًا (مرة أخرى بعد يوم، جيد بعد 3 أيام، سهل بعد 7).
           </p>
         )}
       </div>
@@ -109,9 +109,9 @@ export function FlashcardDeck({ lectures }: { lectures: ReviewLecture[] }) {
             onClick={() => setRevealed((v) => !v)}
             className="block w-full cursor-pointer px-5 py-10 text-start"
           >
-            <p className="text-2xl font-bold leading-relaxed">{card.front}</p>
+            <p dir="auto" className="text-2xl font-bold leading-relaxed">{card.front}</p>
             {revealed ? (
-              <p className="mt-6 text-lg leading-relaxed text-muted-foreground">{card.back}</p>
+              <p dir="auto" className="mt-6 text-lg leading-relaxed text-muted-foreground">{card.back}</p>
             ) : (
               <p className="mt-6 text-sm text-primary">انقر لإظهار الإجابة</p>
             )}
