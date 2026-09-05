@@ -10,9 +10,11 @@
 //   - lecture has pdf_page_start  -> extract exactly that page range
 //   - pdf_file used by ONE lecture -> whole file belongs to it
 //   - pdf_file shared but no range -> skipped (needs admin ranges first)
+//   - --force                      -> replace existing derived assets after a
+//                                     verified PDF boundary has changed
 
 import { createRequire } from "node:module";
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import postgres from "postgres";
 
@@ -20,6 +22,12 @@ const require_ = createRequire(import.meta.url);
 const ROOT = process.env.CONTENT_ROOT ?? "C:/work/projects";
 const DB = process.env.DATABASE_URL ?? "postgres://postgres:lms_dev@localhost:5432/lms";
 const CARDS_DIR = resolve("public/study-cards");
+const slugsArg = process.argv.find((arg) => arg.startsWith("--slugs="));
+const requestedSlugs = slugsArg
+  ? slugsArg.slice("--slugs=".length).split(",").map((slug) => slug.trim()).filter(Boolean)
+  : null;
+const moduleArg = process.argv.find((arg) => arg.startsWith("--module="))?.slice("--module=".length) || null;
+const force = process.argv.includes("--force");
 
 const sql = postgres(DB, { max: 3 });
 
@@ -53,13 +61,28 @@ async function extractPages(absPath, fromPage, toPage) {
       const tc = await page.getTextContent();
       let text = "";
       let lastY = null;
+      let lastXEnd = null;
       for (const item of tc.items) {
         if (!item.str) continue;
         const y = item.transform?.[5] ?? 0;
-        if (lastY !== null && Math.abs(y - lastY) > 2) text += "\n";
-        else if (text && !text.endsWith("\n") && !text.endsWith(" ")) text += " ";
+        const x = item.transform?.[4] ?? 0;
+        // Some scanned PDFs expose every individual character as a separate
+        // text item. Use the horizontal gap to distinguish a real word break
+        // from consecutive letters instead of inserting a space unconditionally.
+        if (lastY !== null && Math.abs(y - lastY) > 2) {
+          text += "\n";
+        } else if (
+          text &&
+          !text.endsWith("\n") &&
+          !text.endsWith(" ") &&
+          lastXEnd !== null &&
+          x - lastXEnd > 2.5
+        ) {
+          text += " ";
+        }
         text += item.str;
         lastY = y;
+        lastXEnd = x + (item.width ?? 0);
       }
       chunks.push(text.replace(/[ \t]+/g, " ").replace(/\n{2,}/g, "\n").trim());
       page.cleanup();
@@ -149,7 +172,51 @@ function buildMindmap(title, text) {
     }
   }
 
+  // OSPE/practical sheets often consist of short labels instead of sentences.
+  // Preserve those verified labels rather than returning an empty study map.
+  if (rootChildren.length < 3) {
+    const seenLabels = new Set();
+    rootChildren.length = 0;
+    for (const line of lines) {
+      const label = line.replace(/\s+/g, " ").trim();
+      const key = label.toLowerCase().replace(/[^a-z\u0600-\u06ff]/g, "");
+      if (
+        label.length < 4 ||
+        label.length > 90 ||
+        JUNK.test(label) ||
+        /^identify\b/i.test(label) ||
+        seenLabels.has(key)
+      ) continue;
+      seenLabels.add(key);
+      rootChildren.push({ label });
+      if (rootChildren.length === 5) break;
+    }
+  }
+
   return { label: title.slice(0, 90), children: rootChildren };
+}
+
+// A source-grounded offline summary. It is intentionally extractive: unlike an
+// LLM it cannot invent clinical advice, which keeps the no-cost pipeline safe.
+function buildSummary(title, text, map) {
+  const sentences = text
+    .replace(/\s+/g, " ")
+    .split(/(?<=[.!?])\s+/)
+    .map((sentence) => sentence.trim())
+    .filter((sentence) => sentence.length >= 45 && sentence.length <= 420)
+    .filter((sentence) => !JUNK.test(sentence));
+  const overviewParts = sentences.slice(0, 2);
+  const overview = overviewParts.length
+    ? overviewParts.join(" ")
+    : `${title}: this study guide is based on the verified lecture pages.`;
+  const keyPoints = (map.children ?? [])
+    .map((node) => node.label)
+    .filter((label) => label && label.length >= 4)
+    .slice(0, 7);
+  const clinicalPearls = sentences
+    .filter((sentence) => /clinical|diagnos|treat|management|risk|complication|contraindicat/i.test(sentence))
+    .slice(0, 3);
+  return { overview, keyPoints, clinicalPearls, references: [] };
 }
 
 // ── SVG summary cards ────────────────────────────────────────────────────────
@@ -234,12 +301,20 @@ function renderCard({ title, moduleName, sections }) {
 async function main() {
   mkdirSync(CARDS_DIR, { recursive: true });
 
-  const lectures = await sql`
-    SELECT l.id, l.slug, l.title, l.pdf_file, l.pdf_page_start, l.pdf_page_end,
-           l.content, l.mindmap_json, m.name AS module_name
-    FROM lecture l JOIN module m ON m.id = l.module_id
-    ORDER BY m."order", l."order"
-  `;
+  const filter = requestedSlugs
+    ? "WHERE l.slug = ANY($1)"
+    : moduleArg
+      ? "WHERE m.slug = $1"
+      : "";
+  const params = requestedSlugs ? [requestedSlugs] : moduleArg ? [moduleArg] : [];
+  const lectures = await sql.unsafe(
+    `SELECT l.id, l.slug, l.title, l.pdf_file, l.pdf_page_start, l.pdf_page_end,
+            l.content, l.mindmap_json, l.summary_json, m.name AS module_name
+     FROM lecture l JOIN module m ON m.id = l.module_id
+     ${filter}
+     ORDER BY m."order", l."order"`,
+    params,
+  );
   console.log(`lectures: ${lectures.length}`);
 
   // Which pdf files are shared between multiple lectures?
@@ -252,6 +327,7 @@ async function main() {
   const docCache = new Map(); // absPath -> { numPages }
   let extracted = 0;
   let mapped = 0;
+  let summarized = 0;
   let carded = 0;
   let skippedShared = 0;
 
@@ -285,7 +361,10 @@ async function main() {
         console.error(`  ✗ extract ${l.title}: ${err.message}`);
       }
     }
-    if (!text && !l.pdf_file && l.content && l.content.trim().length > 100) {
+    // Scanned OSPE sheets can have no extractable PDF text. When verified
+    // source notes were entered for that exact lecture, use them instead of
+    // leaving its study tools blank.
+    if ((!text || !text.trim()) && l.content && l.content.trim().length > 100) {
       text = l.content;
       trusted = true;
     }
@@ -306,21 +385,32 @@ async function main() {
     }
 
     // ---- Phase 2: mindmap --------------------------------------------------
-    if (text && trusted && !l.mindmap_json) {
-      const map = buildMindmap(l.title, text.slice(0, 60_000));
+    const map = text && trusted ? buildMindmap(l.title, text.slice(0, 60_000)) : null;
+    if (map && (force || !l.mindmap_json)) {
       if (map.children.length >= 3) {
         await sql`
           UPDATE lecture SET mindmap_json = ${sql.json(map)}::jsonb, updated_at = now()
-          WHERE id = ${l.id} AND mindmap_json IS NULL
+          WHERE id = ${l.id}
         `;
         mapped++;
       }
     }
 
+    if (map && text && trusted) {
+      const summary = buildSummary(l.title, text.slice(0, 60_000), map);
+      if (summary.keyPoints.length >= 3 && (force || !l.summary_json)) {
+        await sql`
+          UPDATE lecture SET summary_json = ${sql.json(summary)}::jsonb, updated_at = now()
+          WHERE id = ${l.id}
+        `;
+        summarized++;
+      }
+    }
+
     // ---- Phase 3: SVG card -------------------------------------------------
     if (text && trusted) {
-      const map = buildMindmap(l.title, text.slice(0, 20_000));
-      const sections = (map.children ?? []).slice(0, 5);
+      const cardMap = buildMindmap(l.title, text.slice(0, 20_000));
+      const sections = (cardMap.children ?? []).slice(0, 5);
       if (sections.length) {
         const svg = renderCard({
           title: l.title,
@@ -333,7 +423,7 @@ async function main() {
     }
   }
 
-  console.log(`\ndone. content-updated: ${extracted}, mindmaps-created: ${mapped}, cards: ${carded}, skipped-shared-no-range: ${skippedShared}`);
+  console.log(`\ndone. content-updated: ${extracted}, mindmaps-created: ${mapped}, summaries-created: ${summarized}, cards: ${carded}, skipped-shared-no-range: ${skippedShared}`);
   await sql.end();
 }
 

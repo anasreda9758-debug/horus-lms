@@ -743,6 +743,7 @@ async function main() {
 
   let modulesCreated = 0;
   let lecturesCreated = 0;
+  const usedSlugs = new Set<string>();
   let filesLinked = 0;
   let textsExtracted = 0;
   let missingFolders = 0;
@@ -822,7 +823,11 @@ async function main() {
         }
 
         const title = item.title;
-        const slug = slugify(`${mod.slug}-${subject.name}-${title}`);
+        const base = slugify(`${mod.slug}-${subject.name}-${title}`);
+        let slug = base;
+        let n = 2;
+        while (usedSlugs.has(slug)) slug = `${base}-${n++}`;
+        usedSlugs.add(slug);
         await db.insert(lecture).values({
           id: randomUUID(),
           moduleId,

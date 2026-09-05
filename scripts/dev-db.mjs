@@ -6,11 +6,10 @@
 // NOTE: start uses the embedded-postgres spawn path (direct child of node),
 // which stays healthy under the agent harness. pg_ctl-detached servers on this
 // machine fail to spawn child backends (0xC0000142). stop/status use pg_ctl.
-import { spawnSync } from "node:child_process";
-import { existsSync } from "node:fs";
+import { spawn, spawnSync } from "node:child_process";
+import { existsSync, readFileSync, unlinkSync } from "node:fs";
 import { createConnection } from "node:net";
 import { join } from "node:path";
-import EmbeddedPostgres from "embedded-postgres";
 import postgres from "postgres";
 
 const root = process.cwd();
@@ -28,16 +27,6 @@ const BIN = join(
   "bin",
 );
 
-const pg = new EmbeddedPostgres({
-  databaseDir: DB_DIR,
-  port: PORT,
-  user: USER,
-  password: PASSWORD,
-  persistent: true,
-  initdbFlags: ["--encoding=UTF8", "--locale=C"],
-  postgresFlags: ["-h", "127.0.0.1"],
-});
-
 function isPortOpen(port, host = "127.0.0.1") {
   return new Promise((resolve) => {
     const sock = createConnection({ port, host, timeout: 1000 });
@@ -51,6 +40,58 @@ function isPortOpen(port, host = "127.0.0.1") {
       resolve(false);
     });
   });
+}
+
+async function waitForDatabase(timeoutMs = 30_000) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const sql = postgres(`postgres://${USER}:${PASSWORD}@127.0.0.1:${PORT}/postgres`, {
+      connect_timeout: 1,
+      idle_timeout: 1,
+      max: 1,
+    });
+    try {
+      await sql.unsafe("SELECT 1");
+      return true;
+    } catch {
+      // PostgreSQL can accept TCP connections while crash recovery is still running.
+    } finally {
+      await sql.end().catch(() => {});
+    }
+    await new Promise((resolve) => setTimeout(resolve, 250));
+  }
+  return false;
+}
+
+function removeStalePidFile() {
+  const pidFile = join(DB_DIR, "postmaster.pid");
+  if (!existsSync(pidFile)) return;
+
+  const pid = Number(readFileSync(pidFile, "utf8").split(/\r?\n/, 1)[0]);
+  try {
+    process.kill(pid, 0);
+  } catch {
+    unlinkSync(pidFile);
+    console.log("[dev-db] removed stale PostgreSQL state file");
+  }
+}
+
+async function startPostgres() {
+  if (!existsSync(join(DB_DIR, "PG_VERSION"))) {
+    throw new Error("database is not initialized; restore .pgdata before starting it");
+  }
+
+  removeStalePidFile();
+  const postgresExe = join(BIN, "postgres.exe");
+  const child = spawn(postgresExe, ["-D", DB_DIR, "-p", String(PORT), "-h", "127.0.0.1"], {
+    stdio: "inherit",
+    windowsHide: true,
+  });
+  child.once("error", (err) => console.error("[dev-db] postgres process error:", err));
+
+  if (!(await waitForDatabase())) {
+    throw new Error("PostgreSQL did not become ready within 30 seconds");
+  }
 }
 
 async function ensureDatabase() {
@@ -75,8 +116,7 @@ try {
   if (action === "start") {
     const running = await isPortOpen(PORT);
     if (!running) {
-      if (!existsSync(join(DB_DIR, "PG_VERSION"))) await pg.initialise();
-      await pg.start();
+      await startPostgres();
       console.log("[dev-db] postgres started");
     } else {
       console.log("[dev-db] postgres is already running");
