@@ -5,6 +5,7 @@ import { getAiUsageToday, FREE_DAILY_LIMIT, recordAiUsage } from "@/features/ai/
 import { generateJson } from "@/shared/ai-client";
 import { getClinicalCase } from "@/features/review/queries";
 import { awardXp } from "@/features/gamification/queries";
+import { evaluateSourceAnswers } from "@/features/review/source-generators";
 
 const SYSTEM_PROMPT =
   "You are a medical examiner. Evaluate the student's answers against the model answers. Give clear, concise feedback " +
@@ -55,6 +56,12 @@ export async function POST(request: NextRequest) {
   const questions = JSON.parse(caseRow.questionsJson) as string[];
   const modelAnswers = JSON.parse(caseRow.modelAnswersJson) as string[];
   const joined = answers.map((a, i) => `Q${i + 1}: ${a}`).join("\n");
+  const evaluateLocally = () => {
+    const result = evaluateSourceAnswers(answers, modelAnswers);
+    awardXp(session.user.id, "case_complete", caseId).catch(() => {});
+    return NextResponse.json({ ...result, source: "lecture" });
+  };
+  if (!process.env.GROQ_API_KEY) return evaluateLocally();
 
   try {
     const { data, inputTokens, outputTokens } = await generateJson<{ score: number; feedback: string }>({
@@ -75,6 +82,6 @@ export async function POST(request: NextRequest) {
     });
   } catch (err) {
     console.error("case evaluate error:", err);
-    return NextResponse.json({ error: "ai_unavailable" }, { status: 502 });
+    return evaluateLocally();
   }
 }

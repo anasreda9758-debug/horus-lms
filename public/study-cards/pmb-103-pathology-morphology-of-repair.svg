@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0b1220"/>
+      <stop offset="1" stop-color="#16233b"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" rx="36" fill="url(#bg)"/>
+  <rect width="1200" height="630" rx="36" fill="none" stroke="#22d3ee" stroke-opacity="0.35" stroke-width="2"/>
+  <rect x="0" y="0" width="1200" height="10" rx="5" fill="#22d3ee"/>
+  <rect x="410" y="52" width="720" height="52" rx="26" fill="#22d3ee" fill-opacity="0.14"/>
+  <text x="1108" y="86" text-anchor="end" font-size="26" fill="#22d3ee" font-weight="700">Pathology, Microbiology &amp; Biochemistry (PMB-103)</text>
+  <text x="1130" y="190" text-anchor="end" font-size="46" fill="#ffffff" font-weight="800"><tspan x="1130" dy="0">Morphology of repair</tspan></text>
+  <circle cx="1138" cy="260" r="7" fill="#22d3ee"/>
+  <text x="1130" y="268" text-anchor="end" font-size="27" fill="#e2e8f0" font-weight="600">OSPE morphology of repair.</text>
+  <circle cx="1138" cy="316" r="7" fill="#22d3ee"/>
+  <text x="1130" y="324" text-anchor="end" font-size="27" fill="#e2e8f0" font-weight="600">The sheet presents a picture related to a complication of an</text>
+  <circle cx="1138" cy="372" r="7" fill="#22d3ee"/>
+  <text x="1130" y="380" text-anchor="end" font-size="27" fill="#e2e8f0" font-weight="600">The listed choices are fistula, keloid, ulcer, sinus, and</text>
+  <circle cx="1138" cy="428" r="7" fill="#22d3ee"/>
+  <text x="1130" y="436" text-anchor="end" font-size="27" fill="#e2e8f0" font-weight="600">The task is visual recognition of the complication and</text>
+  <text x="1130" y="588" text-anchor="end" font-size="22" fill="#64748b">Horus MED · ملخص المحاضرة</text>
+</svg>

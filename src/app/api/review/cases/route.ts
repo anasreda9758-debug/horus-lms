@@ -7,6 +7,7 @@ import { hasAnySubscription, hasModuleAccess } from "@/features/billing/queries"
 import { getAiUsageToday, FREE_DAILY_LIMIT, recordAiUsage } from "@/features/ai/queries";
 import { generateJson } from "@/shared/ai-client";
 import { createClinicalCase, listMyCases } from "@/features/review/queries";
+import { createSourceClinicalCase } from "@/features/review/source-generators";
 
 const SYSTEM_PROMPT =
   "You are a medical educator. Create one realistic medical clinical case based strictly on the content given. " +
@@ -60,6 +61,16 @@ export async function POST(request: NextRequest) {
   }
 
   const body = lectureRow.content.slice(0, 15000);
+  const createLocalCase = async () => {
+    const data = createSourceClinicalCase(lectureRow.title, body, lectureRow.summaryJson);
+    if (data.questions.length === 0) {
+      return NextResponse.json({ error: "no_usable_content" }, { status: 400 });
+    }
+    const caseId = await createClinicalCase(session.user.id, lectureId, data);
+    return NextResponse.json({ caseId, case: data.case, questions: data.questions, source: "lecture" });
+  };
+  if (!process.env.GROQ_API_KEY) return createLocalCase();
+
   try {
     const { data, inputTokens, outputTokens } = await generateJson<{
       case: string;
@@ -75,7 +86,7 @@ export async function POST(request: NextRequest) {
       !Array.isArray(data.questions) ||
       !Array.isArray(data.model_answers)
     ) {
-      return NextResponse.json({ error: "ai_unavailable" }, { status: 502 });
+      return createLocalCase();
     }
     const caseId = await createClinicalCase(session.user.id, lectureId, data);
     await recordAiUsage({
@@ -88,7 +99,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ caseId, case: data.case, questions: data.questions });
   } catch (err) {
     console.error("clinical case error:", err);
-    return NextResponse.json({ error: "ai_unavailable" }, { status: 502 });
+    return createLocalCase();
   }
 }
 

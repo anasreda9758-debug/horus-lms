@@ -1,0 +1,1147 @@
+{
+  "generatedAt": "2026-09-05T12:22:23.213Z",
+  "module": "ppg-102",
+  "files": [
+    {
+      "file": "semester 1/Principles of Physiology, Pharmacology and Molecular biology/Module 2.pdf",
+      "pages": 182,
+      "lectureCount": 36,
+      "mappings": [
+        {
+          "lectureId": "c1f11f5d-2acb-4c41-b684-c9b472d754a3",
+          "slug": "ppg-102-pharmacology-targets-for-drug-actions",
+          "title": "Targets for drug actions",
+          "bestCandidate": null,
+          "candidates": []
+        },
+        {
+          "lectureId": "81c718d3-5d0a-4b31-8f94-c33f43b64927",
+          "slug": "ppg-102-pharmacology-graded-dose-response-curve",
+          "title": "Graded dose response curve",
+          "bestCandidate": null,
+          "candidates": []
+        },
+        {
+          "lectureId": "14923e91-1acd-44cc-b61a-c03ee6f33a8e",
+          "slug": "ppg-102-pharmacology-quantal-dose-response-curve",
+          "title": "Quantal dose & response curve",
+          "bestCandidate": null,
+          "candidates": []
+        },
+        {
+          "lectureId": "aedbf98d-8544-4e55-b855-33e52b3eba3c",
+          "slug": "ppg-102-pharmacology-factors-affecting-dose-response",
+          "title": "Factors affecting dose response",
+          "bestCandidate": {
+            "page": 60,
+            "topText": "Part 2: Factors affecting dose - response relationship A. FACTORS RELATED TO THE DRUG 1. Drug shape (stereoisomerism): - Most drugs have multiple stereoisomers (enantiomers) (e.g. L-thyroxin and D- thyroxin). The receptor site is usually sensitive fo",
+            "score": 140,
+            "matchedTokens": [
+              "factors",
+              "affecting",
+              "dose",
+              "response"
+            ]
+          },
+          "candidates": [
+            {
+              "page": 60,
+              "topText": "Part 2: Factors affecting dose - response relationship A. FACTORS RELATED TO THE DRUG 1. Drug shape (stereoisomerism): - Most drugs have multiple stereoisomers (enantiomers) (e.g. L-thyroxin and D- thyroxin). The receptor site is usually sensitive fo",
+              "score": 140,
+              "matchedTokens": [
+                "factors",
+                "affecting",
+                "dose",
+                "response"
+              ]
+            }
+          ]
+        },
+        {
+          "lectureId": "18bf1e09-0b6e-45b0-8341-0c29ee0bce50",
+          "slug": "ppg-102-pharmacology-drug-absorption",
+          "title": "Drug absorption",
+          "bestCandidate": {
+            "page": 63,
+            "topText": "Part 3: Clinical pharmacokinetics Definition: it is the journey of the drug inside the body. It includes 4 processes: A bsorption D istribution M etabolism E xcretion ◆ ABSORPTION OF DRUGS Definition: it is the passage of drug from the site of admini",
+            "score": 130,
+            "matchedTokens": [
+              "absorption"
+            ]
+          },
+          "candidates": [
+            {
+              "page": 63,
+              "topText": "Part 3: Clinical pharmacokinetics Definition: it is the journey of the drug inside the body. It includes 4 processes: A bsorption D istribution M etabolism E xcretion ◆ ABSORPTION OF DRUGS Definition: it is the passage of drug from the site of admini",
+              "score": 130,
+              "matchedTokens": [
+                "absorption"
+              ]
+            },
+            {
+              "page": 76,
+              "topText": "A. Pseudocholinestrase deficiency B. Methemoglobin reductase deficiency C. G-6-PD deficiency D. Vitamin K epoxide reductase deficiency E. Monoamine oxidase deficiency 8. Failure of some children with rickets to respond to therapeutic doses of vitamin",
+              "score": 130,
+              "matchedTokens": [
+                "absorption"
+              ]
+            },
+            {
+              "page": 78,
+              "topText": "A. The prototype member of a class of drugs. B. The oldest member of a class of drugs C. An inactive drug that is transformed in the body to an active metabolite. D. A drug that is stored in the body tissues and is then gradually released in the circ",
+              "score": 130,
+              "matchedTokens": [
+                "absorption"
+              ]
+            },
+            {
+              "page": 97,
+              "topText": " Spirits (essences) they are alcoholic or hydroalcoholic solutions of volatile oils e.g. peppermint spirit and lemon spirit. They are intended for oral or topical use.  Tinctures they are alcoholic concentrates of vegetable materials or chemical su",
+              "score": 130,
+              "matchedTokens": [
+                "absorption"
+              ]
+            },
+            {
+              "page": 100,
+              "topText": "It is the most common route. The drug should be non-irritant and adequately absorbed. Advantages: safe, easy, no need for sterilization. Disadvantages:  Delayed onset (not suitable for patients in emergencies).  The drug may be destroyed by gastric",
+              "score": 130,
+              "matchedTokens": [
+                "absorption"
+              ]
+            }
+          ]
+        },
+        {
+          "lectureId": "dabc9ade-66f3-4f5d-b8a1-72d36ea0eb7c",
+          "slug": "ppg-102-pharmacology-drug-distribution",
+          "title": "Drug distribution",
+          "bestCandidate": {
+            "page": 42,
+            "topText": "Chapter 3 Nerve Physiology -Def: action potential is the potential changes which occur in RMP of the nerve due to stimulation by effective stimulus , these changes propagate (self propagated) along the nerve, then reach the effector organ to produce ",
+            "score": 130,
+            "matchedTokens": [
+              "distribution"
+            ]
+          },
+          "candidates": [
+            {
+              "page": 42,
+              "topText": "Chapter 3 Nerve Physiology -Def: action potential is the potential changes which occur in RMP of the nerve due to stimulation by effective stimulus , these changes propagate (self propagated) along the nerve, then reach the effector organ to produce ",
+              "score": 130,
+              "matchedTokens": [
+                "distribution"
+              ]
+            },
+            {
+              "page": 65,
+              "topText": "◆ DISTRIBUTION OF DRUGS Distribution of drugs is the process by which a drug leaves the bloodstream and enters the extracellular fluids and tissues. Sites of drug distribution: Standard values  Plasma: 3 liters  Extracellular water: 9 liters  Intr",
+              "score": 130,
+              "matchedTokens": [
+                "distribution"
+              ]
+            },
+            {
+              "page": 74,
+              "topText": "◆ Review Questions Define the following pharmacokinetic parameters: − Volume of distribution − pKa of drugs − Elimination half life − First-pass metabolism − Bioavailability Mention the clinical significance of each of the following: − Volume of dist",
+              "score": 130,
+              "matchedTokens": [
+                "distribution"
+              ]
+            },
+            {
+              "page": 78,
+              "topText": "A. The prototype member of a class of drugs. B. The oldest member of a class of drugs C. An inactive drug that is transformed in the body to an active metabolite. D. A drug that is stored in the body tissues and is then gradually released in the circ",
+              "score": 130,
+              "matchedTokens": [
+                "distribution"
+              ]
+            },
+            {
+              "page": 79,
+              "topText": "A. Intravenous B. Sublingual C. Oral D. Inhalation E. Intramuscular 28. If a drug was given by a constant infusion rate, which of the following factors determines how long it will take for the drug to reach a steady-state concentration (Cpss) in the ",
+              "score": 130,
+              "matchedTokens": [
+                "distribution"
+              ]
+            }
+          ]
+        },
+        {
+          "lectureId": "d73131db-03e0-454d-8bb3-05df793efccf",
+          "slug": "ppg-102-pharmacology-metabolism",
+          "title": "Metabolism",
+          "bestCandidate": {
+            "page": 9,
+            "topText": "Chapter 1 Introduction to Physiology -The total body water constitutes about 65% of the total body weight Water input = 2400 ml/day Water output = 2400 ml/day From 2 sources: a) Exogenous water: - ingested in the form of water or liquid = about 2200 ",
+            "score": 130,
+            "matchedTokens": [
+              "metabolism"
+            ]
+          },
+          "candidates": [
+            {
+              "page": 9,
+              "topText": "Chapter 1 Introduction to Physiology -The total body water constitutes about 65% of the total body weight Water input = 2400 ml/day Water output = 2400 ml/day From 2 sources: a) Exogenous water: - ingested in the form of water or liquid = about 2200 ",
+              "score": 130,
+              "matchedTokens": [
+                "metabolism"
+              ]
+            },
+            {
+              "page": 61,
+              "topText": "B. FACTORS RELATED TO THE PATIENT 1. Age, sex, and weight. 2. Pathological status: Liver or kidney diseases significantly alter the response to drugs due to altered metabolism and elimination. 3. Pharmacogenetic factors (idiosyncrasy): It is abnormal",
+              "score": 130,
+              "matchedTokens": [
+                "metabolism"
+              ]
+            },
+            {
+              "page": 67,
+              "topText": "◆ METABOLISM OF DRUGS (biotransformation)  The liver is the major site of drug metabolism but other organs can also metabolize drugs e.g. kidney, lungs, and adrenal glands.  Many lipid soluble drugs must be converted into a water-soluble form (pola",
+              "score": 130,
+              "matchedTokens": [
+                "metabolism"
+              ]
+            },
+            {
+              "page": 68,
+              "topText": "- The CYP2C, CYP2D, and CYP3A enzymes are responsible for the metabolism of most drugs. CYP3A4 is the most abundant hepatic enzyme and is involved in the metabolism of over half of clinically important drugs. - Genetic polymorphism of several clinica",
+              "score": 130,
+              "matchedTokens": [
+                "metabolism"
+              ]
+            },
+            {
+              "page": 69,
+              "topText": "▌ Hepatic extraction of drugs: - General extraction by the liver occws because of the liver's large size (1,500 g) and high blood flow (1 mL/g/mln). - The extraction ratio is the amount of drug removed in the liver dMded bythe amount of drug entering",
+              "score": 130,
+              "matchedTokens": [
+                "metabolism"
+              ]
+            }
+          ]
+        },
+        {
+          "lectureId": "6d6a0873-2801-41cc-bbc7-64d85a79b5ba",
+          "slug": "ppg-102-pharmacology-elimination",
+          "title": "Elimination",
+          "bestCandidate": {
+            "page": 61,
+            "topText": "B. FACTORS RELATED TO THE PATIENT 1. Age, sex, and weight. 2. Pathological status: Liver or kidney diseases significantly alter the response to drugs due to altered metabolism and elimination. 3. Pharmacogenetic factors (idiosyncrasy): It is abnormal",
+            "score": 130,
+            "matchedTokens": [
+              "elimination"
+            ]
+          },
+          "candidates": [
+            {
+              "page": 61,
+              "topText": "B. FACTORS RELATED TO THE PATIENT 1. Age, sex, and weight. 2. Pathological status: Liver or kidney diseases significantly alter the response to drugs due to altered metabolism and elimination. 3. Pharmacogenetic factors (idiosyncrasy): It is abnormal",
+              "score": 130,
+              "matchedTokens": [
+                "elimination"
+              ]
+            },
+            {
+              "page": 69,
+              "topText": "▌ Hepatic extraction of drugs: - General extraction by the liver occws because of the liver's large size (1,500 g) and high blood flow (1 mL/g/mln). - The extraction ratio is the amount of drug removed in the liver dMded bythe amount of drug entering",
+              "score": 130,
+              "matchedTokens": [
+                "elimination"
+              ]
+            },
+            {
+              "page": 70,
+              "topText": "█▌EXCRETION AND ELIMINATION OF DRUGS - In most cases, the action of a drug is terminated by enzyme-catalyzed conversion to an inactive (or less active) compound and/or elimination from the body via the kidney or other routes. − Elimination of drugs m",
+              "score": 130,
+              "matchedTokens": [
+                "elimination"
+              ]
+            },
+            {
+              "page": 71,
+              "topText": "▌Elimination half - life (t 1/2 ) Definition: It is the time taken for the concentration of a drug in blood to fall half to its original value. Calculation:  From the plasma concentration versus time curve.  From the equation: Clinical significance",
+              "score": 130,
+              "matchedTokens": [
+                "elimination"
+              ]
+            },
+            {
+              "page": 73,
+              "topText": "▌Therapeutic drug monitoring (TDM) Definition: monitoring of serum drug concentrations to optimize drug therapy.  Serum drug samples are usually taken when the drug has reached the CPSS (e.g. at the trough level, just before the next dose).  TDM ca",
+              "score": 130,
+              "matchedTokens": [
+                "elimination"
+              ]
+            }
+          ]
+        },
+        {
+          "lectureId": "c24d6edb-b743-40ab-b013-d0ad2fbbb573",
+          "slug": "ppg-102-pharmacology-autonomic-pharmacology-1",
+          "title": "Autonomic pharmacology 1",
+          "bestCandidate": {
+            "page": 80,
+            "topText": "Autonomic pharmacology",
+            "score": 140,
+            "matchedTokens": [
+              "autonomic",
+              "pharmacology"
+            ]
+          },
+          "candidates": [
+            {
+              "page": 80,
+              "topText": "Autonomic pharmacology",
+              "score": 140,
+              "matchedTokens": [
+                "autonomic",
+                "pharmacology"
+              ]
+            }
+          ]
+        },
+        {
+          "lectureId": "0182dde8-55ef-4027-9e57-11aae634107f",
+          "slug": "ppg-102-pharmacology-autonomic-pharmacology-2",
+          "title": "Autonomic pharmacology 2",
+          "bestCandidate": {
+            "page": 80,
+            "topText": "Autonomic pharmacology",
+            "score": 140,
+            "matchedTokens": [
+              "autonomic",
+              "pharmacology"
+            ]
+          },
+          "candidates": [
+            {
+              "page": 80,
+              "topText": "Autonomic pharmacology",
+              "score": 140,
+              "matchedTokens": [
+                "autonomic",
+                "pharmacology"
+              ]
+            }
+          ]
+        },
+        {
+          "lectureId": "fba1c2e0-3b56-4039-b4e2-6d3f9d5ad209",
+          "slug": "ppg-102-pharmacology-neuromuscular-transmission",
+          "title": "Neuromuscular transmission",
+          "bestCandidate": {
+            "page": 45,
+            "topText": "Chapter 3 Nerve Physiology Study guide questions I- Define: -RMP -action potential - Nerve block -depolarization of nerve fibers. -repolarization of nerve fibers. -all or non rule -myathenia gravis II- Explain the following: -nerve depolarization -so",
+            "score": 140,
+            "matchedTokens": [
+              "neuromuscular",
+              "transmission"
+            ]
+          },
+          "candidates": [
+            {
+              "page": 45,
+              "topText": "Chapter 3 Nerve Physiology Study guide questions I- Define: -RMP -action potential - Nerve block -depolarization of nerve fibers. -repolarization of nerve fibers. -all or non rule -myathenia gravis II- Explain the following: -nerve depolarization -so",
+              "score": 140,
+              "matchedTokens": [
+                "neuromuscular",
+                "transmission"
+              ]
+            },
+            {
+              "page": 53,
+              "topText": "Chapter 3 Nerve Physiology Myathenia gravis 4) Effect of ions: A) Ca ++ ions : helps neuromuscular transmission. -  ed Ca ++  neuromuscular transmission. B) Mg ++ ions : stabilizes A.ch. vesicles. -  ed Mg ++  neuromuscular transmission. C) K +",
+              "score": 140,
+              "matchedTokens": [
+                "neuromuscular",
+                "transmission"
+              ]
+            }
+          ]
+        },
+        {
+          "lectureId": "bb19af8d-d4c9-411a-9c46-c34a82d1b070",
+          "slug": "ppg-102-pharmacology-drug-development",
+          "title": "Drug development",
+          "bestCandidate": {
+            "page": 91,
+            "topText": "Introduction Until the 1960s, the shocking potential of drug-induced disease was not realized world-wide. Thalidomide was first marketed in West Germany in 1956 as a sedative and treatment for morning sickness. The drug was successfully launched in v",
+            "score": 130,
+            "matchedTokens": [
+              "development"
+            ]
+          },
+          "candidates": [
+            {
+              "page": 91,
+              "topText": "Introduction Until the 1960s, the shocking potential of drug-induced disease was not realized world-wide. Thalidomide was first marketed in West Germany in 1956 as a sedative and treatment for morning sickness. The drug was successfully launched in v",
+              "score": 130,
+              "matchedTokens": [
+                "development"
+              ]
+            },
+            {
+              "page": 143,
+              "topText": "Molecular biology semester 1 It is the removal of a gene or genes from the genome. Example: Complete loss of all genes in red blood cells during development (These discard their nuclei once sufficient hemoglobin RNA is synthesized). c- Gene rearrange",
+              "score": 130,
+              "matchedTokens": [
+                "development"
+              ]
+            }
+          ]
+        },
+        {
+          "lectureId": "abc05d8f-db19-4bad-9e6f-2988b4408f05",
+          "slug": "ppg-102-pharmacology-prescription-writing",
+          "title": "Prescription writing",
+          "bestCandidate": {
+            "page": 103,
+            "topText": "Concentration and preparation form should be written just to the right of the drug name. Use the metric system of weights and measures. To avoid misinterpretation of the preparation strength, follow this standard in writing percentages: If the percen",
+            "score": 120,
+            "matchedTokens": [
+              "prescription",
+              "writing"
+            ]
+          },
+          "candidates": [
+            {
+              "page": 103,
+              "topText": "Concentration and preparation form should be written just to the right of the drug name. Use the metric system of weights and measures. To avoid misinterpretation of the preparation strength, follow this standard in writing percentages: If the percen",
+              "score": 120,
+              "matchedTokens": [
+                "prescription",
+                "writing"
+              ]
+            }
+          ]
+        },
+        {
+          "lectureId": "2398870b-c4a6-435a-a88e-f71a8c506390",
+          "slug": "ppg-102-pharmacology-classic-experiment",
+          "title": "Classic experiment",
+          "bestCandidate": null,
+          "candidates": []
+        },
+        {
+          "lectureId": "85d202c1-0029-4def-851d-51d6ec4a281b",
+          "slug": "ppg-102-molecular-biology-introduction-to-molecular-biology-dna-organization",
+          "title": "Introduction to molecular biology & DNA organization",
+          "bestCandidate": null,
+          "candidates": []
+        },
+        {
+          "lectureId": "096e505d-64fe-48fa-861e-e8aa851a234d",
+          "slug": "ppg-102-molecular-biology-dna-replication",
+          "title": "DNA replication",
+          "bestCandidate": {
+            "page": 124,
+            "topText": "Molecular biology semester 1 DNA Replication It is the duplication of the DNA content before mitosis. DNA replication proceeds through multiple enzymatic activities done by DNA polymerases Complex. Principles of DNA Replication : • Replication of DNA",
+            "score": 140,
+            "matchedTokens": [
+              "dna",
+              "replication"
+            ]
+          },
+          "candidates": [
+            {
+              "page": 124,
+              "topText": "Molecular biology semester 1 DNA Replication It is the duplication of the DNA content before mitosis. DNA replication proceeds through multiple enzymatic activities done by DNA polymerases Complex. Principles of DNA Replication : • Replication of DNA",
+              "score": 140,
+              "matchedTokens": [
+                "dna",
+                "replication"
+              ]
+            },
+            {
+              "page": 118,
+              "topText": "Molecular biology semester 1 DNA structure Deoxyribonucleic acid (DNA) : • Function : storage and expression of genetic information. - Direct its own replication during cell division. - Direct the synthesis of RNA (Transcription). • In eukaryotic cel",
+              "score": 120,
+              "matchedTokens": [
+                "dna",
+                "replication"
+              ]
+            },
+            {
+              "page": 125,
+              "topText": "Molecular biology semester 1 2. Unwinding of DNA=formation of replication fork: DNA helicase unwind the DNA at the origin of replication onwards to generate a \"replication bubble“ forming two V-shaped replication forks. 3. Stabilization of the fork: ",
+              "score": 120,
+              "matchedTokens": [
+                "dna",
+                "replication"
+              ]
+            },
+            {
+              "page": 126,
+              "topText": "Molecular biology semester 1 RNA primer is in 5`→3` direction according to base pairing rule A -U and G- C using 3`→5` of DNA s trand as template .RNA primer with a free hydroxyl group on the 3′ -end of the RNA strand, act as acceptor of DNA nucleoti",
+              "score": 120,
+              "matchedTokens": [
+                "dna",
+                "replication"
+              ]
+            },
+            {
+              "page": 127,
+              "topText": "Molecular biology semester 1 • The major post-replication modification of DNA is methylation by the addition of a methyl group to the 5th position of the cytosine pyrimidine ring. • This modification can be inherited through cell division. Flow of ge",
+              "score": 120,
+              "matchedTokens": [
+                "dna",
+                "replication"
+              ]
+            }
+          ]
+        },
+        {
+          "lectureId": "8fcb6b19-1437-408d-9bb3-2ead64b7c8de",
+          "slug": "ppg-102-molecular-biology-rna-structure-transcription",
+          "title": "RNA structure & transcription",
+          "bestCandidate": {
+            "page": 118,
+            "topText": "Molecular biology semester 1 DNA structure Deoxyribonucleic acid (DNA) : • Function : storage and expression of genetic information. - Direct its own replication during cell division. - Direct the synthesis of RNA (Transcription). • In eukaryotic cel",
+            "score": 130,
+            "matchedTokens": [
+              "rna",
+              "structure",
+              "transcription"
+            ]
+          },
+          "candidates": [
+            {
+              "page": 118,
+              "topText": "Molecular biology semester 1 DNA structure Deoxyribonucleic acid (DNA) : • Function : storage and expression of genetic information. - Direct its own replication during cell division. - Direct the synthesis of RNA (Transcription). • In eukaryotic cel",
+              "score": 130,
+              "matchedTokens": [
+                "rna",
+                "structure",
+                "transcription"
+              ]
+            }
+          ]
+        },
+        {
+          "lectureId": "48ad9984-c84b-4091-a97f-0fd44c9673bf",
+          "slug": "ppg-102-molecular-biology-translation",
+          "title": "Translation",
+          "bestCandidate": {
+            "page": 132,
+            "topText": "Molecular biology semester 1 2) Polyadenylation: It is the addition of polyadenine (A) tail to the 3′ end of the primary transcript. Significance: A. It stabilizes the mRNA, and protects it against the attack by ribonucleases. B. It increases the eff",
+            "score": 130,
+            "matchedTokens": [
+              "translation"
+            ]
+          },
+          "candidates": [
+            {
+              "page": 132,
+              "topText": "Molecular biology semester 1 2) Polyadenylation: It is the addition of polyadenine (A) tail to the 3′ end of the primary transcript. Significance: A. It stabilizes the mRNA, and protects it against the attack by ribonucleases. B. It increases the eff",
+              "score": 130,
+              "matchedTokens": [
+                "translation"
+              ]
+            },
+            {
+              "page": 134,
+              "topText": "Molecular biology semester 1 Protein Synthesis (Translation) Protein Synthesis: The process of building a protein from RNA. Genetic codon :",
+              "score": 130,
+              "matchedTokens": [
+                "translation"
+              ]
+            },
+            {
+              "page": 135,
+              "topText": "Molecular biology semester 1 Characters of genetic codon: ∗ Each codon consists of 3 nucleotides. ∗ Each amino acid has specific codons (1 or more) ∗ There are 20 amino acids. ∗ There are 64 codon. ∗ 61 = codons code for amino acids. ∗ 3 = stop codon",
+              "score": 130,
+              "matchedTokens": [
+                "translation"
+              ]
+            },
+            {
+              "page": 140,
+              "topText": "Molecular biology semester 1 Post-translation processing of protein 1- Trimming: removal of part of the peptide chain, conversion of inactive protein to active one. e.g. proinsulin. 2- Covalent modifications: proteins may be activated or inactivated ",
+              "score": 130,
+              "matchedTokens": [
+                "translation"
+              ]
+            }
+          ]
+        },
+        {
+          "lectureId": "b098d82d-1f44-44a5-9761-e86b38b32c32",
+          "slug": "ppg-102-molecular-biology-regulation-of-gene-expression",
+          "title": "Regulation of gene expression",
+          "bestCandidate": {
+            "page": 141,
+            "topText": "Molecular biology semester 1 Regulation of gene expression Introduction: • Regulation is an important aspect of almost every process in nature, especially gene expression. • Selective gene expression allows cells to be efficient, synthesizing only wh",
+            "score": 130,
+            "matchedTokens": [
+              "regulation",
+              "gene",
+              "expression"
+            ]
+          },
+          "candidates": [
+            {
+              "page": 141,
+              "topText": "Molecular biology semester 1 Regulation of gene expression Introduction: • Regulation is an important aspect of almost every process in nature, especially gene expression. • Selective gene expression allows cells to be efficient, synthesizing only wh",
+              "score": 130,
+              "matchedTokens": [
+                "regulation",
+                "gene",
+                "expression"
+              ]
+            },
+            {
+              "page": 146,
+              "topText": "Molecular biology semester 1 2- Regulated expression elements : They are specific DNA sequences which are present on the same gene i.e produced from the same chromosome, and usually located about 200 to 300 bp upstream from the transcription start in",
+              "score": 130,
+              "matchedTokens": [
+                "regulation",
+                "gene",
+                "expression"
+              ]
+            }
+          ]
+        },
+        {
+          "lectureId": "c5088c09-6f9d-44e1-b79c-1a3e88d11644",
+          "slug": "ppg-102-molecular-biology-mutation-repair",
+          "title": "Mutation & repair",
+          "bestCandidate": {
+            "page": 155,
+            "topText": "Molecular biology semester 1 • Mutation location: autosomal chromosomes. • A recessive trait will only manifest itself when homozygous ‘with two mutant alleles’. • It appears in one or more siblings but not in earlier generation. • Males and females ",
+            "score": 120,
+            "matchedTokens": [
+              "mutation",
+              "repair"
+            ]
+          },
+          "candidates": [
+            {
+              "page": 155,
+              "topText": "Molecular biology semester 1 • Mutation location: autosomal chromosomes. • A recessive trait will only manifest itself when homozygous ‘with two mutant alleles’. • It appears in one or more siblings but not in earlier generation. • Males and females ",
+              "score": 120,
+              "matchedTokens": [
+                "mutation",
+                "repair"
+              ]
+            }
+          ]
+        },
+        {
+          "lectureId": "e9d47e5b-1a50-461d-8765-8489501b757c",
+          "slug": "ppg-102-molecular-biology-heredity",
+          "title": "Heredity",
+          "bestCandidate": {
+            "page": 148,
+            "topText": "Molecular biology semester 1 What is Heredity? Heredity = the passing on of traits from one generation to the next. What is a Trait? TRAIT is a specific characteristic that is unique. Examples are hair color, eye color, handedness, etc INHERITANCE PA",
+            "score": 130,
+            "matchedTokens": [
+              "heredity"
+            ]
+          },
+          "candidates": [
+            {
+              "page": 148,
+              "topText": "Molecular biology semester 1 What is Heredity? Heredity = the passing on of traits from one generation to the next. What is a Trait? TRAIT is a specific characteristic that is unique. Examples are hair color, eye color, handedness, etc INHERITANCE PA",
+              "score": 130,
+              "matchedTokens": [
+                "heredity"
+              ]
+            },
+            {
+              "page": 157,
+              "topText": "Molecular biology semester 1 • Heredity pattern in which a recessive gene on the X chromosome results in the manifestation of characteristics in male offspring and a carrier state in female offspring • X-linked recessive diseases are those in which a",
+              "score": 130,
+              "matchedTokens": [
+                "heredity"
+              ]
+            }
+          ]
+        },
+        {
+          "lectureId": "f4429360-0cc2-4913-b026-da597f58370f",
+          "slug": "ppg-102-physiology-organisation-of-the-human-body",
+          "title": "Organisation of the human body",
+          "bestCandidate": null,
+          "candidates": []
+        },
+        {
+          "lectureId": "f946d01d-0dc4-4135-9e46-61c71d33102c",
+          "slug": "ppg-102-physiology-cell-membrane-body-fluids-water-balance",
+          "title": "Cell membrane, body fluids & water balance",
+          "bestCandidate": null,
+          "candidates": []
+        },
+        {
+          "lectureId": "868404d8-5944-4805-9dda-c3f34be06877",
+          "slug": "ppg-102-physiology-transport-across-the-cell-membrane",
+          "title": "Transport across the cell membrane",
+          "bestCandidate": {
+            "page": 7,
+            "topText": "Chapter 1 Introduction to Physiology B B ) ) P P r r o o t t e e i i n n s s : : -There are 2 types of proteins: 1 1 - - I I n n t t r r i i n n s s i i c c o o r r i i n n t t e e g g r r a a l l p p r r o o t t e e i i n n s s 2 2 - - P P e e r r i",
+            "score": 140,
+            "matchedTokens": [
+              "transport",
+              "across",
+              "cell",
+              "membrane"
+            ]
+          },
+          "candidates": [
+            {
+              "page": 7,
+              "topText": "Chapter 1 Introduction to Physiology B B ) ) P P r r o o t t e e i i n n s s : : -There are 2 types of proteins: 1 1 - - I I n n t t r r i i n n s s i i c c o o r r i i n n t t e e g g r r a a l l p p r r o o t t e e i i n n s s 2 2 - - P P e e r r i",
+              "score": 140,
+              "matchedTokens": [
+                "transport",
+                "across",
+                "cell",
+                "membrane"
+              ]
+            },
+            {
+              "page": 10,
+              "topText": "Chapter 1 Introduction to Physiology b) Active transport: -Is movement of substances across the cell membrane against its electro- chemical gradient and needs energy . -Needs carrier. -Active transport is rate limited and saturable. -Needs ATP. -May ",
+              "score": 140,
+              "matchedTokens": [
+                "transport",
+                "across",
+                "cell",
+                "membrane"
+              ]
+            }
+          ]
+        },
+        {
+          "lectureId": "a9c04484-5038-424f-8f6c-50d350341d71",
+          "slug": "ppg-102-physiology-introduction-to-the-nervous-system",
+          "title": "Introduction to the nervous system",
+          "bestCandidate": {
+            "page": 5,
+            "topText": "Chapter 1 Introduction to Physiology Summary of the main body systems: System Organs Main function 1 - Nervous system brain,spinal cord and nerves. -collects and processes information from the senses via nerves and controls muscle actions. -it also c",
+            "score": 120,
+            "matchedTokens": [
+              "introduction",
+              "nervous"
+            ]
+          },
+          "candidates": [
+            {
+              "page": 5,
+              "topText": "Chapter 1 Introduction to Physiology Summary of the main body systems: System Organs Main function 1 - Nervous system brain,spinal cord and nerves. -collects and processes information from the senses via nerves and controls muscle actions. -it also c",
+              "score": 120,
+              "matchedTokens": [
+                "introduction",
+                "nervous"
+              ]
+            }
+          ]
+        },
+        {
+          "lectureId": "1bcc61f1-40eb-47f2-b3e6-84e7b2ced641",
+          "slug": "ppg-102-physiology-autonomic-nervous-system",
+          "title": "Autonomic nervous system",
+          "bestCandidate": {
+            "page": 12,
+            "topText": "Chapter 2 Autonomic Nervous System",
+            "score": 140,
+            "matchedTokens": [
+              "autonomic",
+              "nervous"
+            ]
+          },
+          "candidates": [
+            {
+              "page": 12,
+              "topText": "Chapter 2 Autonomic Nervous System",
+              "score": 140,
+              "matchedTokens": [
+                "autonomic",
+                "nervous"
+              ]
+            },
+            {
+              "page": 13,
+              "topText": "Chapter 2 Autonomic Nervous System Nervous System - The nervous system provides most of the control function for the body. -it receives thousands of information from the different sensory organs and then analyses all of them to determine the response",
+              "score": 140,
+              "matchedTokens": [
+                "autonomic",
+                "nervous"
+              ]
+            },
+            {
+              "page": 14,
+              "topText": "Chapter 2 Autonomic Nervous System Reflex action Types of neurons: (1) Afferent neuron = sensory neuron - it carries impulses from receptors to central nervous system (CNS). (2) Efferent neuron = motor neuron - it carries impulses from CNS to effecto",
+              "score": 140,
+              "matchedTokens": [
+                "autonomic",
+                "nervous"
+              ]
+            },
+            {
+              "page": 15,
+              "topText": "Chapter 2 Autonomic Nervous System (I) Central Nervous System (CNS) The nervous system is divided into 2 divisions: (I) Central nervous system (CNS). (II) Peripheral nervous system (PNS). - It is the part of the nervous system which is protected by b",
+              "score": 140,
+              "matchedTokens": [
+                "autonomic",
+                "nervous"
+              ]
+            },
+            {
+              "page": 16,
+              "topText": "Chapter 2 Autonomic Nervous System b) Spinal cord : It is subdivided into 31 segments in the following regions: 1) Cervical region 8 segments 2) Thoracic region 12 segments 3) Lumbar region 5 segments 4) Sacral region 5 segments 5) Coccygeal region 1",
+              "score": 140,
+              "matchedTokens": [
+                "autonomic",
+                "nervous"
+              ]
+            }
+          ]
+        },
+        {
+          "lectureId": "28a563ff-26a9-420d-9457-6f090aa1ee01",
+          "slug": "ppg-102-physiology-autonomic-ganglia-sympathetic-function",
+          "title": "Autonomic ganglia & sympathetic function",
+          "bestCandidate": {
+            "page": 23,
+            "topText": "Chapter 2 Autonomic Nervous System Def: ganglion is a collection of cell bodies of neurons outside the central nervous system (CNS). Functions : (1) Act as a relay station for autonomic preganglionic nerve fibers & from which postganglionic nerve fib",
+            "score": 140,
+            "matchedTokens": [
+              "autonomic",
+              "ganglia",
+              "sympathetic",
+              "function"
+            ]
+          },
+          "candidates": [
+            {
+              "page": 23,
+              "topText": "Chapter 2 Autonomic Nervous System Def: ganglion is a collection of cell bodies of neurons outside the central nervous system (CNS). Functions : (1) Act as a relay station for autonomic preganglionic nerve fibers & from which postganglionic nerve fib",
+              "score": 140,
+              "matchedTokens": [
+                "autonomic",
+                "ganglia",
+                "sympathetic",
+                "function"
+              ]
+            },
+            {
+              "page": 25,
+              "topText": "Chapter 2 Autonomic Nervous System (A) Sympathetic to head and neck Functions of sympathetic nervous system Origin LHCs of T 1 & T 2 . Relay Superior cervical ganglion (SCG) (a type of lateral ganglia). Function 1 - Eye 1- Pupillary dilatation ( mydr",
+              "score": 140,
+              "matchedTokens": [
+                "autonomic",
+                "ganglia",
+                "sympathetic",
+                "function"
+              ]
+            },
+            {
+              "page": 30,
+              "topText": "Chapter 2 Autonomic Nervous System Origin: -S 2, S 3, S 4 , fibers then unite to form the pelvic nerve which relays in the terminal ganglia Function 1- Rectum and urinary bladder - Parasympathetic causes: -Contraction of the walls of rectum and urina",
+              "score": 140,
+              "matchedTokens": [
+                "autonomic",
+                "ganglia",
+                "sympathetic",
+                "function"
+              ]
+            }
+          ]
+        },
+        {
+          "lectureId": "4a6a77f2-bcfb-4d9d-9559-875d36287edf",
+          "slug": "ppg-102-physiology-parasympathetic-functions",
+          "title": "Parasympathetic functions",
+          "bestCandidate": {
+            "page": 28,
+            "topText": "Chapter 2 Autonomic Nervous System (I) Cranial parasympathetic outflow (1) Functions of oculomotor nerve a - Motor to constrictor papillae muscles  miosis (narrowing of pupils). b- Motor to ciliary muscle  accommodating the eye to near vision . (2)",
+            "score": 120,
+            "matchedTokens": [
+              "parasympathetic",
+              "functions"
+            ]
+          },
+          "candidates": [
+            {
+              "page": 28,
+              "topText": "Chapter 2 Autonomic Nervous System (I) Cranial parasympathetic outflow (1) Functions of oculomotor nerve a - Motor to constrictor papillae muscles  miosis (narrowing of pupils). b- Motor to ciliary muscle  accommodating the eye to near vision . (2)",
+              "score": 120,
+              "matchedTokens": [
+                "parasympathetic",
+                "functions"
+              ]
+            },
+            {
+              "page": 29,
+              "topText": "Chapter 2 Autonomic Nervous System (4) Functions of Vagus (wandering) nerve 1) In the thorax 1) On the heart: a) Parasympathetic stimulation decreases the effectiveness of the heart as a pump: i.e-  heart rate. -  force of contraction -  conductio",
+              "score": 120,
+              "matchedTokens": [
+                "parasympathetic",
+                "functions"
+              ]
+            }
+          ]
+        },
+        {
+          "lectureId": "6a1904d4-5204-4387-b255-49daf4ecb1bb",
+          "slug": "ppg-102-physiology-chemical-transmission",
+          "title": "Chemical transmission",
+          "bestCandidate": {
+            "page": 32,
+            "topText": "Chapter 2 Autonomic Nervous System Synapse: Def: i s a functional connection between a neurone and another cell. - If the connection is with a muscle it`s called neuro-muscular junction. - If the connection is with a gland it`s called neuro-epithelia",
+            "score": 140,
+            "matchedTokens": [
+              "chemical",
+              "transmission"
+            ]
+          },
+          "candidates": [
+            {
+              "page": 32,
+              "topText": "Chapter 2 Autonomic Nervous System Synapse: Def: i s a functional connection between a neurone and another cell. - If the connection is with a muscle it`s called neuro-muscular junction. - If the connection is with a gland it`s called neuro-epithelia",
+              "score": 140,
+              "matchedTokens": [
+                "chemical",
+                "transmission"
+              ]
+            },
+            {
+              "page": 33,
+              "topText": "Chapter 2 Autonomic Nervous System There are 2 main types of chemical transmitters : i- Acetylcholine. ii- Noradrenaline. - Accordingly, there are 2 types of nerve fibers: i- Cholinergic fibers which release acetylcholine. ii- Adrenergic fibers which",
+              "score": 120,
+              "matchedTokens": [
+                "chemical",
+                "transmission"
+              ]
+            },
+            {
+              "page": 35,
+              "topText": "Chapter 2 Autonomic Nervous System - Noradrenaline is the chemical transmitter of symp. nervous system. - Catecholamines include : adrenaline, noradrenaline and dopamine. Sites of action and release of catecholamines: 1- All sympathetic postganglioni",
+              "score": 120,
+              "matchedTokens": [
+                "chemical",
+                "transmission"
+              ]
+            }
+          ]
+        },
+        {
+          "lectureId": "753bf3c5-9cb9-419d-8215-498ff92cb271",
+          "slug": "ppg-102-physiology-nerve-physiology",
+          "title": "Nerve physiology",
+          "bestCandidate": {
+            "page": 5,
+            "topText": "Chapter 1 Introduction to Physiology Summary of the main body systems: System Organs Main function 1 - Nervous system brain,spinal cord and nerves. -collects and processes information from the senses via nerves and controls muscle actions. -it also c",
+            "score": 130,
+            "matchedTokens": [
+              "nerve"
+            ]
+          },
+          "candidates": [
+            {
+              "page": 5,
+              "topText": "Chapter 1 Introduction to Physiology Summary of the main body systems: System Organs Main function 1 - Nervous system brain,spinal cord and nerves. -collects and processes information from the senses via nerves and controls muscle actions. -it also c",
+              "score": 130,
+              "matchedTokens": [
+                "nerve"
+              ]
+            },
+            {
+              "page": 14,
+              "topText": "Chapter 2 Autonomic Nervous System Reflex action Types of neurons: (1) Afferent neuron = sensory neuron - it carries impulses from receptors to central nervous system (CNS). (2) Efferent neuron = motor neuron - it carries impulses from CNS to effecto",
+              "score": 130,
+              "matchedTokens": [
+                "nerve"
+              ]
+            },
+            {
+              "page": 16,
+              "topText": "Chapter 2 Autonomic Nervous System b) Spinal cord : It is subdivided into 31 segments in the following regions: 1) Cervical region 8 segments 2) Thoracic region 12 segments 3) Lumbar region 5 segments 4) Sacral region 5 segments 5) Coccygeal region 1",
+              "score": 130,
+              "matchedTokens": [
+                "nerve"
+              ]
+            },
+            {
+              "page": 17,
+              "topText": "Chapter 2 Autonomic Nervous System 1) Anatomical classification of PNS - The peripheral nervous system provides a communication between the CNS and other tissues via nerves (PNS). Divisions: - nerves of PNS are classified according to their origin fr",
+              "score": 130,
+              "matchedTokens": [
+                "nerve"
+              ]
+            },
+            {
+              "page": 18,
+              "topText": "Chapter 2 Autonomic Nervous System Auditory nerve VIII",
+              "score": 130,
+              "matchedTokens": [
+                "nerve"
+              ]
+            }
+          ]
+        },
+        {
+          "lectureId": "89c4de51-e48e-4e42-a1d5-f67bd58c6184",
+          "slug": "ppg-102-physiology-properties-of-nerve-impulse",
+          "title": "Properties of nerve impulse",
+          "bestCandidate": {
+            "page": 39,
+            "topText": "Chapter 3 Nerve Physiology I-Excitability (irritability) Resting membrane potential (RMP) Properties of nerves : I) Excitability. II) Conductivity. - Excitability is a bioelectric phenomenon in which the nerve fibers respond to stimuli by rapid chang",
+            "score": 130,
+            "matchedTokens": [
+              "properties",
+              "nerve",
+              "impulse"
+            ]
+          },
+          "candidates": [
+            {
+              "page": 39,
+              "topText": "Chapter 3 Nerve Physiology I-Excitability (irritability) Resting membrane potential (RMP) Properties of nerves : I) Excitability. II) Conductivity. - Excitability is a bioelectric phenomenon in which the nerve fibers respond to stimuli by rapid chang",
+              "score": 130,
+              "matchedTokens": [
+                "properties",
+                "nerve",
+                "impulse"
+              ]
+            },
+            {
+              "page": 46,
+              "topText": "Chapter 3 Nerve Physiology 1 - The Nerve impulse is a wave - Being a wave, the nerve impulse has: a- a magnitude (strength) which is the magnitude of the spike potential. b- a duration which is the duration of the spike potential. c- a velocity of co",
+              "score": 130,
+              "matchedTokens": [
+                "properties",
+                "nerve",
+                "impulse"
+              ]
+            }
+          ]
+        },
+        {
+          "lectureId": "6ecbc320-2bde-4681-af71-dd1e4b4c8da2",
+          "slug": "ppg-102-physiology-body-temperature",
+          "title": "Body temperature",
+          "bestCandidate": null,
+          "candidates": []
+        },
+        {
+          "lectureId": "4f2e649a-5167-4423-a671-77f67e844096",
+          "slug": "ppg-102-physiology-arterial-blood-pressure",
+          "title": "Arterial blood pressure",
+          "bestCandidate": null,
+          "candidates": []
+        },
+        {
+          "lectureId": "8c719b38-b33e-4996-83c0-de8f961fec47",
+          "slug": "ppg-102-physiology-cell-membrane-transport",
+          "title": "Cell membrane transport",
+          "bestCandidate": {
+            "page": 3,
+            "topText": "Chapter 1 Introduction to Physiology Objectives of this chapter 1- Identify body systems. 2- Identify divisions of body fluids. 3- identify structure and function of the cell membrane. 4-identidy main mechanisms of cellular transport. Physiology Orga",
+            "score": 130,
+            "matchedTokens": [
+              "cell",
+              "membrane",
+              "transport"
+            ]
+          },
+          "candidates": [
+            {
+              "page": 3,
+              "topText": "Chapter 1 Introduction to Physiology Objectives of this chapter 1- Identify body systems. 2- Identify divisions of body fluids. 3- identify structure and function of the cell membrane. 4-identidy main mechanisms of cellular transport. Physiology Orga",
+              "score": 130,
+              "matchedTokens": [
+                "cell",
+                "membrane",
+                "transport"
+              ]
+            },
+            {
+              "page": 7,
+              "topText": "Chapter 1 Introduction to Physiology B B ) ) P P r r o o t t e e i i n n s s : : -There are 2 types of proteins: 1 1 - - I I n n t t r r i i n n s s i i c c o o r r i i n n t t e e g g r r a a l l p p r r o o t t e e i i n n s s 2 2 - - P P e e r r i",
+              "score": 130,
+              "matchedTokens": [
+                "cell",
+                "membrane",
+                "transport"
+              ]
+            },
+            {
+              "page": 10,
+              "topText": "Chapter 1 Introduction to Physiology b) Active transport: -Is movement of substances across the cell membrane against its electro- chemical gradient and needs energy . -Needs carrier. -Active transport is rate limited and saturable. -Needs ATP. -May ",
+              "score": 130,
+              "matchedTokens": [
+                "cell",
+                "membrane",
+                "transport"
+              ]
+            }
+          ]
+        },
+        {
+          "lectureId": "e5236a3f-d4cc-469c-8bd9-dde9264ef8f9",
+          "slug": "ppg-102-physiology-functions-of-autonomic-neurons",
+          "title": "Functions of autonomic neurons",
+          "bestCandidate": {
+            "page": 23,
+            "topText": "Chapter 2 Autonomic Nervous System Def: ganglion is a collection of cell bodies of neurons outside the central nervous system (CNS). Functions : (1) Act as a relay station for autonomic preganglionic nerve fibers & from which postganglionic nerve fib",
+            "score": 130,
+            "matchedTokens": [
+              "functions",
+              "autonomic",
+              "neurons"
+            ]
+          },
+          "candidates": [
+            {
+              "page": 23,
+              "topText": "Chapter 2 Autonomic Nervous System Def: ganglion is a collection of cell bodies of neurons outside the central nervous system (CNS). Functions : (1) Act as a relay station for autonomic preganglionic nerve fibers & from which postganglionic nerve fib",
+              "score": 130,
+              "matchedTokens": [
+                "functions",
+                "autonomic",
+                "neurons"
+              ]
+            }
+          ]
+        },
+        {
+          "lectureId": "5257d79a-8c68-43e3-a4f2-e40f20cd48d1",
+          "slug": "ppg-102-physiology-neuromuscular-transmission",
+          "title": "Neuromuscular transmission",
+          "bestCandidate": {
+            "page": 45,
+            "topText": "Chapter 3 Nerve Physiology Study guide questions I- Define: -RMP -action potential - Nerve block -depolarization of nerve fibers. -repolarization of nerve fibers. -all or non rule -myathenia gravis II- Explain the following: -nerve depolarization -so",
+            "score": 140,
+            "matchedTokens": [
+              "neuromuscular",
+              "transmission"
+            ]
+          },
+          "candidates": [
+            {
+              "page": 45,
+              "topText": "Chapter 3 Nerve Physiology Study guide questions I- Define: -RMP -action potential - Nerve block -depolarization of nerve fibers. -repolarization of nerve fibers. -all or non rule -myathenia gravis II- Explain the following: -nerve depolarization -so",
+              "score": 140,
+              "matchedTokens": [
+                "neuromuscular",
+                "transmission"
+              ]
+            },
+            {
+              "page": 53,
+              "topText": "Chapter 3 Nerve Physiology Myathenia gravis 4) Effect of ions: A) Ca ++ ions : helps neuromuscular transmission. -  ed Ca ++  neuromuscular transmission. B) Mg ++ ions : stabilizes A.ch. vesicles. -  ed Mg ++  neuromuscular transmission. C) K +",
+              "score": 140,
+              "matchedTokens": [
+                "neuromuscular",
+                "transmission"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

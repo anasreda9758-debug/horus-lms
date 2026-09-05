@@ -7,6 +7,7 @@ import { hasAnySubscription, hasModuleAccess } from "@/features/billing/queries"
 import { getAiUsageToday, FREE_DAILY_LIMIT, recordAiUsage } from "@/features/ai/queries";
 import { generateJson } from "@/shared/ai-client";
 import { createFlashcards, getDueFlashcards } from "@/features/review/queries";
+import { createSourceFlashcards } from "@/features/review/source-generators";
 
 const SYSTEM_PROMPT =
   "You are a medical education assistant. Create concise medical flashcards strictly from the content given. " +
@@ -59,14 +60,22 @@ export async function POST(request: NextRequest) {
   }
 
   const body = lectureRow.content.slice(0, 15000);
+  const createLocalCards = async () => {
+    const cards = createSourceFlashcards(lectureRow.title, body, lectureRow.summaryJson);
+    if (cards.length === 0) {
+      return NextResponse.json({ error: "no_usable_content" }, { status: 400 });
+    }
+    const count = await createFlashcards(session.user.id, lectureId, cards);
+    return NextResponse.json({ count, source: "lecture" });
+  };
+  if (!process.env.GROQ_API_KEY) return createLocalCards();
+
   try {
     const { data, inputTokens, outputTokens } = await generateJson<{ front: string; back: string }[]>({
       system: SYSTEM_PROMPT,
       user: `Create 12 flashcards.\nContent:\n${body}`,
     });
-    if (!data || data.length === 0) {
-      return NextResponse.json({ error: "ai_unavailable" }, { status: 502 });
-    }
+    if (!data || data.length === 0) return createLocalCards();
     const count = await createFlashcards(session.user.id, lectureId, data.slice(0, 12));
     await recordAiUsage({
       userId: session.user.id,
@@ -78,7 +87,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ count });
   } catch (err) {
     console.error("flashcards error:", err);
-    return NextResponse.json({ error: "ai_unavailable" }, { status: 502 });
+    return createLocalCards();
   }
 }
 

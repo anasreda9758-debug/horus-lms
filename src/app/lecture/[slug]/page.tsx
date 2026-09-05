@@ -47,6 +47,14 @@ export default async function LecturePage({
     ),
   });
   const isCompleted = !!progressRow;
+  // A shared source book is not a lecture. Until its exact page boundaries are
+  // reviewed, never show students an arbitrary first page from that book.
+  const hasVerifiedPdfSegment = Boolean(
+    lectureRow.pdfFile &&
+      lectureRow.pdfPageStart &&
+      lectureRow.pdfPageEnd &&
+      lectureRow.pdfPageEnd >= lectureRow.pdfPageStart,
+  );
 
   // Find quiz bank for this lecture (lecture-specific or module-wide fallback)
   const lectureBank = await getBankForLecture(lectureRow.id);
@@ -156,7 +164,7 @@ export default async function LecturePage({
           ) : (
             <>
               {/* PDF Viewer */}
-              {lectureRow.pdfFile ? (
+              {hasVerifiedPdfSegment ? (
                 <div className="mb-6 rounded-2xl border border-border bg-card p-6">
                   <div className="mb-4 flex items-center gap-2">
                     <FileText className="h-5 w-5 text-muted-foreground" />
@@ -168,6 +176,16 @@ export default async function LecturePage({
                     pageStart={lectureRow.pdfPageStart}
                     pageEnd={lectureRow.pdfPageEnd}
                   />
+                </div>
+              ) : lectureRow.pdfFile ? (
+                <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-6 dark:border-amber-900 dark:bg-amber-950/20">
+                  <div className="mb-2 flex items-center gap-2 text-amber-800 dark:text-amber-300">
+                    <AlertCircle className="h-5 w-5" />
+                    <h2 className="font-semibold">الملف قيد المراجعة</h2>
+                  </div>
+                  <p className="text-sm leading-relaxed text-amber-900/80 dark:text-amber-100/80">
+                    نراجع الآن صفحات هذه المحاضرة داخل الملف المجمّع. لن نعرض الكتاب الكامل أو محتوى محاضرة أخرى بالخطأ.
+                  </p>
                 </div>
               ) : null}
 
