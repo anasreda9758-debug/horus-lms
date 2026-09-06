@@ -24,6 +24,7 @@ import { db } from "../src/shared/db";
 import { lecture, curriculumModule } from "../src/features/curriculum/schema";
 
 const CONTENT_ROOT = resolve(process.env.CONTENT_ROOT ?? "C:/work/projects");
+const STUDY_YEAR = Math.max(1, Number(process.env.STUDY_YEAR ?? 1) || 1);
 const EXTRACTED_TEXTS_DIR = resolve(
   process.env.EXTRACTED_TEXTS_DIR ??
     "C:/Users/anasr/AppData/Local/Temp/opencode/lectures"
@@ -757,6 +758,7 @@ async function main() {
       description: mod.description,
       order: mod.order,
       isFree: mod.isFree,
+      studyYear: STUDY_YEAR,
       term: mod.term,
     });
     modulesCreated++;

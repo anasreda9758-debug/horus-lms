@@ -31,6 +31,7 @@ type Module = {
   description: string | null;
   order: number;
   isFree: boolean;
+  studyYear: number;
   term: number;
   lectureCount: number;
 };
@@ -89,6 +90,7 @@ function ModuleForm({
   const [slug, setSlug] = useState(initial?.slug ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
   const [term, setTerm] = useState(initial?.term ?? 1);
+  const [studyYear, setStudyYear] = useState(initial?.studyYear ?? 1);
   const [isFree, setIsFree] = useState(initial?.isFree ?? false);
   const [busy, setBusy] = useState(false);
 
@@ -96,7 +98,7 @@ function ModuleForm({
     if (!name.trim()) return;
     setBusy(true);
     try {
-      await onSave({ name, slug: slug || undefined, description, term, isFree, id: initial?.id });
+      await onSave({ name, slug: slug || undefined, description, studyYear, term, isFree, id: initial?.id });
     } finally {
       setBusy(false);
     }
@@ -119,6 +121,10 @@ function ModuleForm({
         <textarea className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" rows={2} value={description} onChange={(e) => setDescription(e.target.value)} />
       </div>
       <div className="flex items-center gap-4">
+        <div>
+          <label className="text-xs text-muted-foreground">السنة الدراسية</label>
+          <input type="number" min={1} max={12} className="mt-1 w-24 rounded-lg border border-border bg-background px-3 py-2 text-sm" value={studyYear} onChange={(e) => setStudyYear(Math.max(1, Number(e.target.value) || 1))} />
+        </div>
         <div>
           <label className="text-xs text-muted-foreground">الترم</label>
           <select className="mt-1 rounded-lg border border-border bg-background px-3 py-2 text-sm" value={term} onChange={(e) => setTerm(Number(e.target.value))}>

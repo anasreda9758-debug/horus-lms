@@ -393,11 +393,12 @@ export async function getQuizHistory(userId: string, limit = 20) {
   }));
 }
 
-export async function getModuleAccuracy(userId: string) {
+export async function getModuleAccuracy(userId: string, studyYear?: number) {
   const rows = await db
     .select({
       moduleSlug: curriculumModule.slug,
       moduleName: curriculumModule.name,
+      studyYear: curriculumModule.studyYear,
       score: quizAttempt.score,
       total: quizAttempt.total,
     })
@@ -420,7 +421,9 @@ export async function getModuleAccuracy(userId: string) {
     byModule.set(r.moduleSlug, cur);
   }
 
-  return [...byModule.values()].map((m) => ({
+  return [...byModule.values()]
+    .filter((m) => studyYear === undefined || (rows.find((row) => row.moduleSlug === m.moduleSlug)?.studyYear === studyYear))
+    .map((m) => ({
     moduleSlug: m.moduleSlug,
     moduleName: m.moduleName,
     correct: m.score,

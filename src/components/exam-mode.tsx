@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { useLocale } from "@/components/locale-provider";
 
 type Station = {
   id: string;
@@ -30,6 +31,7 @@ type ExamResult = {
 };
 
 export function ExamMode({ folder }: { folder?: string }) {
+  const { t } = useLocale();
   const router = useRouter();
   const [exam, setExam] = useState<ExamData | null>(null);
   const [result, setResult] = useState<ExamResult | null>(null);
@@ -61,7 +63,7 @@ export function ExamMode({ folder }: { folder?: string }) {
         setExam((prev) => (prev ? { ...prev, status: "completed" } : null));
       }
     } catch {
-      setError("تعذر إنهاء الامتحان");
+      setError(t("Could not finish the exam.", "تعذر إنهاء الامتحان"));
     }
   }, [exam]);
 
@@ -155,7 +157,7 @@ export function ExamMode({ folder }: { folder?: string }) {
       });
       if (!res.ok) {
         const data = await res.json();
-        setError(data.error ?? "فشل إنشاء الامتحان");
+        setError(data.error ?? t("Could not create the exam.", "فشل إنشاء الامتحان"));
         return;
       }
       const data = await res.json();
@@ -164,7 +166,7 @@ export function ExamMode({ folder }: { folder?: string }) {
       setStationTimeLeft(data.timePerStationSec);
       stationStartRef.current = Date.now();
     } catch {
-      setError("تعذر الاتصال بالخادم");
+      setError(t("Could not connect to the server.", "تعذر الاتصال بالخادم"));
     } finally {
       setLoading(false);
     }
@@ -180,29 +182,29 @@ export function ExamMode({ folder }: { folder?: string }) {
   if (!exam) {
     return (
       <div className="rounded-xl bg-card p-8 text-center ring-1 ring-foreground/10">
-        <h2 className="mb-2 text-2xl font-bold">وضع الامتحان</h2>
+        <h2 className="mb-2 text-2xl font-bold">{t("Exam mode", "وضع الامتحان")}</h2>
         <p className="mb-6 text-muted-foreground">
-          امتحان صارم — لا يمكن التراجع عن الإجابة، والوقت محدد لكل محطة.
+          {t("Focused exam mode — answers cannot be changed, with a time limit for each station.", "امتحان صارم — لا يمكن التراجع عن الإجابة، والوقت محدد لكل محطة.")}
         </p>
         <div className="mb-6 grid grid-cols-3 gap-4 text-sm">
           <div className="rounded-lg bg-muted p-3">
             <div className="text-lg font-bold">10</div>
-            <div className="text-muted-foreground">محطات</div>
+            <div className="text-muted-foreground">{t("stations", "محطات")}</div>
           </div>
           <div className="rounded-lg bg-muted p-3">
-            <div className="text-lg font-bold">60 ثانية</div>
-            <div className="text-muted-foreground">لكل محطة</div>
+            <div className="text-lg font-bold">{t("60 sec", "60 ثانية")}</div>
+            <div className="text-muted-foreground">{t("per station", "لكل محطة")}</div>
           </div>
           <div className="rounded-lg bg-muted p-3">
-            <div className="text-lg font-bold">10 دقائق</div>
-            <div className="text-muted-foreground">المجموع</div>
+            <div className="text-lg font-bold">{t("10 min", "10 دقائق")}</div>
+            <div className="text-muted-foreground">{t("total", "المجموع")}</div>
           </div>
         </div>
         {error && (
           <div className="mb-4 rounded-lg bg-red-500/10 p-3 text-sm text-red-600">{error}</div>
         )}
         <Button onClick={startExam} disabled={loading} size="lg">
-          {loading ? "جارٍ إنشاء الامتحان…" : "ابدأ الامتحان"}
+          {loading ? t("Creating exam…", "جارٍ إنشاء الامتحان…") : t("Start exam", "ابدأ الامتحان")}
         </Button>
       </div>
     );
@@ -212,15 +214,15 @@ export function ExamMode({ folder }: { folder?: string }) {
   if (exam.status === "completed" && result) {
     return (
       <div className="rounded-xl bg-card p-8 text-center ring-1 ring-foreground/10">
-        <h2 className="mb-4 text-2xl font-bold">نتيجة الامتحان</h2>
+        <h2 className="mb-4 text-2xl font-bold">{t("Exam result", "نتيجة الامتحان")}</h2>
         <div className="mb-6 flex items-center justify-center gap-8">
           <div>
             <div className="text-5xl font-bold text-primary">{result.percentage}%</div>
-            <div className="text-muted-foreground">النسبة</div>
+            <div className="text-muted-foreground">{t("Percentage", "النسبة")}</div>
           </div>
           <div className="text-center">
             <div className="text-3xl font-bold">{result.totalScore} / {result.maxPossibleScore}</div>
-            <div className="text-muted-foreground">النقاط</div>
+            <div className="text-muted-foreground">{t("Points", "النقاط")}</div>
           </div>
         </div>
         <div className="mb-6 grid grid-cols-10 gap-2">
@@ -238,7 +240,7 @@ export function ExamMode({ folder }: { folder?: string }) {
           ))}
         </div>
         <Button onClick={() => router.refresh()} size="lg">
-          امتحان جديد
+          {t("New exam", "امتحان جديد")}
         </Button>
       </div>
     );
@@ -249,11 +251,11 @@ export function ExamMode({ folder }: { folder?: string }) {
   if (!station) {
     return (
       <div className="rounded-xl bg-card p-8 text-center ring-1 ring-foreground/10">
-        <h2 className="mb-2 text-2xl font-bold">تعذر تحميل المحطات</h2>
+        <h2 className="mb-2 text-2xl font-bold">{t("Could not load stations", "تعذر تحميل المحطات")}</h2>
         <p className="mb-4 text-muted-foreground">
-          لم يتم العثور على محطات لهذا الامتحان. تأكد من وجود صور OSPE في المجلد الصحيح.
+          {t("No stations were found for this exam. Check that OSPE images exist in the correct folder.", "لم يتم العثور على محطات لهذا الامتحان. تأكد من وجود صور OSPE في المجلد الصحيح.")}
         </p>
-        <Button onClick={() => router.refresh()} size="lg">حاول مرة أخرى</Button>
+        <Button onClick={() => router.refresh()} size="lg">{t("Try again", "حاول مرة أخرى")}</Button>
       </div>
     );
   }
@@ -266,7 +268,7 @@ export function ExamMode({ folder }: { folder?: string }) {
       <div className="flex items-center justify-between rounded-xl bg-card px-5 py-3 ring-1 ring-foreground/10">
         <div className="flex items-center gap-4">
           <span className="text-sm font-medium text-muted-foreground">
-            المحطة {currentIdx + 1} / {exam.stations.length}
+            {t("Station", "المحطة")} {currentIdx + 1} / {exam.stations.length}
           </span>
           <div className="h-2 w-32 overflow-hidden rounded-full bg-muted">
             <div
@@ -284,7 +286,7 @@ export function ExamMode({ folder }: { folder?: string }) {
             {formatTime(stationTimeLeft)}
           </span>
           <span className="text-xs text-muted-foreground">
-            المتبقي: {formatTime(timeLeft)}
+            {t("Remaining", "المتبقي")}: {formatTime(timeLeft)}
           </span>
         </div>
       </div>
@@ -304,12 +306,12 @@ export function ExamMode({ folder }: { folder?: string }) {
       {/* Answer input */}
       <div className="rounded-xl bg-card p-5 ring-1 ring-foreground/10">
         <label className="mb-2 block text-sm font-medium text-muted-foreground">
-          إجابتك
+          {t("Your answer", "إجابتك")}
         </label>
         <textarea
           value={answer}
           onChange={(e) => setAnswer(e.target.value)}
-          placeholder="اكتب التشخيص وال양اتريفت هنا..."
+          placeholder={t("Write the diagnosis and key findings here…", "اكتب التشخيص والعلامات المهمة هنا...")}
           className="h-32 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
         />
         <div className="mt-3 flex items-center justify-between">

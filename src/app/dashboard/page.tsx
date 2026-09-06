@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { requireUser } from "@/shared/session";
-import { getCurriculum } from "@/features/curriculum/queries";
+import { getCurriculum, getStudyYears } from "@/features/curriculum/queries";
 import { getModuleAccuracy, getDueReviewCount } from "@/features/practice/queries";
-import { getActiveSubscriptions } from "@/features/billing/queries";
+import { getActiveSubscriptions, withModuleAccess } from "@/features/billing/queries";
 import { getProfile } from "@/features/gamification/queries";
 import { db } from "@/shared/db";
 import { quizAttempt, questionBank } from "@/features/practice/schema";
@@ -10,6 +10,9 @@ import { curriculumModule } from "@/features/curriculum/schema";
 import { and, eq, desc } from "drizzle-orm";
 import { Navigation } from "@/components/navigation";
 import { getLocale, localize } from "@/shared/locale";
+import { getSelectedStudyYear } from "@/shared/study-year";
+import { AcademicYearSelector } from "@/components/academic-year-selector";
+import { DailyStudyPlan } from "@/components/daily-study-plan";
 import {
   BookOpen,
   FlaskConical,
@@ -31,13 +34,24 @@ export default async function DashboardPage() {
   const locale = await getLocale();
   const t = (english: string, arabic: string) => localize(locale, english, arabic);
   const user = session.user;
-  const curriculum = await getCurriculum(user.id);
-  const accuracy = await getModuleAccuracy(user.id);
+  const studyYears = await getStudyYears();
+  const availableYears = studyYears.length ? studyYears : [1];
+  const savedYear = await getSelectedStudyYear();
+  const studyYear = availableYears.includes(savedYear) ? savedYear : availableYears[0];
+  const curriculum = await getCurriculum(user.id, studyYear);
+  const accessibleCurriculum = await withModuleAccess(user.id, curriculum);
+  const accuracy = await getModuleAccuracy(user.id, studyYear);
   const subs = (await getActiveSubscriptions(user.id)).filter(
     (s) => s.expiresAt > new Date()
   );
   const profile = await getProfile(user.id);
   const dueReviewCount = await getDueReviewCount(user.id);
+  const nextLecture = accessibleCurriculum
+    .flatMap((module) => module.lectures.map((lecture) => ({ ...lecture, moduleName: module.name, accessible: module.access })))
+    .find((lecture) => lecture.accessible && !lecture.completed) ?? null;
+  const weakModule = [...accuracy]
+    .filter((module) => module.total > 0)
+    .sort((a, b) => a.percent - b.percent)[0] ?? null;
 
   const totalCorrect = accuracy.reduce((s, m) => s + m.correct, 0);
   const totalAnswered = accuracy.reduce((s, m) => s + m.total, 0);
@@ -58,6 +72,9 @@ export default async function DashboardPage() {
   const totalLectures = curriculum.reduce((s, m) => s + m.totalLectures, 0);
   const completedLectures = curriculum.reduce((s, m) => s + m.completedLectures, 0);
   const overallPercent = totalLectures > 0 ? Math.round((completedLectures / totalLectures) * 100) : 0;
+  const examReadiness = Math.round(
+    overallPercent * 0.45 + (totalAnswered > 0 ? avgAccuracy : 0) * 0.45 + Math.min(totalAnswered / 100, 1) * 10,
+  );
 
   // Recent quizzes (last 5)
   const recentQuizzes = await db
@@ -89,10 +106,19 @@ export default async function DashboardPage() {
       <main className="flex-1 p-6 lg:p-8">
         <div className="mx-auto max-w-5xl">
           {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold">{t(`Welcome back, ${user.name}`, `مرحبًا ${user.name}`)}</h1>
-            <p className="mt-1 text-muted-foreground">{user.email}</p>
+          <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-bold">{t(`Welcome back, ${user.name}`, `مرحبًا ${user.name}`)}</h1>
+              <p className="mt-1 text-muted-foreground">{user.email}</p>
+            </div>
+            <AcademicYearSelector years={availableYears} value={studyYear} />
           </div>
+
+          <DailyStudyPlan
+            nextLecture={nextLecture ? { title: nextLecture.title, slug: nextLecture.slug, moduleName: nextLecture.moduleName, durationMin: nextLecture.durationMin } : null}
+            dueReviewCount={dueReviewCount}
+            weakModule={weakModule ? { name: weakModule.moduleName, slug: weakModule.moduleSlug } : null}
+          />
 
           {/* Hero Stats Row */}
           <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -129,6 +155,14 @@ export default async function DashboardPage() {
               sub={dueReviewCount > 0 ? t("Questions waiting for review", "أسئلة بانتظار المراجعة") : t("No reviews due", "لا توجد مراجعات")}
               color="text-purple-600 bg-purple-50 dark:bg-purple-950/40"
               href="/review"
+            />
+            <StatCard
+              icon={TrendingUp}
+              label={t("Exam readiness", "الاستعداد للامتحان")}
+              value={`${examReadiness}%`}
+              sub={t("Progress + accuracy + practice", "التقدم + الدقة + التدريب")}
+              color="text-blue-600 bg-blue-50 dark:bg-blue-950/40"
+              href="/quiz/analytics"
             />
           </div>
 

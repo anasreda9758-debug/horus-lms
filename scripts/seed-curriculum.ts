@@ -3,6 +3,8 @@ import { randomUUID } from "node:crypto";
 import { db } from "../src/shared/db";
 import { lecture, curriculumModule } from "../src/features/curriculum/schema";
 
+const STUDY_YEAR = Math.max(1, Number(process.env.STUDY_YEAR ?? 1) || 1);
+
 const modules = [
   {
     name: "التشريح — الوحدة 1",
@@ -90,6 +92,7 @@ async function main() {
       description: m.description,
       order: m.order,
       isFree: m.isFree,
+      studyYear: STUDY_YEAR,
       term: m.term ?? 1,
     });
     for (const l of m.lectures) {

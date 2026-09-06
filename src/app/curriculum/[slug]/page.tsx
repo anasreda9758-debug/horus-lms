@@ -29,6 +29,7 @@ export default async function ModulePage({
   if (!mod) notFound();
   const bank = await getBankForModule(mod.id);
   const access = await hasModuleAccess(session.user.id, mod);
+  const previewLecture = mod.lectures[0] ?? null;
 
   return (
     <div className="flex flex-1">
@@ -77,20 +78,34 @@ export default async function ModulePage({
           </div>
 
           {!access ? (
-            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-8 text-center dark:border-amber-900 dark:bg-amber-950/20">
-              <Lock className="mx-auto mb-4 h-12 w-12 text-amber-400" />
-              <h2 className="mb-2 text-xl font-semibold">
-                {localize(locale, "This module requires access", "هذا الموديول مدفوع")}
-              </h2>
-              <p className="mb-6 text-muted-foreground">
-                {localize(locale, "Subscribe to this module, term, or the full year to unlock lectures, quizzes, and the AI tutor.", "اشترِ الموديول أو الترم أو السنة بالكامل لفتح المحاضرات والاختبارات والمعلم الذكي.")}
-              </p>
-              <Link
-                href="/pricing"
-                className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-              >
-                {localize(locale, "View plans", "عرض الأسعار والاشتراك")}
-              </Link>
+            <div className="space-y-5">
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 p-8 text-center dark:border-amber-900 dark:bg-amber-950/20">
+                <Lock className="mx-auto mb-4 h-12 w-12 text-amber-400" />
+                <h2 className="mb-2 text-xl font-semibold">
+                  {localize(locale, "This module requires access", "هذا الموديول مدفوع")}
+                </h2>
+                <p className="mb-6 text-muted-foreground">
+                  {localize(locale, "Subscribe to this module, term, or the full year to unlock the full lecture sequence, quizzes, and tutor.", "اشترِ الموديول أو الترم أو السنة بالكامل لفتح تسلسل المحاضرات والاختبارات والمعلم الذكي.")}
+                </p>
+                <Link
+                  href="/pricing"
+                  className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+                >
+                  {localize(locale, "View plans", "عرض الأسعار والاشتراك")}
+                </Link>
+              </div>
+              {previewLecture && (
+                <Link href={`/lecture/${previewLecture.slug}`} className="group block rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-5 transition hover:border-emerald-500/60">
+                  <div className="flex items-center gap-3">
+                    <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600"><BookOpen className="h-5 w-5" /></div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold text-emerald-600">{localize(locale, "Free preview", "معاينة مجانية")}</p>
+                      <p className="truncate font-semibold group-hover:text-primary">{previewLecture.title}</p>
+                      <p className="mt-1 text-sm text-muted-foreground">{localize(locale, "Read the first lecture and its study summary before subscribing.", "اقرأ المحاضرة الأولى وملخصها قبل الاشتراك.")}</p>
+                    </div>
+                  </div>
+                </Link>
+              )}
             </div>
           ) : (
             <>

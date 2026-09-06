@@ -13,9 +13,10 @@ import { Clock, BookOpen, FileText, Lock, MessageCircle, CheckCircle2, Brain, Li
 import { CompleteButton } from "@/components/complete-button";
 import { PdfViewer } from "@/components/pdf-viewer";
 import { MindMap } from "@/components/mind-map";
+import { LectureNotes } from "@/components/lecture-notes";
 import { db } from "@/shared/db";
-import { lectureProgress } from "@/features/curriculum/schema";
-import { and, eq } from "drizzle-orm";
+import { lecture, lectureProgress } from "@/features/curriculum/schema";
+import { and, asc, eq } from "drizzle-orm";
 import { getLocale, localize } from "@/shared/locale";
 
 export default async function LecturePage({
@@ -32,7 +33,7 @@ export default async function LecturePage({
 
   const moduleName = lectureRow.module?.name ?? t("Module", "الموديول");
   const isFree = lectureRow.module?.isFree ?? true;
-  const access = await hasModuleAccess(
+  const moduleAccess = await hasModuleAccess(
     session.user.id,
     lectureRow.module ?? {
       id: "",
@@ -41,6 +42,15 @@ export default async function LecturePage({
       term: 1,
     }
   );
+  const firstLecture = lectureRow.moduleId
+    ? await db.query.lecture.findFirst({
+        where: eq(lecture.moduleId, lectureRow.moduleId),
+        orderBy: [asc(lecture.order)],
+        columns: { id: true },
+      })
+    : null;
+  const isPreview = !moduleAccess && (firstLecture?.id === lectureRow.id || lectureRow.order === 1);
+  const access = moduleAccess || isPreview;
 
   // Check if lecture is completed
   const progressRow = await db.query.lectureProgress.findFirst({
@@ -123,12 +133,18 @@ export default async function LecturePage({
                   {t(`${lectureRow.durationMin} min`, `${lectureRow.durationMin} دقيقة`)}
                 </span>
               ) : null}
-              {!isFree ? (
+              {!isFree && !isPreview ? (
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 px-3 py-1 text-xs font-medium text-amber-600">
                   <Lock className="h-3 w-3" />
                   {t("Locked content", "محتوى مدفوع")}
                 </span>
               ) : null}
+              {isPreview && (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-600">
+                  <BookOpen className="h-3 w-3" />
+                  {t("Free preview", "معاينة مجانية")}
+                </span>
+              )}
               {isCompleted && (
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-600">
                   <CheckCircle2 className="h-3 w-3" />
@@ -311,6 +327,10 @@ export default async function LecturePage({
                   </div>
                 </div>
               )}
+
+              <div className="mb-6">
+                <LectureNotes lectureId={lectureRow.id} />
+              </div>
 
               {/* AI Tutor */}
               <div className="rounded-2xl border border-border bg-card p-6">

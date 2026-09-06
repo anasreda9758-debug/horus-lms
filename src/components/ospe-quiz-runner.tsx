@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Clock, Pause, Play, Stethoscope, CheckCircle2, Bookmark, BookmarkCheck } from "lucide-react";
+import { useLocale } from "@/components/locale-provider";
 
 type QuizQuestion = {
   id: string;
@@ -34,10 +35,10 @@ function formatTime(sec: number) {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
-function difficultyBadge(d: string) {
-  if (d === "easy") return { text: "سهل", cls: "bg-emerald-500/10 text-emerald-600" };
-  if (d === "hard") return { text: "صعب", cls: "bg-red-500/10 text-red-600" };
-  return { text: "متوسط", cls: "bg-amber-500/10 text-amber-600" };
+function difficultyBadge(d: string, t: (english: string, arabic: string) => string) {
+  if (d === "easy") return { text: t("Easy", "سهل"), cls: "bg-emerald-500/10 text-emerald-600" };
+  if (d === "hard") return { text: t("Hard", "صعب"), cls: "bg-red-500/10 text-red-600" };
+  return { text: t("Medium", "متوسط"), cls: "bg-amber-500/10 text-amber-600" };
 }
 
 export function OspeQuizRunner({
@@ -54,6 +55,7 @@ export function OspeQuizRunner({
   attemptId?: string | null;
 }) {
   const router = useRouter();
+  const { t } = useLocale();
   const [index, setIndex] = useState(0);
   const [selected, setSelected] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -180,43 +182,43 @@ export function OspeQuizRunner({
           : "border-red-500/30 bg-red-500/5"
       }`}>
         <Stethoscope className="mx-auto mb-4 h-12 w-12 text-primary" />
-        <h2 className="text-2xl font-bold"> نتيجة اختبار OSPE</h2>
+        <h2 className="text-2xl font-bold">{t("OSPE result", "نتيجة اختبار OSPE")}</h2>
         <p className={`mt-3 text-6xl font-bold ${passed ? "text-emerald-600" : "text-red-600"}`}>
           {result.percent}%
         </p>
         <p className="mt-2 text-lg text-muted-foreground">
-          {result.score} من {result.total} محطة صحيحة
+          {t(`${result.score} of ${result.total} stations correct`, `${result.score} من ${result.total} محطة صحيحة`)}
         </p>
         {passed ? (
-          <p className="mt-2 text-sm font-medium text-emerald-600"> نجح</p>
+          <p className="mt-2 text-sm font-medium text-emerald-600">{t("Passed", "نجح")}</p>
         ) : (
-          <p className="mt-2 text-sm font-medium text-red-600"> حاول مرة أخرى</p>
+          <p className="mt-2 text-sm font-medium text-red-600">{t("Try again", "حاول مرة أخرى")}</p>
         )}
         {timeLimitSec ? (
           <p className="mt-2 text-sm text-muted-foreground">
-            الوقت: {formatTime(timeLimitSec - timeLeft)} / {formatTime(timeLimitSec)}
+            {t("Time", "الوقت")}: {formatTime(timeLimitSec - timeLeft)} / {formatTime(timeLimitSec)}
           </p>
         ) : null}
         <div className="mt-8 flex flex-wrap justify-center gap-3">
           <Button variant="outline" onClick={() => router.push(`/quiz/ospe/${moduleSlug}`)}>
-            إعادة المحاولة
+            {t("Try again", "إعادة المحاولة")}
           </Button>
           <Button onClick={() => router.push("/quiz/ospe")}>
-            اختيار موديول آخر
+            {t("Choose another module", "اختيار موديول آخر")}
           </Button>
         </div>
       </div>
     );
   }
 
-  const diff = difficultyBadge(q.difficulty);
+  const diff = difficultyBadge(q.difficulty, t);
 
   return (
     <div className="space-y-4">
       {/* ── Station progress bar ── */}
       <div className="rounded-xl bg-card p-4 ring-1 ring-foreground/10">
         <div className="mb-2 flex items-center justify-between text-sm">
-          <span className="font-medium text-muted-foreground">المحطة {index + 1} / {questions.length}</span>
+          <span className="font-medium text-muted-foreground">{t("Station", "المحطة")} {index + 1} / {questions.length}</span>
           {timeLimitSec ? (
             <button
               className="flex items-center gap-1.5"
@@ -228,7 +230,7 @@ export function OspeQuizRunner({
               </span>
             </button>
           ) : (
-            <span className="text-muted-foreground">{answered} أُجيب</span>
+            <span className="text-muted-foreground">{t(`${answered} answered`, `${answered} أُجيب`)}</span>
           )}
         </div>
         {/* Progress bar */}
@@ -270,11 +272,11 @@ export function OspeQuizRunner({
       <div className="rounded-xl border border-primary/20 bg-primary/5 p-5">
         <div className="mb-3 flex items-center gap-2">
           <Stethoscope className="h-4 w-4 text-primary" />
-          <span className="text-sm font-bold uppercase tracking-wide text-primary">السيناريو السريري</span>
+          <span className="text-sm font-bold uppercase tracking-wide text-primary">{t("Clinical scenario", "السيناريو السريري")}</span>
           <button
             onClick={toggleBookmark}
             className="ms-2 rounded-lg p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-            title={bookmarked ? "إزالة من المحفوظات" : "حفظ السؤال"}
+            title={bookmarked ? t("Remove bookmark", "إزالة من المحفوظات") : t("Save question", "حفظ السؤال")}
           >
             {bookmarked ? <BookmarkCheck className="h-4 w-4 text-primary" /> : <Bookmark className="h-4 w-4" />}
           </button>
@@ -287,7 +289,7 @@ export function OspeQuizRunner({
 
       {/* ── Options ── */}
       <div className="rounded-xl bg-card p-5 ring-1 ring-foreground/10">
-        <p className="mb-3 text-sm font-medium text-muted-foreground">اختر الإجابة الصحيحة:</p>
+        <p className="mb-3 text-sm font-medium text-muted-foreground">{t("Choose the best answer:", "اختر الإجابة الصحيحة:")}</p>
         <ul className="grid gap-2.5">
           {q.options.map((opt, i) => {
             const letter = String.fromCharCode(65 + i); // A, B, C, D, E

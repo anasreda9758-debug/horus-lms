@@ -22,12 +22,12 @@ const TTL = {
 
 // ── Curriculum ──────────────────────────────────────────────────────
 
-export async function getCachedCurriculum(userId: string) {
+export async function getCachedCurriculum(userId: string, studyYear?: number) {
   return cacheGetOrSet(
-    `curriculum:${userId}`,
+    `curriculum:${userId}:${studyYear ?? "all"}`,
     async () => {
       const { getCurriculum } = await import("@/features/curriculum/queries");
-      return getCurriculum(userId);
+      return getCurriculum(userId, studyYear);
     },
     { ttlSec: TTL.CURRICULUM, prefix: "horus" },
   );

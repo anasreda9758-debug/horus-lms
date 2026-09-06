@@ -1,12 +1,15 @@
 import Link from "next/link";
 import { requireUser } from "@/shared/session";
-import { getCurriculum } from "@/features/curriculum/queries";
+import { getCurriculum, getStudyYears } from "@/features/curriculum/queries";
 import { getCachedCurriculum } from "@/shared/query-cache";
 import { ProgressBar } from "@/components/progress-bar";
 import { Navigation } from "@/components/navigation";
 import { BookOpen, Lock, Unlock, Calendar } from "lucide-react";
 import { getLocale, localize } from "@/shared/locale";
 import type { AppLocale } from "@/components/locale-provider";
+import { moduleDescription } from "@/shared/curriculum-copy";
+import { getSelectedStudyYear } from "@/shared/study-year";
+import { AcademicYearSelector } from "@/components/academic-year-selector";
 
 function ModuleCard({
   m,
@@ -32,9 +35,9 @@ function ModuleCard({
                 {m.name}
               </h2>
             </div>
-            {m.description ? (
+            {moduleDescription(m.slug, m.description, locale) ? (
               <p className="mb-3 text-sm text-muted-foreground line-clamp-2">
-                {m.description}
+                {moduleDescription(m.slug, m.description, locale)}
               </p>
             ) : null}
           </div>
@@ -64,13 +67,22 @@ function ModuleCard({
 export default async function CurriculumPage({
   searchParams,
 }: {
-  searchParams: Promise<{ term?: string }>;
+  searchParams: Promise<{ term?: string; year?: string }>;
 }) {
   const session = await requireUser();
   const locale = await getLocale();
   const t = (english: string, arabic: string) => localize(locale, english, arabic);
   const params = await searchParams;
-  const curriculum = await getCachedCurriculum(session.user.id);
+  const studyYears = await getStudyYears();
+  const availableYears = studyYears.length ? studyYears : [1];
+  const savedYear = await getSelectedStudyYear();
+  const requestedYear = Number(params.year);
+  const studyYear = availableYears.includes(requestedYear)
+    ? requestedYear
+    : availableYears.includes(savedYear)
+      ? savedYear
+      : availableYears[0];
+  const curriculum = await getCachedCurriculum(session.user.id, studyYear);
   const activeTerm = params.term ? Number(params.term) : 0;
 
   const term1 = curriculum.filter((m) => m.term === 1);
@@ -92,11 +104,14 @@ export default async function CurriculumPage({
 
       <main className="flex-1 p-6 lg:p-8">
         <div className="mx-auto max-w-4xl">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold">{t("Curriculum", "المنهج")}</h1>
-            <p className="mt-1 text-muted-foreground">
-              {t("Choose a term, then a module to browse its lectures.", "اختر الترم ثم الموديول لتصفح المحاضرات.")}
-            </p>
+          <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-bold">{t("Curriculum", "المنهج")}</h1>
+              <p className="mt-1 text-muted-foreground">
+                {t("Choose a term, then a module to browse its lectures.", "اختر الترم ثم الموديول لتصفح المحاضرات.")}
+              </p>
+            </div>
+            <AcademicYearSelector years={availableYears} value={studyYear} />
           </div>
 
           {curriculum.length === 0 ? (
@@ -109,7 +124,7 @@ export default async function CurriculumPage({
               {/* Term Selector */}
               <div className="mb-8 grid gap-4 sm:grid-cols-2">
                 <Link
-                  href="/curriculum?term=1"
+                  href={`/curriculum?year=${studyYear}&term=1`}
                   className={`group rounded-2xl border-2 p-5 transition-all hover:shadow-md ${
                     activeTerm === 1
                       ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30"
@@ -136,7 +151,7 @@ export default async function CurriculumPage({
                 </Link>
 
                 <Link
-                  href="/curriculum?term=2"
+                  href={`/curriculum?year=${studyYear}&term=2`}
                   className={`group rounded-2xl border-2 p-5 transition-all hover:shadow-md ${
                     activeTerm === 2
                       ? "border-purple-500 bg-purple-50 dark:bg-purple-950/30"
@@ -174,7 +189,7 @@ export default async function CurriculumPage({
                 </h2>
                 {activeTerm !== 0 && (
                   <Link
-                    href="/curriculum"
+                    href={`/curriculum?year=${studyYear}`}
                     className="text-sm text-primary hover:underline"
                   >
                     {t("View all", "عرض الكل")}

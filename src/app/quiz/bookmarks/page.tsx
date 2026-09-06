@@ -6,9 +6,12 @@ import { curriculumModule } from "@/features/curriculum/schema";
 import { eq, asc } from "drizzle-orm";
 import { Navigation } from "@/components/navigation";
 import { Bookmark, BookOpen } from "lucide-react";
+import { getLocale, localize } from "@/shared/locale";
 
 export default async function BookmarksPage() {
   const session = await requireUser();
+  const locale = await getLocale();
+  const t = (english: string, arabic: string) => localize(locale, english, arabic);
 
   const bookmarks = await db
     .select({
@@ -48,23 +51,23 @@ export default async function BookmarksPage() {
       <main className="flex-1 p-6 lg:p-8">
         <div className="mx-auto max-w-3xl">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold">الأسئلة المحفوظة</h1>
+            <h1 className="text-3xl font-bold">{t("Saved questions", "الأسئلة المحفوظة")}</h1>
             <p className="mt-1 text-muted-foreground">
-              أسئلة حفظتها للمراجعة لاحقاً.
+              {t("Questions saved for later review.", "أسئلة حفظتها للمراجعة لاحقاً.")}
             </p>
           </div>
 
           {questionsWithOptions.length === 0 ? (
             <div className="rounded-2xl border border-border bg-card p-12 text-center">
               <Bookmark className="mx-auto mb-4 h-12 w-12 text-muted-foreground/40" />
-              <p className="text-muted-foreground">لم تحفظ أي أسئلة بعد.</p>
-              <p className="mt-1 text-sm text-muted-foreground">اضغط على أيقونة الحفظ أثناء الاختبار لحفظ الأسئلة الصعبة.</p>
+              <p className="text-muted-foreground">{t("You have not saved any questions yet.", "لم تحفظ أي أسئلة بعد.")}</p>
+              <p className="mt-1 text-sm text-muted-foreground">{t("Use the bookmark button during a quiz to save difficult questions.", "اضغط على أيقونة الحفظ أثناء الاختبار لحفظ الأسئلة الصعبة.")}</p>
               <Link
                 href="/curriculum"
                 className="mt-4 inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-medium text-primary-foreground hover:bg-primary/90"
               >
                 <BookOpen className="h-4 w-4" />
-                تصفح المنهج
+                {t("Browse curriculum", "تصفح المنهج")}
               </Link>
             </div>
           ) : (
@@ -80,7 +83,7 @@ export default async function BookmarksPage() {
                         q.difficulty === "hard" ? "bg-red-500/10 text-red-600" :
                         "bg-amber-500/10 text-amber-600"
                       }`}>
-                        {q.difficulty === "easy" ? "سهل" : q.difficulty === "hard" ? "صعب" : "متوسط"}
+                        {q.difficulty === "easy" ? t("Easy", "سهل") : q.difficulty === "hard" ? t("Hard", "صعب") : t("Medium", "متوسط")}
                       </span>
                     </div>
                     <p className="mb-3 text-sm leading-relaxed">{q.prompt}</p>
@@ -96,7 +99,7 @@ export default async function BookmarksPage() {
                     </ul>
                     {q.explanation && (
                       <div className="rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">
-                        <strong className="text-foreground">الشرح:</strong> {q.explanation}
+                        <strong className="text-foreground">{t("Explanation:", "الشرح:")}</strong> {q.explanation}
                       </div>
                     )}
                   </div>

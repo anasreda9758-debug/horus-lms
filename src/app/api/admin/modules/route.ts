@@ -19,7 +19,7 @@ export async function GET() {
   if (!admin) return NextResponse.json({ error: "forbidden" }, { status: 403 });
 
   const rows = await db.execute(sql`
-    SELECT m.id, m.name, m.slug, m.description, m."order", m.is_free, m.term,
+    SELECT m.id, m.name, m.slug, m.description, m."order", m.is_free, m.study_year, m.term,
       m.subject_id, m.created_at, m.updated_at,
       (SELECT count(*) FROM lecture l WHERE l.module_id = m.id) as lecture_count
     FROM module m
@@ -33,6 +33,7 @@ export async function GET() {
     description: r.description,
     order: r.order,
     isFree: r.is_free,
+    studyYear: Number(r.study_year ?? 1),
     term: r.term,
     subjectId: r.subject_id,
     lectureCount: Number(r.lecture_count),
@@ -79,6 +80,7 @@ export async function POST(request: NextRequest) {
     subjectId: body.subjectId ?? null,
     order: body.order ?? nextOrder,
     isFree: body.isFree ?? false,
+    studyYear: Number(body.studyYear) || 1,
     term: body.term ?? 1,
   });
 
@@ -89,7 +91,7 @@ export async function POST(request: NextRequest) {
     entityType: "module",
     entityId: id,
     entityName: body.name,
-    newData: { name: body.name, slug, term: body.term ?? 1 },
+    newData: { name: body.name, slug, studyYear: Number(body.studyYear) || 1, term: body.term ?? 1 },
   });
 
   revalidatePath("/admin");
@@ -121,6 +123,7 @@ export async function PUT(request: NextRequest) {
   if (body.subjectId !== undefined) updates.subject_id = body.subjectId;
   if (body.order !== undefined) updates["order"] = body.order;
   if (body.isFree !== undefined) updates.is_free = body.isFree;
+  if (body.studyYear !== undefined) updates.study_year = Number(body.studyYear) || 1;
   if (body.term !== undefined) updates.term = body.term;
 
   if (Object.keys(updates).length === 0) {

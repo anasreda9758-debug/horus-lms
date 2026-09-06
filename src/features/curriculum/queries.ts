@@ -1,6 +1,6 @@
-import { eq } from "drizzle-orm";
+import { asc, eq } from "drizzle-orm";
 import { db } from "@/shared/db";
-import { lecture, lectureProgress } from "./schema";
+import { curriculumModule, lecture, lectureProgress } from "./schema";
 
 export async function getLectureBySlug(slug: string) {
   return db.query.lecture.findFirst({
@@ -9,8 +9,18 @@ export async function getLectureBySlug(slug: string) {
   });
 }
 
-export async function getCurriculum(userId: string) {
+export async function getStudyYears() {
+  const rows = await db
+    .select({ studyYear: curriculumModule.studyYear })
+    .from(curriculumModule)
+    .groupBy(curriculumModule.studyYear)
+    .orderBy(asc(curriculumModule.studyYear));
+  return rows.map((row) => row.studyYear);
+}
+
+export async function getCurriculum(userId: string, studyYear?: number) {
   const modules = await db.query.curriculumModule.findMany({
+    where: studyYear ? eq(curriculumModule.studyYear, studyYear) : undefined,
     orderBy: (m, { asc }) => [asc(m.order)],
     with: {
       lectures: {
@@ -43,8 +53,8 @@ export async function getModuleBySlug(userId: string, slug: string) {
   return curriculum.find((m) => m.slug === slug) ?? null;
 }
 
-export async function getOverallProgress(userId: string) {
-  const curriculum = await getCurriculum(userId);
+export async function getOverallProgress(userId: string, studyYear?: number) {
+  const curriculum = await getCurriculum(userId, studyYear);
   const { withModuleAccess } = await import("@/features/billing/queries");
   const accessible = (await withModuleAccess(userId, curriculum)).filter((m) => m.access);
   const total = accessible.reduce((sum, m) => sum + m.totalLectures, 0);

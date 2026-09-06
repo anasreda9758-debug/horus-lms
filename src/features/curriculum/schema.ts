@@ -11,13 +11,14 @@ export const curriculumModule = pgTable("module", {
   subjectId: text("subject_id").references(() => subject.id, { onDelete: "set null" }),
   order: integer("order").notNull().default(0),
   isFree: boolean("is_free").notNull().default(false),
+  studyYear: integer("study_year").notNull().default(1),
   term: integer("term").notNull().default(1),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()
     .$onUpdate(() => new Date())
     .notNull(),
-});
+}, (table) => [index("module_study_year_idx").on(table.studyYear)]);
 
 export const lecture = pgTable(
   "lecture",
@@ -81,6 +82,27 @@ export const lectureProgress = pgTable(
   ],
 );
 
+export const lectureNote = pgTable(
+  "lecture_note",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    lectureId: text("lecture_id")
+      .notNull()
+      .references(() => lecture.id, { onDelete: "cascade" }),
+    body: text("body").notNull(),
+    highlightedText: text("highlighted_text"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [index("lecture_note_user_lecture_idx").on(table.userId, table.lectureId)],
+);
+
 export const curriculumModuleRelations = relations(curriculumModule, ({ many }) => ({
   lectures: many(lecture),
 }));
@@ -91,6 +113,7 @@ export const lectureRelations = relations(lecture, ({ one, many }) => ({
     references: [curriculumModule.id],
   }),
   progress: many(lectureProgress),
+  notes: many(lectureNote),
 }));
 
 export const lectureProgressRelations = relations(lectureProgress, ({ one }) => ({
@@ -100,6 +123,17 @@ export const lectureProgressRelations = relations(lectureProgress, ({ one }) => 
   }),
   user: one(user, {
     fields: [lectureProgress.userId],
+    references: [user.id],
+  }),
+}));
+
+export const lectureNoteRelations = relations(lectureNote, ({ one }) => ({
+  lecture: one(lecture, {
+    fields: [lectureNote.lectureId],
+    references: [lecture.id],
+  }),
+  user: one(user, {
+    fields: [lectureNote.userId],
     references: [user.id],
   }),
 }));

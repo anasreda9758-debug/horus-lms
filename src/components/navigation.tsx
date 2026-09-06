@@ -18,6 +18,7 @@ import {
   Trophy,
   BarChart3,
   RefreshCw,
+  Search,
 } from "lucide-react";
 import { SignOutButton } from "@/components/sign-out-button";
 import { PreferenceControls } from "@/components/preference-controls";
@@ -26,6 +27,7 @@ import { useLocale } from "@/components/locale-provider";
 const navItems = [
   { href: "/dashboard", label: { en: "Student dashboard", ar: "لوحة الطالب" }, icon: LayoutDashboard },
   { href: "/curriculum", label: { en: "Curriculum", ar: "المنهج" }, icon: BookOpen },
+  { href: "/search", label: { en: "Study search", ar: "بحث دراسي" }, icon: Search },
   { href: "/flashcards", label: { en: "Flashcards", ar: "البطاقات التعليمية" }, icon: Brain },
   { href: "/cases", label: { en: "Clinical cases", ar: "الحالات السريرية" }, icon: Stethoscope },
   { href: "/ospe", label: { en: "OSPE simulator", ar: "محاكي OSPE" }, icon: FlaskConical },

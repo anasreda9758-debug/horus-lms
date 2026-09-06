@@ -10,14 +10,16 @@ import {
   Calendar,
   Sparkles,
 } from "lucide-react";
+import { getLocale, localize } from "@/shared/locale";
+import { moduleDescription } from "@/shared/curriculum-copy";
 
-function fmtDays(days: number) {
-  if (days >= 365) return "عام كامل";
+function fmtDays(days: number, locale: "en" | "ar") {
+  if (days >= 365) return locale === "ar" ? "عام كامل" : "Full year";
   if (days >= 30) {
     const months = Math.round((days / 30) * 2) / 2;
-    return `${months} شهر`;
+    return locale === "ar" ? `${months} شهر` : `${months} months`;
   }
-  return `${days} يوم`;
+  return locale === "ar" ? `${days} يوم` : `${days} days`;
 }
 
 type PlanRow = {
@@ -35,6 +37,7 @@ function PlanCard({
   owned,
   userId,
   features,
+  locale,
 }: {
   plan: PlanRow;
   title: string;
@@ -43,7 +46,9 @@ function PlanCard({
   owned: boolean;
   userId?: string;
   features?: string[];
+  locale: "en" | "ar";
 }) {
+  const t = (english: string, arabic: string) => localize(locale, english, arabic);
   return (
     <div
       className={`relative flex flex-col rounded-2xl border p-6 transition-all ${
@@ -56,7 +61,7 @@ function PlanCard({
         <div className="absolute -top-3 left-1/2 -translate-x-1/2">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1 text-xs font-medium text-primary-foreground">
             <Crown className="h-3 w-3" />
-            أفضل قيمة
+            {t("Best value", "أفضل قيمة")}
           </span>
         </div>
       )}
@@ -69,12 +74,12 @@ function PlanCard({
       <div className="mb-4">
         <span className="text-4xl font-bold">{plan.priceEg}</span>
         <span className="me-1 text-base font-medium text-muted-foreground">
-          ج.م
+          EGP
         </span>
       </div>
       <p className="mb-4 text-sm text-muted-foreground">
         <Calendar className="me-1 inline h-3.5 w-3.5" />
-        مدة الصلاحية: {fmtDays(plan.durationDays)}
+        {t("Valid for", "مدة الصلاحية")}: {fmtDays(plan.durationDays, locale)}
       </p>
       {features && features.length > 0 && (
         <ul className="mb-6 space-y-2">
@@ -94,7 +99,7 @@ function PlanCard({
             href="/sign-in"
             className="inline-flex w-full items-center justify-center rounded-xl bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
-            سجّل الدخول للاشتراك
+            {t("Sign in to subscribe", "سجّل الدخول للاشتراك")}
           </Link>
         )}
       </div>
@@ -104,6 +109,8 @@ function PlanCard({
 
 export default async function PricingPage() {
   const session = await getSession();
+  const locale = await getLocale();
+  const t = (english: string, arabic: string) => localize(locale, english, arabic);
   const userId = session?.user.id;
 
   const [plans, modules, subs] = await Promise.all([
@@ -146,15 +153,13 @@ export default async function PricingPage() {
           <div className="mb-12 text-center">
             <span className="mb-4 inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-sm font-medium text-primary">
               <Sparkles className="h-3.5 w-3.5" />
-              اختر ما يناسبك
+              {t("Choose what fits you", "اختر ما يناسبك")}
             </span>
             <h1 className="mt-4 text-3xl font-bold lg:text-4xl">
-              الأسعار والاشتراك
+              {t("Plans & subscription", "الأسعار والاشتراك")}
             </h1>
             <p className="mx-auto mt-4 max-w-2xl text-muted-foreground">
-              اشترك في الموديول الذي تحتاجه، أو وفر باختيار الترم أو السنة
-              كاملة. جميع المحتويات مدفوعة، والاشتراك يفتح المحاضرات والاختبارات
-              والمعلم الذكي.
+              {t("Subscribe to a module, term, or full academic year. A subscription unlocks lectures, quizzes, and the study tutor.", "اشترك في الموديول الذي تحتاجه، أو وفر باختيار الترم أو السنة كاملة. جميع المحتويات مدفوعة، والاشتراك يفتح المحاضرات والاختبارات والمعلم الذكي.")}
             </p>
           </div>
 
@@ -164,18 +169,19 @@ export default async function PricingPage() {
               <div className="mx-auto max-w-md">
                 <PlanCard
                   plan={yearPlan}
-                  title="السنة كاملة"
-                  subtitle="كل موديولات الترمين الأول والثاني"
+                  title={t("Full academic year", "السنة كاملة")}
+                  subtitle={t("Every module in Terms 1 and 2", "كل موديولات الترمين الأول والثاني")}
                   highlight
                   owned={owned.has(yearPlan.id)}
                   userId={userId}
+                  locale={locale}
                   features={[
-                    "جميع الموديولات (10 موديولات)",
-                    "جميع المحاضرات والسيمينارات",
-                    "اختبارات بنوك الأسئلة الحقيقية",
-                    "المعلم الذكي بدون حد",
-                    "بطاقات تعليمية SRS",
-                    "محاكي OSPE",
+                    t("All modules (10 modules)", "جميع الموديولات (10 موديولات)"),
+                    t("All lectures and seminars", "جميع المحاضرات والسيمينارات"),
+                    t("Source-based question banks", "اختبارات بنوك الأسئلة الحقيقية"),
+                    t("Unlimited study tutor", "المعلم الذكي بدون حد"),
+                    t("Spaced-repetition flashcards", "بطاقات تعليمية SRS"),
+                    t("OSPE simulator", "محاكي OSPE"),
                   ]}
                 />
               </div>
@@ -185,7 +191,7 @@ export default async function PricingPage() {
           {/* Term Plans */}
           <section className="mb-12">
             <h2 className="mb-4 text-center text-xl font-bold">
-              اشتراك الترم
+              {t("Term subscriptions", "اشتراك الترم")}
             </h2>
             <div className="mx-auto grid max-w-3xl gap-4 sm:grid-cols-2">
               {termPlans.map((p) => (
@@ -200,11 +206,12 @@ export default async function PricingPage() {
                   }
                   owned={owned.has(p.id)}
                   userId={userId}
+                  locale={locale}
                   features={[
-                    "5 موديولات في الترم",
-                    "جميع المحاضرات والتمارين",
-                    "اختبارات الأسئلة",
-                    "المعلم الذكي",
+                    t("5 modules in the term", "5 موديولات في الترم"),
+                    t("All lectures and practice", "جميع المحاضرات والتمارين"),
+                    t("Question-bank quizzes", "اختبارات الأسئلة"),
+                    t("Study tutor", "المعلم الذكي"),
                   ]}
                 />
               ))}
@@ -214,10 +221,10 @@ export default async function PricingPage() {
           {/* Core Module Plans */}
           <section className="mb-12">
             <h2 className="mb-4 text-center text-xl font-bold">
-              الموديولات الأساسية
+              {t("Core modules", "الموديولات الأساسية")}
             </h2>
             <p className="mb-6 text-center text-sm text-muted-foreground">
-              119 ج.م لكل موديول — مدة شهر ونصف إلى 4 شهور
+              {t("119 EGP per module — valid for 1.5 to 4 months", "119 ج.م لكل موديول — مدة شهر ونصف إلى 4 شهور")}
             </p>
             <ul className="mx-auto grid max-w-4xl gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {corePlans.map((p) => {
@@ -227,9 +234,10 @@ export default async function PricingPage() {
                     <PlanCard
                       plan={p}
                       title={m?.name ?? p.name}
-                      subtitle={m?.description ?? undefined}
+                      subtitle={moduleDescription(m?.slug ?? p.scopeRef ?? "", m?.description ?? null, locale) ?? undefined}
                       owned={owned.has(p.id)}
                       userId={userId}
+                      locale={locale}
                     />
                   </li>
                 );
@@ -241,10 +249,10 @@ export default async function PricingPage() {
           {nonCorePlans.length > 0 && (
             <section className="mb-12">
               <h2 className="mb-4 text-center text-xl font-bold">
-                المواد غير الأساسية
+                {t("Additional modules", "المواد غير الأساسية")}
               </h2>
               <p className="mb-6 text-center text-sm text-muted-foreground">
-                50 ج.م لكل مادة — صالحة طوال الترم
+                {t("50 EGP per module — valid for the full term", "50 ج.م لكل مادة — صالحة طوال الترم")}
               </p>
               <ul className="mx-auto grid max-w-3xl gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {nonCorePlans.map((p) => {
@@ -254,9 +262,10 @@ export default async function PricingPage() {
                       <PlanCard
                         plan={p}
                         title={m?.name ?? p.name}
-                        subtitle={m?.description ?? undefined}
+                        subtitle={moduleDescription(m?.slug ?? p.scopeRef ?? "", m?.description ?? null, locale) ?? undefined}
                         owned={owned.has(p.id)}
                         userId={userId}
+                        locale={locale}
                       />
                     </li>
                   );
@@ -266,7 +275,7 @@ export default async function PricingPage() {
           )}
 
           <p className="text-center text-sm text-muted-foreground">
-            الأسعار بالجنيه المصري. جميع المحتويات مدفوعة.
+            {t("Prices are in Egyptian pounds. All content requires a subscription.", "الأسعار بالجنيه المصري. جميع المحتويات مدفوعة.")}
           </p>
         </div>
       </main>

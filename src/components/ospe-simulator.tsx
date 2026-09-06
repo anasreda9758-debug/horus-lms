@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { useLocale } from "@/components/locale-provider";
 
 type OspeModule = {
   folder: string;
@@ -22,6 +23,7 @@ type Station = {
 };
 
 export function OspeSimulator() {
+  const { t } = useLocale();
   const [modules, setModules] = useState<OspeModule[]>([]);
   const [filter, setFilter] = useState<string>("all");
   const [station, setStation] = useState<Station | null>(null);
@@ -39,13 +41,13 @@ export function OspeSimulator() {
         `/api/content/ospe/station?folder=${encodeURIComponent(folder)}`,
       );
       if (!res.ok) {
-        setError("لا توجد محطات متاحة لهذه الوحدة.");
+        setError(t("No stations are available for this module.", "لا توجد محطات متاحة لهذه الوحدة."));
         setStation(null);
         return;
       }
       setStation((await res.json()) as Station);
     } catch {
-      setError("تعذر تحميل المحطة. حاول مرة أخرى.");
+      setError(t("Could not load the station. Try again.", "تعذر تحميل المحطة. حاول مرة أخرى."));
     } finally {
       setLoading(false);
     }
@@ -59,7 +61,7 @@ export function OspeSimulator() {
         setModules(data.modules);
         if (unlocked.length > 0) return loadStation("all");
       })
-      .catch(() => setError("تعذر تحميل الوحدات."))
+      .catch(() => setError(t("Could not load OSPE modules.", "تعذر تحميل الوحدات.")))
       .finally(() => setLoading(false));
   }, [loadStation]);
 
@@ -72,7 +74,7 @@ export function OspeSimulator() {
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <label className="text-sm font-medium text-muted-foreground">
-              تقييد الوحدة (اختياري)
+              {t("Filter by module (optional)", "تقييد الوحدة (اختياري)")}
             </label>
             <select
               value={filter}
@@ -86,24 +88,24 @@ export function OspeSimulator() {
               }}
               className="mt-2 block w-full rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
             >
-              <option value="all">كل الوحدات</option>
+              <option value="all">{t("All modules", "كل الوحدات")}</option>
               {modules.map((m) => (
                 <option key={m.folder} value={m.folder} disabled={m.locked}>
                   {m.moduleName}
-                  {m.locked ? " (مدفوع)" : ""} — {m.count} صورة
+                  {m.locked ? ` (${t("Locked", "مدفوع")})` : ""} — {m.count} {t("images", "صورة")}
                 </option>
               ))}
             </select>
           </div>
           <Button onClick={() => loadStation(filter)} disabled={loading}>
-            🎲 محطة جديدة
+            🎲 {t("New station", "محطة جديدة")}
           </Button>
         </div>
         <p className="mt-3 text-sm text-muted-foreground">
-          محطات تُراجع هذه الجلسة: {count}
+          {t(`Stations reviewed this session: ${count}`, `محطات تُراجع هذه الجلسة: ${count}`)}
           {lockedCount > 0 ? (
             <span className="ms-2 text-amber-600">
-              · {lockedCount} وحدة مدفوعة مؤمنة
+              · {lockedCount} {t("locked modules", "وحدة مدفوعة مؤمنة")}
             </span>
           ) : null}
         </p>
@@ -117,7 +119,7 @@ export function OspeSimulator() {
 
       {loading ? (
         <div className="rounded-xl bg-card p-16 text-center text-muted-foreground ring-1 ring-foreground/10">
-          جارٍ تحميل محطة عشوائية…
+          {t("Loading a random station…", "جارٍ تحميل محطة عشوائية…")}
         </div>
       ) : station ? (
         <div className="overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10">
@@ -139,12 +141,11 @@ export function OspeSimulator() {
           <div className="flex flex-wrap items-center justify-between gap-3 border-t px-5 py-4">
             {revealed ? (
               <p className="text-sm text-muted-foreground">
-                وضع المراجعة الذاتية: قارن إجابتك بدفاترك العملية أو الأطلس لهذه
-                المحطة.
+                {t("Self-review mode: compare your answer with your practical notes or atlas.", "وضع المراجعة الذاتية: قارن إجابتك بدفاترك العملية أو الأطلس لهذه المحطة.")}
               </p>
             ) : (
               <p className="text-sm text-muted-foreground">
-                حدّد البنية / التشخيص / العلامة، ثم تحقق من نفسك.
+                {t("Identify the structure, diagnosis, or sign, then check yourself.", "حدّد البنية / التشخيص / العلامة، ثم تحقق من نفسك.")}
               </p>
             )}
             <div className="flex gap-3">
@@ -155,11 +156,11 @@ export function OspeSimulator() {
                     loadStation(filter);
                   }}
                 >
-                  ✅ فهمتها → المحطة التالية
+                  ✅ {t("Got it → next station", "فهمتها → المحطة التالية")}
                 </Button>
               ) : (
                 <Button variant="outline" onClick={() => setRevealed(true)}>
-                  👁️ إظهار / مراجعة ذاتية
+                  👁️ {t("Reveal / self-review", "إظهار / مراجعة ذاتية")}
                 </Button>
               )}
             </div>
