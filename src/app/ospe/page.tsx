@@ -3,6 +3,7 @@ import { OspeSimulator } from "@/components/ospe-simulator";
 import { ExamMode } from "@/components/exam-mode";
 import { Navigation } from "@/components/navigation";
 import { FileText } from "lucide-react";
+import { getLocale, localize } from "@/shared/locale";
 
 const OSPE_PDFS = [
   { name: "OSPE CVS", file: "OSPE CVS.pdf", size: "80 MB" },
@@ -20,6 +21,7 @@ export default async function OspePage({
   searchParams: Promise<{ mode?: string }>;
 }) {
   const session = await requireUser();
+  const locale = await getLocale();
   const { mode } = await searchParams;
   const isExamMode = mode === "exam";
 
@@ -35,19 +37,19 @@ export default async function OspePage({
           <div className="mb-8 flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold">
-                {isExamMode ? "امتحان OSPE" : "محاكي OSPE"}
+                {isExamMode ? localize(locale, "OSPE exam", "امتحان OSPE") : localize(locale, "OSPE simulator", "محاكي OSPE")}
               </h1>
               <p className="mt-1 text-muted-foreground">
                 {isExamMode
-                  ? "امتحان صارم — وقت محدد، لا تراجع، تقييم تلقائي."
-                  : "مراجعة عشوائية للمحطات العملية من معارض الصور."}
+                  ? localize(locale, "A focused exam with a time limit, no review, and automatic scoring.", "امتحان صارم — وقت محدد، لا تراجع، تقييم تلقائي.")
+                  : localize(locale, "Random review of practical stations from the image galleries.", "مراجعة عشوائية للمحطات العملية من معارض الصور.")}
               </p>
             </div>
             <a
               href={isExamMode ? "/ospe" : "/ospe?mode=exam"}
               className="inline-flex h-10 items-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90"
             >
-              {isExamMode ? "وضع المراجعة" : "وضع الامتحان"}
+              {isExamMode ? localize(locale, "Review mode", "وضع المراجعة") : localize(locale, "Exam mode", "وضع الامتحان")}
             </a>
           </div>
 
@@ -57,10 +59,10 @@ export default async function OspePage({
           <div className="mt-6 rounded-xl bg-card p-6 ring-1 ring-foreground/10">
             <div className="mb-4 flex items-center gap-2">
               <FileText className="h-5 w-5 text-primary" />
-              <h2 className="text-lg font-bold">ملفات PDF للمرجع</h2>
+              <h2 className="text-lg font-bold">{localize(locale, "Reference PDFs", "ملفات PDF للمرجع")}</h2>
             </div>
             <p className="mb-4 text-sm text-muted-foreground">
-              ملفات PDF فيها كل المحطات مع الإجابات النموذجية.
+              {localize(locale, "PDF reference files with the stations and model answers.", "ملفات PDF فيها كل المحطات مع الإجابات النموذجية.")}
             </p>
             <div className="grid gap-3 sm:grid-cols-2">
               {OSPE_PDFS.map((pdf) => (

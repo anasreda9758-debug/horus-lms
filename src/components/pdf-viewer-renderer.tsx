@@ -6,6 +6,7 @@ import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Download, Maximize2, Minimize2 } from "lucide-react";
+import { useLocale } from "@/components/locale-provider";
 
 // This file is loaded in the browser only. pdf.js needs browser-only APIs such
 // as DOMMatrix, so evaluating it during server rendering would break a lecture page.
@@ -22,6 +23,7 @@ export function PdfViewerRenderer({
   pageStart?: number | null;
   pageEnd?: number | null;
 }) {
+  const { t } = useLocale();
   const [numPages, setNumPages] = useState(0);
   const [pageNumber, setPageNumber] = useState(1);
   const [jumpedForNumPages, setJumpedForNumPages] = useState(0);
@@ -42,7 +44,7 @@ export function PdfViewerRenderer({
 
   const onDocumentLoadError = useCallback((loadError: Error) => {
     setLoading(false);
-    setError("فشل تحميل الملف. حاول مرة أخرى.");
+    setError(t("Could not load the file. Please try again.", "فشل تحميل الملف. حاول مرة أخرى."));
     console.error("PDF load error:", loadError);
   }, []);
 
@@ -69,34 +71,34 @@ export function PdfViewerRenderer({
     <div className={`flex flex-col ${fullscreen ? "fixed inset-0 z-50 bg-background" : ""}`}>
       <div className="flex items-center justify-between gap-2 rounded-t-xl border border-border bg-card px-4 py-2">
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" onClick={() => setScale((value) => Math.max(0.5, value - 0.2))} disabled={scale <= 0.5} title="تصغير">
+          <Button variant="ghost" size="icon" onClick={() => setScale((value) => Math.max(0.5, value - 0.2))} disabled={scale <= 0.5} title={t("Zoom out", "تصغير")}>
             <ZoomOut className="h-4 w-4" />
           </Button>
           <span className="min-w-[3rem] text-center text-xs text-muted-foreground">{Math.round(scale * 100)}%</span>
-          <Button variant="ghost" size="icon" onClick={() => setScale((value) => Math.min(3, value + 0.2))} disabled={scale >= 3} title="تكبير">
+          <Button variant="ghost" size="icon" onClick={() => setScale((value) => Math.min(3, value + 0.2))} disabled={scale >= 3} title={t("Zoom in", "تكبير")}>
             <ZoomIn className="h-4 w-4" />
           </Button>
         </div>
 
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" onClick={prevPage} disabled={pageNumber <= minPage} title="السابق">
+          <Button variant="ghost" size="icon" onClick={prevPage} disabled={pageNumber <= minPage} title={t("Previous page", "السابق")}>
             <ChevronRight className="h-4 w-4" />
           </Button>
           <span className="text-sm text-muted-foreground" dir="ltr">
             {hasRange ? `${relative} / ${totalInRange}` : `${pageNumber} / ${numPages}`}
             {hasRange ? <span className="mx-1 text-xs opacity-60">(PDF: {pageNumber})</span> : null}
           </span>
-          <Button variant="ghost" size="icon" onClick={nextPage} disabled={pageNumber >= maxPage} title="التالي">
+          <Button variant="ghost" size="icon" onClick={nextPage} disabled={pageNumber >= maxPage} title={t("Next page", "التالي")}>
             <ChevronLeft className="h-4 w-4" />
           </Button>
         </div>
 
         <div className="flex items-center gap-1">
-          {!loading && !error && hasRange ? <span className="rounded-full bg-primary/10 px-3 py-1 text-xs text-primary">صفحات المحاضرة: {rangeStart}–{maxPage}</span> : null}
-          <a href={pdfUrl} download className="inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground" title="تحميل">
+          {!loading && !error && hasRange ? <span className="rounded-full bg-primary/10 px-3 py-1 text-xs text-primary">{t(`Lecture pages: ${rangeStart}–${maxPage}`, `صفحات المحاضرة: ${rangeStart}–${maxPage}`)}</span> : null}
+          <a href={pdfUrl} download className="inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground" title={t("Download", "تحميل")}>
             <Download className="h-4 w-4" />
           </a>
-          <Button variant="ghost" size="icon" onClick={() => setFullscreen((value) => !value)} title={fullscreen ? "تصغير" : "ملء الشاشة"}>
+          <Button variant="ghost" size="icon" onClick={() => setFullscreen((value) => !value)} title={fullscreen ? t("Exit fullscreen", "تصغير") : t("Fullscreen", "ملء الشاشة")}>
             {fullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
           </Button>
         </div>

@@ -7,9 +7,12 @@ import { eq } from "drizzle-orm";
 import { Navigation } from "@/components/navigation";
 import { SettingsForm } from "@/components/settings-form";
 import { Settings } from "lucide-react";
+import { getLocale, localize } from "@/shared/locale";
 
 export default async function SettingsPage() {
   const session = await requireUser();
+  const locale = await getLocale();
+  const t = (english: string, arabic: string) => localize(locale, english, arabic);
   const profile = await getProfile(session.user.id);
   const subs = await getActiveSubscriptions(session.user.id);
   const activeSub = subs.find((s) => s.expiresAt > new Date());
@@ -26,8 +29,8 @@ export default async function SettingsPage() {
               <Settings className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold">الإعدادات</h1>
-              <p className="mt-1 text-muted-foreground">إدارة حسابك وتفضيلاتك.</p>
+              <h1 className="text-3xl font-bold">{t("Settings", "الإعدادات")}</h1>
+              <p className="mt-1 text-muted-foreground">{t("Manage your account and preferences.", "إدارة حسابك وتفضيلاتك.")}</p>
             </div>
           </div>
 

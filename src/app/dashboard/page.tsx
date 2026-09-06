@@ -9,6 +9,7 @@ import { quizAttempt, questionBank } from "@/features/practice/schema";
 import { curriculumModule } from "@/features/curriculum/schema";
 import { and, eq, desc } from "drizzle-orm";
 import { Navigation } from "@/components/navigation";
+import { getLocale, localize } from "@/shared/locale";
 import {
   BookOpen,
   FlaskConical,
@@ -27,6 +28,8 @@ import {
 
 export default async function DashboardPage() {
   const session = await requireUser();
+  const locale = await getLocale();
+  const t = (english: string, arabic: string) => localize(locale, english, arabic);
   const user = session.user;
   const curriculum = await getCurriculum(user.id);
   const accuracy = await getModuleAccuracy(user.id);
@@ -87,7 +90,7 @@ export default async function DashboardPage() {
         <div className="mx-auto max-w-5xl">
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-3xl font-bold">مرحبًا {user.name}</h1>
+            <h1 className="text-3xl font-bold">{t(`Welcome back, ${user.name}`, `مرحبًا ${user.name}`)}</h1>
             <p className="mt-1 text-muted-foreground">{user.email}</p>
           </div>
 
@@ -98,32 +101,32 @@ export default async function DashboardPage() {
               <div className="flex items-center gap-4">
                 <ProgressRing percent={overallPercent} size={72} strokeWidth={6} />
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">التقدم الكلي</p>
+                  <p className="text-sm font-medium text-muted-foreground">{t("Overall progress", "التقدم الكلي")}</p>
                   <p className="text-2xl font-bold">{overallPercent}%</p>
-                  <p className="text-xs text-muted-foreground">{completedLectures}/{totalLectures} محاضرة</p>
+                  <p className="text-xs text-muted-foreground">{t(`${completedLectures}/${totalLectures} lectures`, `${completedLectures}/${totalLectures} محاضرة`)}</p>
                 </div>
               </div>
             </div>
 
             <StatCard
               icon={Zap}
-              label="المستوى"
+              label={t("Level", "المستوى")}
               value={`Lv.${profile.level}`}
               sub={`${profile.totalXp} XP`}
               color="text-yellow-600 bg-yellow-50 dark:bg-yellow-950/40"
             />
             <StatCard
               icon={Target}
-              label="دقة الاختبارات"
+              label={t("Quiz accuracy", "دقة الاختبارات")}
               value={totalAnswered > 0 ? `${avgAccuracy}%` : "—"}
-              sub={totalAnswered > 0 ? `${totalCorrect}/${totalAnswered} صحيحة` : "لم تبدأ بعد"}
+              sub={totalAnswered > 0 ? t(`${totalCorrect}/${totalAnswered} correct`, `${totalCorrect}/${totalAnswered} صحيحة`) : t("Not started", "لم تبدأ بعد")}
               color="text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40"
             />
             <StatCard
               icon={RefreshCw}
-              label="مراجعة معلقة"
+              label={t("Due review", "مراجعة معلقة")}
               value={String(dueReviewCount)}
-              sub={dueReviewCount > 0 ? "أسئلة بانتظار المراجعة" : "لا توجد مراجعات"}
+              sub={dueReviewCount > 0 ? t("Questions waiting for review", "أسئلة بانتظار المراجعة") : t("No reviews due", "لا توجد مراجعات")}
               color="text-purple-600 bg-purple-50 dark:bg-purple-950/40"
               href="/review"
             />
@@ -131,14 +134,14 @@ export default async function DashboardPage() {
 
           {/* Quick Actions */}
           <div className="mb-8">
-            <h2 className="mb-4 text-lg font-semibold">روابط سريعة</h2>
+            <h2 className="mb-4 text-lg font-semibold">{t("Quick access", "روابط سريعة")}</h2>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
-              <QuickAction href="/curriculum" icon={BookOpen} label="تصفح المنهج" />
-              <QuickAction href="/review" icon={RefreshCw} label="مراجعة الأسئلة" badge={dueReviewCount > 0 ? String(dueReviewCount) : undefined} />
-              <QuickAction href="/flashcards" icon={Brain} label="البطاقات التعليمية" />
-              <QuickAction href="/cases" icon={Stethoscope} label="الحالات السريرية" />
-              <QuickAction href="/ospe" icon={FlaskConical} label="محاكي OSPE" />
-              <QuickAction href="/battles" icon={Swords} label="تحدي الأقران" />
+              <QuickAction href="/curriculum" icon={BookOpen} label={t("Browse curriculum", "تصفح المنهج")} />
+              <QuickAction href="/review" icon={RefreshCw} label={t("Question review", "مراجعة الأسئلة")} badge={dueReviewCount > 0 ? String(dueReviewCount) : undefined} />
+              <QuickAction href="/flashcards" icon={Brain} label={t("Flashcards", "البطاقات التعليمية")} />
+              <QuickAction href="/cases" icon={Stethoscope} label={t("Clinical cases", "الحالات السريرية")} />
+              <QuickAction href="/ospe" icon={FlaskConical} label={t("OSPE simulator", "محاكي OSPE")} />
+              <QuickAction href="/battles" icon={Swords} label={t("Peer challenge", "تحدي الأقران")} />
             </div>
           </div>
 
@@ -146,21 +149,21 @@ export default async function DashboardPage() {
             {/* Module Progress Breakdown */}
             <div className="rounded-2xl border border-border bg-card p-6">
               <div className="mb-4 flex items-center justify-between">
-                <h2 className="font-semibold">تقدم المنهج</h2>
+                <h2 className="font-semibold">{t("Curriculum progress", "تقدم المنهج")}</h2>
                 <Link href="/curriculum" className="flex items-center gap-1 text-xs text-primary hover:underline">
-                  عرض الكل <ChevronLeft className="h-3 w-3" />
+                  {t("View all", "عرض الكل")} <ChevronLeft className="h-3 w-3" />
                 </Link>
               </div>
 
               {/* Term breakdown */}
               <div className="mb-4 grid grid-cols-2 gap-3">
                 <div className="rounded-xl bg-muted/50 p-3 text-center">
-                  <p className="text-xs text-muted-foreground">الترم الأول</p>
+                  <p className="text-xs text-muted-foreground">{t("Term 1", "الترم الأول")}</p>
                   <ProgressRing percent={term1Percent} size={48} strokeWidth={4} />
                   <p className="mt-1 text-sm font-bold">{term1Percent}%</p>
                 </div>
                 <div className="rounded-xl bg-muted/50 p-3 text-center">
-                  <p className="text-xs text-muted-foreground">الترم الثاني</p>
+                  <p className="text-xs text-muted-foreground">{t("Term 2", "الترم الثاني")}</p>
                   <ProgressRing percent={term2Percent} size={48} strokeWidth={4} />
                   <p className="mt-1 text-sm font-bold">{term2Percent}%</p>
                 </div>
@@ -194,16 +197,16 @@ export default async function DashboardPage() {
             {/* Recent Quizzes */}
             <div className="rounded-2xl border border-border bg-card p-6">
               <div className="mb-4 flex items-center justify-between">
-                <h2 className="font-semibold">آخر الاختبارات</h2>
+                <h2 className="font-semibold">{t("Recent quizzes", "آخر الاختبارات")}</h2>
                 <Link href="/quiz/history" className="flex items-center gap-1 text-xs text-primary hover:underline">
-                  عرض الكل <ChevronLeft className="h-3 w-3" />
+                  {t("View all", "عرض الكل")} <ChevronLeft className="h-3 w-3" />
                 </Link>
               </div>
               {recentQuizzes.length === 0 ? (
                 <div className="py-8 text-center text-sm text-muted-foreground">
                   <Clock className="mx-auto mb-2 h-8 w-8 text-muted-foreground/40" />
-                  <p>لم تقم بأي اختبار بعد.</p>
-                  <Link href="/curriculum" className="mt-2 inline-block text-primary hover:underline">ابدأ الآن</Link>
+                  <p>{t("No quizzes completed yet.", "لم تقم بأي اختبار بعد.")}</p>
+                  <Link href="/curriculum" className="mt-2 inline-block text-primary hover:underline">{t("Get started", "ابدأ الآن")}</Link>
                 </div>
               ) : (
                 <ul className="space-y-2">
@@ -225,7 +228,7 @@ export default async function DashboardPage() {
                           </p>
                         </div>
                         <span className="text-xs text-muted-foreground">
-                          {q.completedAt ? new Date(q.completedAt).toLocaleDateString("ar-EG", { month: "short", day: "numeric" }) : ""}
+                          {q.completedAt ? new Date(q.completedAt).toLocaleDateString(locale === "ar" ? "ar-EG" : "en-US", { month: "short", day: "numeric" }) : ""}
                         </span>
                       </li>
                     );
@@ -239,9 +242,9 @@ export default async function DashboardPage() {
           {accuracy.length > 0 && (
             <div className="mt-6 rounded-2xl border border-border bg-card p-6">
               <div className="mb-4 flex items-center justify-between">
-                <h2 className="font-semibold">الدقة حسب الموديول</h2>
+                <h2 className="font-semibold">{t("Accuracy by module", "الدقة حسب الموديول")}</h2>
                 <Link href="/quiz/analytics" className="flex items-center gap-1 text-xs text-primary hover:underline">
-                  تحليلات مفصلة <ChevronLeft className="h-3 w-3" />
+                  {t("Detailed analytics", "تحليلات مفصلة")} <ChevronLeft className="h-3 w-3" />
                 </Link>
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
@@ -267,7 +270,7 @@ export default async function DashboardPage() {
                         style={{ width: `${m.percent}%` }}
                       />
                     </div>
-                    <p className="mt-1 text-[11px] text-muted-foreground">{m.correct}/{m.total} صحيحة</p>
+                    <p className="mt-1 text-[11px] text-muted-foreground">{t(`${m.correct}/${m.total} correct`, `${m.correct}/${m.total} صحيحة`)}</p>
                   </div>
                 ))}
               </div>
@@ -280,11 +283,11 @@ export default async function DashboardPage() {
               <div className="flex items-center gap-3">
                 <CreditCard className="h-5 w-5 text-emerald-600" />
                 <div>
-                  <p className="text-sm font-medium text-emerald-600">اشتراكك نشط</p>
+                  <p className="text-sm font-medium text-emerald-600">{t("Your subscription is active", "اشتراكك نشط")}</p>
                   <p className="text-xs text-muted-foreground">
                     {subs.length === 1
-                      ? `ينتهي في ${subs[0].expiresAt.toLocaleDateString("ar-EG")}`
-                      : `${subs.length} اشتراكات نشطة`}
+                      ? t(`Ends ${subs[0].expiresAt.toLocaleDateString(locale === "ar" ? "ar-EG" : "en-US")}`, `ينتهي في ${subs[0].expiresAt.toLocaleDateString("ar-EG")}`)
+                      : t(`${subs.length} active subscriptions`, `${subs.length} اشتراكات نشطة`)}
                   </p>
                 </div>
               </div>

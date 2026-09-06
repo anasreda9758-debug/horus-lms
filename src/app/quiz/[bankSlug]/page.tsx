@@ -6,6 +6,7 @@ import { getBankBySlug, getQuizQuestionsRandom, startAttempt } from "@/features/
 import { QuizRunner } from "@/components/quiz-runner";
 import { Navigation } from "@/components/navigation";
 import { Lock, HelpCircle, Clock, BarChart3 } from "lucide-react";
+import { getLocale, localize } from "@/shared/locale";
 
 export default async function QuizPage({
   params,
@@ -17,10 +18,12 @@ export default async function QuizPage({
   const { bankSlug } = await params;
   const { count: countParam, difficulty: diffParam, time: timeParam } = await searchParams;
   const session = await requireUser();
+  const locale = await getLocale();
+  const t = (english: string, arabic: string) => localize(locale, english, arabic);
   const bank = await getBankBySlug(bankSlug);
   if (!bank) notFound();
 
-  const moduleName = bank.module?.name ?? "هذا الموديول";
+  const moduleName = bank.module?.name ?? t("this module", "هذا الموديول");
   const access = await hasModuleAccess(
     session.user.id,
     bank.module ?? {
@@ -77,7 +80,7 @@ export default async function QuizPage({
             <div className="mt-3 flex items-center gap-2">
               <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
                 <HelpCircle className="h-3 w-3" />
-                اختبار من {bank.title}
+                {t("Quiz", "اختبار")}: {bank.title}
               </span>
               <span className="text-sm text-muted-foreground">{moduleName}</span>
               <Link
@@ -85,7 +88,7 @@ export default async function QuizPage({
                 className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1 text-xs text-muted-foreground hover:text-foreground"
               >
                 <BarChart3 className="h-3 w-3" />
-                تاريخ الاختبارات
+                {t("Quiz history", "تاريخ الاختبارات")}
               </Link>
             </div>
           </div>
@@ -94,16 +97,16 @@ export default async function QuizPage({
             <div className="rounded-2xl border border-amber-200 bg-amber-50 p-8 text-center dark:border-amber-900 dark:bg-amber-950/20">
               <Lock className="mx-auto mb-4 h-12 w-12 text-amber-400" />
               <h2 className="mb-2 text-xl font-semibold">
-                هذا الاختبار مدفوع
+                {t("This quiz is locked", "هذا الاختبار مدفوع")}
               </h2>
               <p className="mb-6 text-muted-foreground">
-                اشترِ الموديول أو الترم أو السنة لفتح اختبارات هذا الموديول.
+                {t("Purchase the module, term, or academic year to unlock its quizzes.", "اشترِ الموديول أو الترم أو السنة لفتح اختبارات هذا الموديول.")}
               </p>
               <Link
                 href="/pricing"
                 className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
               >
-                عرض الأسعار والاشتراك
+                {t("View plans", "عرض الأسعار والاشتراك")}
               </Link>
             </div>
           ) : hasConfig ? (
@@ -117,12 +120,12 @@ export default async function QuizPage({
           ) : (
             <div className="rounded-2xl border border-border bg-card p-8 text-center">
               <HelpCircle className="mx-auto mb-4 h-12 w-12 text-muted-foreground/40" />
-              <h2 className="mb-2 text-xl font-semibold">إعداد الاختبار</h2>
-              <p className="mb-6 text-muted-foreground">اختار إعدادات الاختبار</p>
+              <h2 className="mb-2 text-xl font-semibold">{t("Quiz setup", "إعداد الاختبار")}</h2>
+              <p className="mb-6 text-muted-foreground">{t("Choose your quiz settings", "اختار إعدادات الاختبار")}</p>
 
               {/* Question count */}
               <div className="mb-6">
-                <p className="mb-3 text-sm font-medium text-muted-foreground">عدد الأسئلة</p>
+                <p className="mb-3 text-sm font-medium text-muted-foreground">{t("Question count", "عدد الأسئلة")}</p>
                 <div className="flex flex-wrap justify-center gap-4">
                   {[10, 25, 50].map((n) => (
                     <Link
@@ -135,7 +138,7 @@ export default async function QuizPage({
                       }`}
                     >
                       <span className="text-3xl font-bold">{n}</span>
-                      <span className="mt-1 text-sm text-muted-foreground">سؤال</span>
+                      <span className="mt-1 text-sm text-muted-foreground">{t("questions", "سؤال")}</span>
                     </Link>
                   ))}
                 </div>
@@ -143,13 +146,13 @@ export default async function QuizPage({
 
               {/* Difficulty */}
               <div className="mb-6">
-                <p className="mb-3 text-sm font-medium text-muted-foreground">مستوى الصعوبة</p>
+                <p className="mb-3 text-sm font-medium text-muted-foreground">{t("Difficulty", "مستوى الصعوبة")}</p>
                 <div className="flex flex-wrap justify-center gap-3">
                   {[
-                    { value: "", label: "الكل", color: "border-border" },
-                    { value: "easy", label: "سهل", color: "border-emerald-500" },
-                    { value: "medium", label: "متوسط", color: "border-amber-500" },
-                    { value: "hard", label: "صعب", color: "border-red-500" },
+                    { value: "", label: t("All", "الكل"), color: "border-border" },
+                    { value: "easy", label: t("Easy", "سهل"), color: "border-emerald-500" },
+                    { value: "medium", label: t("Medium", "متوسط"), color: "border-amber-500" },
+                    { value: "hard", label: t("Hard", "صعب"), color: "border-red-500" },
                   ].map((d) => (
                     <Link
                       key={d.value}
@@ -170,14 +173,14 @@ export default async function QuizPage({
               <div>
                 <p className="mb-3 text-sm font-medium text-muted-foreground">
                   <Clock className="mr-1 inline h-3.5 w-3.5" />
-                  مهلة الوقت (اختياري)
+                  {t("Time limit (optional)", "مهلة الوقت (اختياري)")}
                 </p>
                 <div className="flex flex-wrap justify-center gap-3">
                   {[
-                    { value: "", label: "بدون مهلة" },
-                    { value: "600", label: "10 دقائق" },
-                    { value: "1200", label: "20 دقيقة" },
-                    { value: "1800", label: "30 دقيقة" },
+                    { value: "", label: t("No time limit", "بدون مهلة") },
+                    { value: "600", label: t("10 minutes", "10 دقائق") },
+                    { value: "1200", label: t("20 minutes", "20 دقيقة") },
+                    { value: "1800", label: t("30 minutes", "30 دقيقة") },
                   ].map((t) => (
                     <Link
                       key={t.value}

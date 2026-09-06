@@ -103,12 +103,13 @@ export async function GET() {
       // review schedule intact but present the same stored source through the
       // clearer question style used by current cards.
       const legacyIndex = c.front.match(/\s—\skey point\s(\d+)$/i)?.[1];
-      const refreshed = legacyIndex && c.lecture
+      const needsEnglishFront = /[\u0600-\u06FF]/.test(c.front);
+      const refreshed = c.lecture && (legacyIndex || needsEnglishFront)
         ? createSourceFlashcards(
             c.lecture.title,
             c.lecture.content ?? "",
             c.lecture.summaryJson,
-          )[Number(legacyIndex) - 1]
+          )[legacyIndex ? Number(legacyIndex) - 1 : 0]
         : null;
       return {
         id: c.id,

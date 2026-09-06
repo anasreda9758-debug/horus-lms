@@ -7,6 +7,7 @@ import { getBankForModule } from "@/features/practice/queries";
 import { ProgressBar } from "@/components/progress-bar";
 import { CompleteButton } from "@/components/complete-button";
 import { Navigation } from "@/components/navigation";
+import { getLocale, localize } from "@/shared/locale";
 import {
   BookOpen,
   FileText,
@@ -23,6 +24,7 @@ export default async function ModulePage({
 }) {
   const { slug } = await params;
   const session = await requireUser();
+  const locale = await getLocale();
   const mod = await getModuleBySlug(session.user.id, slug);
   if (!mod) notFound();
   const bank = await getBankForModule(mod.id);
@@ -40,7 +42,7 @@ export default async function ModulePage({
           {/* Breadcrumb */}
           <div className="mb-6 flex items-center gap-2 text-sm text-muted-foreground">
             <Link href="/curriculum" className="hover:text-foreground">
-              المنهج
+              {localize(locale, "Curriculum", "المنهج")}
             </Link>
             <span>/</span>
             <span className="text-foreground">{mod.name}</span>
@@ -58,18 +60,18 @@ export default async function ModulePage({
               {!mod.isFree ? (
                 <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-amber-500/10 px-3 py-1 text-xs font-medium text-amber-600">
                   <Lock className="h-3 w-3" />
-                  مدفوع
+                  {localize(locale, "Paid", "مدفوع")}
                 </span>
               ) : (
                 <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-600">
-                  مجاني
+                  {localize(locale, "Free", "مجاني")}
                 </span>
               )}
             </div>
             <div className="mt-4 flex items-center gap-3">
               <ProgressBar percent={mod.percent} />
               <span className="shrink-0 text-sm text-muted-foreground">
-                {mod.completedLectures}/{mod.totalLectures} مكتملة
+                {mod.completedLectures}/{mod.totalLectures} {localize(locale, "completed", "مكتملة")}
               </span>
             </div>
           </div>
@@ -78,17 +80,16 @@ export default async function ModulePage({
             <div className="rounded-2xl border border-amber-200 bg-amber-50 p-8 text-center dark:border-amber-900 dark:bg-amber-950/20">
               <Lock className="mx-auto mb-4 h-12 w-12 text-amber-400" />
               <h2 className="mb-2 text-xl font-semibold">
-                هذا الموديول مدفوع
+                {localize(locale, "This module requires access", "هذا الموديول مدفوع")}
               </h2>
               <p className="mb-6 text-muted-foreground">
-                اشترِ الموديول أو الترم أو السنة بالكامل لفتح المحاضرات
-                والاختبارات والمعلم الذكي.
+                {localize(locale, "Subscribe to this module, term, or the full year to unlock lectures, quizzes, and the AI tutor.", "اشترِ الموديول أو الترم أو السنة بالكامل لفتح المحاضرات والاختبارات والمعلم الذكي.")}
               </p>
               <Link
                 href="/pricing"
                 className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
               >
-                عرض الأسعار والاشتراك
+                {localize(locale, "View plans", "عرض الأسعار والاشتراك")}
               </Link>
             </div>
           ) : (
@@ -100,12 +101,12 @@ export default async function ModulePage({
                   className="mb-6 inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
                 >
                   <FlaskConical className="h-4 w-4" />
-                  اختبار الموديول ({bank.title})
+                  {localize(locale, `Module quiz (${bank.title})`, `اختبار الموديول (${bank.title})`)}
                 </Link>
               ) : null}
 
               {/* Lectures */}
-              {renderGroupedLectures(mod.lectures, mod.slug)}
+              {renderGroupedLectures(mod.lectures, mod.slug, locale)}
             </>
           )}
         </div>
@@ -139,11 +140,12 @@ const KIND_ICONS: Record<string, typeof BookOpen> = {
 
 function renderGroupedLectures(
   lectures: LectureRow[],
-  moduleSlug: string
+  moduleSlug: string,
+  locale: "en" | "ar",
 ) {
   const groups = new Map<string, Map<string, LectureRow[]>>();
   for (const l of lectures) {
-    const subject = l.subject ?? "عام";
+    const subject = l.subject ?? localize(locale, "General", "عام");
     const kind = l.kind ?? "lecture";
     if (!groups.has(subject)) groups.set(subject, new Map());
     const kinds = groups.get(subject)!;
@@ -159,7 +161,7 @@ function renderGroupedLectures(
       <div className="rounded-2xl border border-border bg-card p-12 text-center">
         <BookOpen className="mx-auto mb-4 h-12 w-12 text-muted-foreground/40" />
         <p className="text-muted-foreground">
-          لا توجد محاضرات مفصّلة لهذا الموديول بعد.
+          {localize(locale, "No individual lectures have been added to this module yet.", "لا توجد محاضرات مفصّلة لهذا الموديول بعد.")}
         </p>
       </div>
     );
@@ -176,7 +178,7 @@ function renderGroupedLectures(
               <div key={kind} className="mb-4">
                 <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   <KindIcon className="h-3.5 w-3.5" />
-                  {KIND_LABELS[kind] ?? kind}
+                  {locale === "ar" ? KIND_LABELS[kind] ?? kind : kind === "lecture" ? "Lectures" : kind === "seminar" ? "Seminars" : kind === "practical" ? "Practical" : kind}
                 </div>
                 <ul className="space-y-2">
                   {items.map((l) => (
@@ -210,7 +212,7 @@ function renderGroupedLectures(
                           {l.durationMin ? (
                             <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
                               <Clock className="h-3 w-3" />
-                              {l.durationMin} دقيقة
+                              {l.durationMin} {localize(locale, "min", "دقيقة")}
                             </p>
                           ) : null}
                         </div>

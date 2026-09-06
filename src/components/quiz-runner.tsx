@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Clock, Pause, Play, Bookmark, BookmarkCheck } from "lucide-react";
+import { useLocale } from "@/components/locale-provider";
 
 type QuizQuestion = {
   id: string;
@@ -33,10 +34,10 @@ function formatTime(sec: number) {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
-function difficultyBadge(d: string) {
-  if (d === "easy") return { text: "سهل", cls: "bg-emerald-500/10 text-emerald-600" };
-  if (d === "hard") return { text: "صعب", cls: "bg-red-500/10 text-red-600" };
-  return { text: "متوسط", cls: "bg-amber-500/10 text-amber-600" };
+function difficultyBadge(d: string, t: (english: string, arabic: string) => string) {
+  if (d === "easy") return { text: t("Easy", "سهل"), cls: "bg-emerald-500/10 text-emerald-600" };
+  if (d === "hard") return { text: t("Hard", "صعب"), cls: "bg-red-500/10 text-red-600" };
+  return { text: t("Medium", "متوسط"), cls: "bg-amber-500/10 text-amber-600" };
 }
 
 export function QuizRunner({
@@ -53,6 +54,7 @@ export function QuizRunner({
   attemptId?: string | null;
 }) {
   const router = useRouter();
+  const { t } = useLocale();
   const [index, setIndex] = useState(0);
   const [selected, setSelected] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -177,41 +179,41 @@ export function QuizRunner({
   if (result) {
     return (
       <div className="rounded-xl bg-card p-6 ring-1 ring-foreground/10">
-        <h2 className="text-2xl font-bold">نتيجة الاختبار</h2>
+        <h2 className="text-2xl font-bold">{t("Quiz result", "نتيجة الاختبار")}</h2>
         <p className="mt-3 text-5xl font-bold">
           {result.percent}%
         </p>
         <p className="mt-2 text-muted-foreground">
-          {result.score} من {result.total} إجابة صحيحة
+          {t(`${result.score} of ${result.total} answers correct`, `${result.score} من ${result.total} إجابة صحيحة`)}
         </p>
         {timeLimitSec ? (
           <p className="mt-1 text-sm text-muted-foreground">
-            الوقت المستخدم: {formatTime(timeLimitSec - timeLeft)} / {formatTime(timeLimitSec)}
+            {t("Time used", "الوقت المستخدم")}: {formatTime(timeLimitSec - timeLeft)} / {formatTime(timeLimitSec)}
           </p>
         ) : null}
         <div className="mt-6 flex flex-wrap gap-3">
           <Button variant="outline" onClick={() => router.push(`/quiz/${bankSlug}`)}>
-            إعادة الاختبار
+            {t("Try again", "إعادة الاختبار")}
           </Button>
           <Button onClick={() => router.push(`/quiz/history`)}>
-            تاريخ الاختبارات
+            {t("Quiz history", "تاريخ الاختبارات")}
           </Button>
           <Button onClick={() => router.push(`/curriculum/${moduleSlug}`)}>
-            العودة للموديول
+            {t("Back to module", "العودة للموديول")}
           </Button>
         </div>
       </div>
     );
   }
 
-  const diff = difficultyBadge(q.difficulty);
+  const diff = difficultyBadge(q.difficulty, t);
 
   return (
     <div>
       {/* Header bar */}
       <div className="mb-3 flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
-          السؤال {index + 1} من {questions.length} · أُجيب: {answered}
+          {t(`Question ${index + 1} of ${questions.length} · Answered: ${answered}`, `السؤال ${index + 1} من ${questions.length} · أُجيب: ${answered}`)}
         </p>
         {timeLimitSec ? (
           <div className="flex items-center gap-2">
@@ -238,7 +240,7 @@ export function QuizRunner({
             <button
               onClick={toggleBookmark}
               className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-              title={bookmarked ? "إزالة من المحفوظات" : "حفظ السؤال"}
+              title={bookmarked ? t("Remove bookmark", "إزالة من المحفوظات") : t("Save question", "حفظ السؤال")}
             >
               {bookmarked ? <BookmarkCheck className="h-4 w-4 text-primary" /> : <Bookmark className="h-4 w-4" />}
             </button>
@@ -286,7 +288,7 @@ export function QuizRunner({
             }`}
           >
             <p className={feedback.correct ? "text-emerald-600" : "text-red-600"}>
-              {feedback.correct ? "إجابة صحيحة" : "إجابة خاطئة"}
+              {feedback.correct ? t("Correct answer", "إجابة صحيحة") : t("Incorrect answer", "إجابة خاطئة")}
             </p>
             {feedback.explanation ? (
               <p className="mt-1 text-muted-foreground">{feedback.explanation}</p>
@@ -298,16 +300,16 @@ export function QuizRunner({
           {feedback ? (
             isLast ? (
               <Button className="ms-auto" onClick={finish} disabled={busy}>
-                إنهاء الاختبار
+                {t("Finish quiz", "إنهاء الاختبار")}
               </Button>
             ) : (
               <Button className="ms-auto" onClick={next}>
-                السؤال التالي
+                {t("Next question", "السؤال التالي")}
               </Button>
             )
           ) : (
             <Button className="ms-auto" onClick={submit} disabled={!selected || busy || timerPaused}>
-              إرسال الإجابة
+              {t("Submit answer", "إرسال الإجابة")}
             </Button>
           )}
         </div>

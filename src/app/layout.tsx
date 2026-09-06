@@ -1,22 +1,13 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import Script from "next/script";
-import { Geist, Geist_Mono } from "next/font/google";
+import { cookies } from "next/headers";
+import { LocaleProvider, type AppLocale } from "@/components/locale-provider";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
 export const metadata: Metadata = {
-  title: "منصة التعلم الذكية",
-  description: "منصة تعليمية ذكية لطلاب الطب — منهج منظّم، محاضرات، اختبارات، ومساعد ذكي",
+  title: "Horus MED — Medical Learning Platform",
+  description: "A structured learning platform for medical students: lectures, practice, and study tools.",
 };
 
 // NOTE: the extension-artifact cleanup lives in public/ext-cleanup.js and is
@@ -24,16 +15,20 @@ export const metadata: Metadata = {
 // triggers React's "script tag while rendering" dev error, so it must stay
 // external.
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default async function RootLayout({ children }: { children: ReactNode }) {
+  const cookieStore = await cookies();
+  const locale: AppLocale = cookieStore.get("horus_locale")?.value === "ar" ? "ar" : "en";
+  const theme = cookieStore.get("horus_theme")?.value === "light" ? "light" : "dark";
   return (
     <html
-      lang="ar"
-      dir="rtl"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      lang={locale}
+      dir={locale === "ar" ? "rtl" : "ltr"}
+      className={`h-full antialiased ${theme === "dark" ? "dark" : ""}`}
+      style={{ colorScheme: theme }}
     >
       <body suppressHydrationWarning className="min-h-full flex flex-col">
         <Script src="/ext-cleanup.js" strategy="beforeInteractive" />
-        {children}
+        <LocaleProvider locale={locale}>{children}</LocaleProvider>
       </body>
     </html>
   );

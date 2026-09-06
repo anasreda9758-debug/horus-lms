@@ -33,6 +33,10 @@ function tidyPoint(value: string) {
     .replace(/\.{3,}/g, "…");
 }
 
+function isEnglishMedicalText(value: string) {
+  return !/[\u0600-\u06FF]/.test(value);
+}
+
 function questionForPoint(title: string, point: string) {
   const cleaned = tidyPoint(point);
   const term = cleaned.match(
@@ -40,15 +44,15 @@ function questionForPoint(title: string, point: string) {
   )?.[1]?.trim();
 
   if (term && !/^the\s+(response|drug|patient|lecture)/i.test(term)) {
-    return `ما الذي يميّز «${term}»؟`;
+    return `What characterizes “${term}”?`;
   }
-  return `ما النقطة الأساسية في «${title}»؟`;
+  return `What is the key point in “${title}”?`;
 }
 
 /** Free, local fallback used when a hosted AI model is not configured. */
 export function createSourceFlashcards(title: string, content: string, summary: Summary) {
   const points = [...new Set(studyPoints(content, summary).map(tidyPoint))]
-    .filter((point) => point.length >= 12 && point.length <= 360)
+    .filter((point) => point.length >= 12 && point.length <= 360 && isEnglishMedicalText(point))
     .slice(0, 12);
   return points.map((point) => ({
     front: questionForPoint(title, point),
@@ -58,7 +62,7 @@ export function createSourceFlashcards(title: string, content: string, summary: 
 
 /** A source-grounded study case, without adding unsupported medical facts. */
 export function createSourceClinicalCase(title: string, content: string, summary: Summary) {
-  const points = studyPoints(content, summary);
+  const points = studyPoints(content, summary).filter(isEnglishMedicalText);
   const selected = points.slice(0, 3);
   const overview = clean(summary?.overview ?? selected[0] ?? `Review the source material for ${title}.`);
   return {
@@ -79,7 +83,7 @@ export function createSourceTutorReply(
   question: string,
 ) {
   const points = [...new Set(studyPoints(content, summary).map(tidyPoint))]
-    .filter((point) => point.length >= 12)
+    .filter((point) => point.length >= 12 && isEnglishMedicalText(point))
     .slice(0, 8);
   const overview = tidyPoint(summary?.overview ?? "");
   const lower = question.toLowerCase();
@@ -94,22 +98,22 @@ export function createSourceTutorReply(
   const relevant = ranked.filter((item) => item.score > 0).map((item) => item.point).slice(0, 4);
   const selected = (relevant.length ? relevant : points).slice(0, 4);
 
-  if (/ملخص|summary/.test(lower)) {
-    return [overview || `ملخص «${title}».`, ...selected.map((point) => `• ${point}`)].join("\n");
+  if (/ملخص|summary|summari[sz]e/.test(lower)) {
+    return [overview || `Summary of “${title}”.`, ...selected.map((point) => `• ${point}`)].join("\n");
   }
-  if (/اختبار|امتحان|mcq|سؤال|اختبر/.test(lower)) {
+  if (/اختبار|امتحان|mcq|سؤال|اختبر|question/.test(lower)) {
     const answer = selected[0] ?? overview;
     return answer
-      ? `سؤال مراجعة: ما العبارة الصحيحة عن «${title}»؟\n\nالإجابة من محتوى المحاضرة: ${answer}`
-      : `لا توجد نقاط نصية كافية لإنشاء سؤال لهذه المحاضرة.`;
+      ? `Review question: Which statement is correct about “${title}”?\n\nAnswer from the lecture source: ${answer}`
+      : "There are not enough source points to create a question for this lecture.";
   }
   if (/مصطلح|terms?|تعريف|define/.test(lower)) {
     return selected.length
       ? selected.map((point) => `• ${point}`).join("\n")
-      : `لا توجد مصطلحات نصية كافية في «${title}».`;
+      : `There are not enough source terms in “${title}”.`;
   }
 
-  return [overview || `في «${title}» ركّز على النقاط التالية:`, ...selected.map((point) => `• ${point}`)].join("\n");
+  return [overview || `In “${title}”, focus on the following points:`, ...selected.map((point) => `• ${point}`)].join("\n");
 }
 
 export function evaluateSourceAnswers(answers: string[], modelAnswers: string[]) {
@@ -121,7 +125,7 @@ export function evaluateSourceAnswers(answers: string[], modelAnswers: string[])
   return {
     score: Math.min(100, score),
     feedback: score >= 70
-      ? "إجابتك تغطي معظم النقاط الموجودة في المصدر. راجع التفاصيل للتثبيت."
-      : "راجع الإجابة النموذجية وقارنها بمحتوى المحاضرة، ثم أعد المحاولة مع ذكر المصطلحات الأساسية.",
+      ? "Your answer covers most source points. Review the details to consolidate them."
+      : "Review the model answer against the lecture source, then try again using the key medical terms.",
   };
 }

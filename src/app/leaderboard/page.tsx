@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useLocale } from "@/components/locale-provider";
 
 type LeaderboardEntry = {
   rank: number;
@@ -23,6 +24,7 @@ type Profile = {
 };
 
 export default function LeaderboardPage() {
+  const { t } = useLocale();
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [myRank, setMyRank] = useState(0);
@@ -42,32 +44,32 @@ export default function LeaderboardPage() {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <p className="text-muted-foreground">جارٍ التحميل…</p>
+        <p className="text-muted-foreground">{t("Loading…", "جارٍ التحميل…")}</p>
       </div>
     );
   }
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
-      <h1 className="mb-8 text-3xl font-bold">🏆 لوحة المتصدرين</h1>
+      <h1 className="mb-8 text-3xl font-bold">🏆 {t("Leaderboard", "لوحة المتصدرين")}</h1>
 
       {profile && (
         <div className="mb-8 rounded-xl bg-gradient-to-r from-primary/10 to-primary/5 p-6 ring-1 ring-primary/20">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-muted-foreground">أداؤك</p>
-              <p className="text-2xl font-bold">المستوى {profile.level}</p>
+              <p className="text-sm text-muted-foreground">{t("Your performance", "أداؤك")}</p>
+              <p className="text-2xl font-bold">{t(`Level ${profile.level}`, `المستوى ${profile.level}`)}</p>
               <p className="text-sm">{profile.totalXp} XP</p>
             </div>
             <div className="text-right">
-              <p className="text-sm text-muted-foreground">ترتيبك</p>
+              <p className="text-sm text-muted-foreground">{t("Your rank", "ترتيبك")}</p>
               <p className="text-2xl font-bold">#{myRank || "—"}</p>
             </div>
           </div>
           <div className="mt-4">
             <div className="flex justify-between text-xs text-muted-foreground">
-              <span>المستوى {profile.level}</span>
-              <span>{profile.xpToNext} XP للمستوى التالي</span>
+              <span>{t(`Level ${profile.level}`, `المستوى ${profile.level}`)}</span>
+              <span>{t(`${profile.xpToNext} XP to next level`, `${profile.xpToNext} XP للمستوى التالي`)}</span>
             </div>
             <div className="mt-1 h-2 rounded-full bg-primary/20">
               <div
@@ -95,7 +97,7 @@ export default function LeaderboardPage() {
             <div className="flex-1">
               <p className="font-medium">{e.userName}</p>
               <p className="text-xs text-muted-foreground">
-                المستوى {e.level} · {e.battlesWon}W / {e.battlesLost}L
+                {t(`Level ${e.level}`, `المستوى ${e.level}`)} · {e.battlesWon}W / {e.battlesLost}L
               </p>
             </div>
             <div className="text-right">
@@ -110,13 +112,13 @@ export default function LeaderboardPage() {
           href="/battles"
           className="flex-1 rounded-xl bg-primary px-4 py-3 text-center font-medium text-primary-foreground hover:bg-primary/90"
         >
-          ⚔️ تحدي صديق
+          ⚔️ {t("Challenge a friend", "تحدي صديق")}
         </Link>
         <Link
           href="/dashboard"
           className="flex-1 rounded-xl bg-muted px-4 py-3 text-center font-medium hover:bg-muted/80"
         >
-          📊 العودة للوحة التحكم
+          📊 {t("Return to dashboard", "العودة للوحة التحكم")}
         </Link>
       </div>
     </div>

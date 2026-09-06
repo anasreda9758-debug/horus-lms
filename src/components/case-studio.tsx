@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { LecturePicker } from "@/components/lecture-picker";
 import type { ReviewLecture } from "@/features/review/queries";
+import { useLocale } from "@/components/locale-provider";
 
 type CaseSummary = {
   id: string;
@@ -13,6 +14,7 @@ type CaseSummary = {
 };
 
 export function CaseStudio({ lectures }: { lectures: ReviewLecture[] }) {
+  const { t } = useLocale();
   const [lectureId, setLectureId] = useState("");
   const [busy, setBusy] = useState(false);
   const [evaluating, setEvaluating] = useState(false);
@@ -44,7 +46,7 @@ export function CaseStudio({ lectures }: { lectures: ReviewLecture[] }) {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(data.message ?? "تعذر توليد الحالة.");
+        setError(data.message ?? t("Could not generate the clinical case.", "تعذر توليد الحالة."));
         return;
       }
       setCaseId(data.caseId);
@@ -72,7 +74,7 @@ export function CaseStudio({ lectures }: { lectures: ReviewLecture[] }) {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(data.message ?? "تعذر التقييم.");
+        setError(data.message ?? t("Could not evaluate the answers.", "تعذر التقييم."));
         return;
       }
       setFeedback({ score: data.score, feedback: data.feedback });
@@ -100,7 +102,7 @@ export function CaseStudio({ lectures }: { lectures: ReviewLecture[] }) {
         </div>
       ) : history.length > 0 ? (
         <div className="rounded-xl bg-card p-5 ring-1 ring-foreground/10">
-          <h2 className="mb-3 font-semibold">حالاتك الأخيرة</h2>
+          <h2 className="mb-3 font-semibold">{t("Recent cases", "حالاتك الأخيرة")}</h2>
           <ul className="grid gap-2">
             {history.map((c) => (
               <li key={c.id}>
@@ -115,7 +117,7 @@ export function CaseStudio({ lectures }: { lectures: ReviewLecture[] }) {
                   }}
                   className="w-full rounded-lg border px-4 py-3 text-start text-sm ring-1 ring-border hover:ring-foreground/30"
                 >
-                  <span className="font-medium">{c.lectureTitle ?? "حالة"}</span>
+                  <span className="font-medium">{c.lectureTitle ?? t("Clinical case", "حالة")}</span>
                   <span className="mt-1 block text-muted-foreground">{c.caseText.slice(0, 120)}…</span>
                 </button>
               </li>
@@ -124,7 +126,10 @@ export function CaseStudio({ lectures }: { lectures: ReviewLecture[] }) {
         </div>
       ) : (
         <div className="rounded-xl bg-card p-10 text-center text-muted-foreground ring-1 ring-foreground/10">
-          ولّد حالة سريرية من محاضرة أعلاه، ثم أجب على الأسئلة واحصل على تقييم.
+          {t(
+            "Generate a source-based clinical case from a lecture above, then answer the questions for feedback.",
+            "ولّد حالة سريرية من محاضرة أعلاه، ثم أجب على الأسئلة واحصل على تقييم.",
+          )}
         </div>
       )}
 
@@ -139,13 +144,13 @@ export function CaseStudio({ lectures }: { lectures: ReviewLecture[] }) {
                   onChange={(e) => setAnswers((a) => a.map((v, j) => (j === i ? e.target.value : v)))}
                   rows={3}
                   className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
-                  placeholder="إجابتك…"
+                  placeholder={t("Your answer…", "إجابتك…")}
                 />
               </li>
             ))}
           </ul>
           <Button className="mt-4" onClick={evaluate} disabled={evaluating}>
-            {evaluating ? "جارٍ التقييم…" : "📝 قيّم إجاباتي"}
+            {evaluating ? t("Evaluating…", "جارٍ التقييم…") : t("📝 Evaluate my answers", "📝 قيّم إجاباتي")}
           </Button>
         </div>
       ) : null}
@@ -153,7 +158,7 @@ export function CaseStudio({ lectures }: { lectures: ReviewLecture[] }) {
       {feedback ? (
         <div className="rounded-xl bg-card p-5 ring-1 ring-foreground/10">
           <p className="text-2xl font-bold">
-            {feedback.score != null ? `${feedback.score}/100` : "التقييم"}
+            {feedback.score != null ? `${feedback.score}/100` : t("Evaluation", "التقييم")}
           </p>
           <p className="mt-3 whitespace-pre-line leading-relaxed text-muted-foreground">
             {feedback.feedback}

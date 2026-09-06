@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, XCircle, Clock, Brain } from "lucide-react";
+import { useLocale } from "@/components/locale-provider";
 
 type ReviewQuestion = {
   reviewId: string;
@@ -29,6 +30,7 @@ type Props = {
 
 export function ReviewSession({ questions }: Props) {
   const router = useRouter();
+  const { t } = useLocale();
   const [index, setIndex] = useState(0);
   const [selected, setSelected] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
@@ -83,17 +85,17 @@ export function ReviewSession({ questions }: Props) {
     return (
       <div className="rounded-2xl border-2 border-primary/20 bg-primary/5 p-8 text-center">
         <Brain className="mx-auto mb-4 h-12 w-12 text-primary" />
-        <h2 className="text-2xl font-bold">اكتملت المراجعة!</h2>
+        <h2 className="text-2xl font-bold">{t("Review complete!", "اكتملت المراجعة!")}</h2>
         <p className="mt-3 text-lg text-muted-foreground">
-          {results.correct} من {results.total} إجابات صحيحة
+          {t(`${results.correct} of ${results.total} answers correct`, `${results.correct} من ${results.total} إجابات صحيحة`)}
         </p>
         <p className="mt-1 text-sm text-muted-foreground">
-          نسبة الصحة: {results.total > 0 ? Math.round((results.correct / results.total) * 100) : 0}%
+          {t("Accuracy", "نسبة الصحة")}: {results.total > 0 ? Math.round((results.correct / results.total) * 100) : 0}%
         </p>
         <div className="mt-6 flex justify-center gap-3">
-          <Button onClick={() => router.refresh()}>مراجعة مرة أخرى</Button>
+          <Button onClick={() => router.refresh()}>{t("Review again", "مراجعة مرة أخرى")}</Button>
           <Button variant="outline" onClick={() => router.push("/quiz/analytics")}>
-            عرض التحليلات
+            {t("View analytics", "عرض التحليلات")}
           </Button>
         </div>
       </div>
@@ -106,10 +108,10 @@ export function ReviewSession({ questions }: Props) {
       <div className="rounded-xl bg-card p-4 ring-1 ring-foreground/10">
         <div className="mb-2 flex items-center justify-between text-sm">
           <span className="font-medium text-muted-foreground">
-            سؤال {index + 1} من {questions.length}
+            {t(`Question ${index + 1} of ${questions.length}`, `سؤال ${index + 1} من ${questions.length}`)}
           </span>
           <span className="text-muted-foreground">
-            {results.correct}/{results.total} صحيحة
+            {t(`${results.correct}/${results.total} correct`, `${results.correct}/${results.total} صحيحة`)}
           </span>
         </div>
         <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
@@ -125,7 +127,7 @@ export function ReviewSession({ questions }: Props) {
         <div className="mb-1 flex items-center gap-2">
           <span className="text-xs font-medium text-primary">{q.moduleName} · {q.bankTitle}</span>
           <span className="ms-auto text-xs text-muted-foreground">
-            مراجعة #{q.totalReviews + 1}
+            {t(`Review #${q.totalReviews + 1}`, `مراجعة #${q.totalReviews + 1}`)}
           </span>
         </div>
         <p className="text-base leading-relaxed text-foreground">{q.prompt}</p>
@@ -182,7 +184,7 @@ export function ReviewSession({ questions }: Props) {
                 <XCircle className="h-4 w-4 text-red-600" />
               )}
               <span className={`font-medium ${isCorrect ? "text-emerald-600" : "text-red-600"}`}>
-                {isCorrect ? "صحيح!" : "خطأ"}
+                {isCorrect ? t("Correct!", "صحيح!") : t("Incorrect", "خطأ")}
               </span>
             </div>
             {q.explanation && (
@@ -195,11 +197,11 @@ export function ReviewSession({ questions }: Props) {
         <div className="mt-5 flex justify-end">
           {submitted ? (
             <Button size="lg" onClick={next} className="px-8">
-              {isLast ? "إنهاء" : "السؤال التالي"}
+              {isLast ? t("Finish", "إنهاء") : t("Next question", "السؤال التالي")}
             </Button>
           ) : (
             <Button size="lg" onClick={submit} disabled={!selected || busy} className="px-8">
-              تأكيد
+              {t("Confirm", "تأكيد")}
             </Button>
           )}
         </div>

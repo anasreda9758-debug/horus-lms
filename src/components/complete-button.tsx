@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { useLocale } from "@/components/locale-provider";
 
 export function CompleteButton({
   lectureId,
@@ -14,6 +15,7 @@ export function CompleteButton({
   completed: boolean;
 }) {
   const router = useRouter();
+  const { t } = useLocale();
   const [busy, setBusy] = useState(false);
 
   async function onClick() {
@@ -32,7 +34,7 @@ export function CompleteButton({
 
   return (
     <Button variant={completed ? "outline" : "default"} disabled={busy} onClick={onClick}>
-      {completed ? "إلغاء الإكمال" : "وضع علامة كمكتمل"}
+      {completed ? t("Mark as incomplete", "إلغاء الإكمال") : t("Mark as completed", "وضع علامة كمكتمل")}
     </Button>
   );
 }

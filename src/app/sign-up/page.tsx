@@ -15,9 +15,12 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PreferenceControls } from "@/components/preference-controls";
+import { useLocale } from "@/components/locale-provider";
 
 export default function SignUpPage() {
   const router = useRouter();
+  const { t } = useLocale();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -30,7 +33,7 @@ export default function SignUpPage() {
     setLoading(true);
     const res = await authClient.signUp.email({ name, email, password });
     if (res.error) {
-      setError(res.error.message ?? "تعذر إنشاء الحساب");
+      setError(res.error.message ?? t("Could not create the account.", "تعذر إنشاء الحساب"));
       setLoading(false);
       return;
     }
@@ -39,16 +42,17 @@ export default function SignUpPage() {
   }
 
   return (
-    <div className="flex flex-1 items-center justify-center p-4">
+    <div className="relative flex flex-1 items-center justify-center p-4">
+      <div className="absolute end-4 top-4"><PreferenceControls /></div>
       <Card className="w-full max-w-sm">
         <CardHeader>
-          <CardTitle>إنشاء حساب جديد</CardTitle>
-          <CardDescription>سجّل للبدء في رحلة التعلم</CardDescription>
+          <CardTitle>{t("Create an account", "إنشاء حساب جديد")}</CardTitle>
+          <CardDescription>{t("Sign up to start your learning journey", "سجّل للبدء في رحلة التعلم")}</CardDescription>
         </CardHeader>
         <form onSubmit={onSubmit}>
           <CardContent className="grid gap-4">
             <div className="grid gap-2">
-              <Label htmlFor="name">الاسم</Label>
+              <Label htmlFor="name">{t("Name", "الاسم")}</Label>
               <Input
                 id="name"
                 value={name}
@@ -58,7 +62,7 @@ export default function SignUpPage() {
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="email">البريد الإلكتروني</Label>
+              <Label htmlFor="email">{t("Email", "البريد الإلكتروني")}</Label>
               <Input
                 id="email"
                 type="email"
@@ -69,7 +73,7 @@ export default function SignUpPage() {
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="password">كلمة المرور</Label>
+              <Label htmlFor="password">{t("Password", "كلمة المرور")}</Label>
               <Input
                 id="password"
                 type="password"
@@ -84,12 +88,12 @@ export default function SignUpPage() {
           </CardContent>
           <CardFooter className="flex-col gap-2">
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "جارٍ الإنشاء..." : "إنشاء الحساب"}
+              {loading ? t("Creating account…", "جارٍ الإنشاء...") : t("Create account", "إنشاء الحساب")}
             </Button>
             <p className="text-sm text-muted-foreground">
-              لديك حساب بالفعل؟{" "}
+              {t("Already have an account?", "لديك حساب بالفعل؟")}{" "}
               <Link href="/sign-in" className="underline">
-                سجّل الدخول
+                {t("Sign in", "سجّل الدخول")}
               </Link>
             </p>
           </CardFooter>

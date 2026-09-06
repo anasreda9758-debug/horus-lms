@@ -3,9 +3,11 @@
 import { useRouter } from "next/navigation";
 import { authClient } from "@/shared/auth-client";
 import { Button } from "@/components/ui/button";
+import { useLocale } from "@/components/locale-provider";
 
 export function SignOutButton() {
   const router = useRouter();
+  const { t } = useLocale();
 
   return (
     <Button
@@ -16,7 +18,7 @@ export function SignOutButton() {
         router.refresh();
       }}
     >
-      تسجيل الخروج
+      {t("Sign out", "تسجيل الخروج")}
     </Button>
   );
 }

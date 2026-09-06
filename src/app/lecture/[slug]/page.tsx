@@ -16,6 +16,7 @@ import { MindMap } from "@/components/mind-map";
 import { db } from "@/shared/db";
 import { lectureProgress } from "@/features/curriculum/schema";
 import { and, eq } from "drizzle-orm";
+import { getLocale, localize } from "@/shared/locale";
 
 export default async function LecturePage({
   params,
@@ -24,10 +25,12 @@ export default async function LecturePage({
 }) {
   const { slug } = await params;
   const session = await requireUser();
+  const locale = await getLocale();
+  const t = (english: string, arabic: string) => localize(locale, english, arabic);
   const lectureRow = await getLectureBySlug(slug);
   if (!lectureRow) notFound();
 
-  const moduleName = lectureRow.module?.name ?? "الموديول";
+  const moduleName = lectureRow.module?.name ?? t("Module", "الموديول");
   const isFree = lectureRow.module?.isFree ?? true;
   const access = await hasModuleAccess(
     session.user.id,
@@ -75,7 +78,7 @@ export default async function LecturePage({
           {/* Breadcrumb */}
           <div className="mb-6 flex items-center gap-2 text-sm text-muted-foreground">
             <Link href="/curriculum" className="hover:text-foreground">
-              المنهج
+              {t("Curriculum", "المنهج")}
             </Link>
             <span>/</span>
             {lectureRow.module && (
@@ -108,28 +111,28 @@ export default async function LecturePage({
               {lectureRow.kind ? (
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
                   {lectureRow.kind === "lecture"
-                    ? "محاضرة"
+                    ? t("Lecture", "محاضرة")
                     : lectureRow.kind === "seminar"
-                      ? "سيمينار"
-                      : "عملي"}
+                      ? t("Seminar", "سيمينار")
+                      : t("Practical", "عملي")}
                 </span>
               ) : null}
               {lectureRow.durationMin ? (
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1 text-xs text-muted-foreground">
                   <Clock className="h-3 w-3" />
-                  {lectureRow.durationMin} دقيقة
+                  {t(`${lectureRow.durationMin} min`, `${lectureRow.durationMin} دقيقة`)}
                 </span>
               ) : null}
               {!isFree ? (
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 px-3 py-1 text-xs font-medium text-amber-600">
                   <Lock className="h-3 w-3" />
-                  محتوى مدفوع
+                  {t("Locked content", "محتوى مدفوع")}
                 </span>
               ) : null}
               {isCompleted && (
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-600">
                   <CheckCircle2 className="h-3 w-3" />
-                  مكتمل
+                  {t("Completed", "مكتمل")}
                 </span>
               )}
             </div>
@@ -148,17 +151,16 @@ export default async function LecturePage({
             <div className="rounded-2xl border border-amber-200 bg-amber-50 p-8 text-center dark:border-amber-900 dark:bg-amber-950/20">
               <Lock className="mx-auto mb-4 h-12 w-12 text-amber-400" />
               <h2 className="mb-2 text-xl font-semibold">
-                هذه المحاضرة مدفوعة
+                {t("This lecture is locked", "هذه المحاضرة مدفوعة")}
               </h2>
               <p className="mb-6 text-muted-foreground">
-                اشترِ الموديول أو الترم أو السنة لفتح محتوى هذه المحاضرة والمعلم
-                الذكي.
+                {t("Purchase the module, term, or academic year to unlock this lecture and its study tutor.", "اشترِ الموديول أو الترم أو السنة لفتح محتوى هذه المحاضرة والمعلم الذكي.")}
               </p>
               <Link
                 href="/pricing"
                 className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
               >
-                عرض الأسعار والاشتراك
+                {t("View plans", "عرض الأسعار والاشتراك")}
               </Link>
             </div>
           ) : (
@@ -168,7 +170,7 @@ export default async function LecturePage({
                 <div className="mb-6 rounded-2xl border border-border bg-card p-6">
                   <div className="mb-4 flex items-center gap-2">
                     <FileText className="h-5 w-5 text-muted-foreground" />
-                    <h2 className="font-semibold">الملف الأصلي (PDF)</h2>
+                    <h2 className="font-semibold">{t("Original file (PDF)", "الملف الأصلي (PDF)")}</h2>
                   </div>
                   <PdfViewer
                     lectureId={lectureRow.id}
@@ -181,10 +183,10 @@ export default async function LecturePage({
                 <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-6 dark:border-amber-900 dark:bg-amber-950/20">
                   <div className="mb-2 flex items-center gap-2 text-amber-800 dark:text-amber-300">
                     <AlertCircle className="h-5 w-5" />
-                    <h2 className="font-semibold">الملف قيد المراجعة</h2>
+                    <h2 className="font-semibold">{t("File under review", "الملف قيد المراجعة")}</h2>
                   </div>
                   <p className="text-sm leading-relaxed text-amber-900/80 dark:text-amber-100/80">
-                    نراجع الآن صفحات هذه المحاضرة داخل الملف المجمّع. لن نعرض الكتاب الكامل أو محتوى محاضرة أخرى بالخطأ.
+                    {t("We are verifying this lecture's exact pages in the source file to avoid showing material from another lecture.", "نراجع الآن صفحات هذه المحاضرة داخل الملف المجمّع. لن نعرض الكتاب الكامل أو محتوى محاضرة أخرى بالخطأ.")}
                   </p>
                 </div>
               ) : null}
@@ -194,7 +196,7 @@ export default async function LecturePage({
                 <div className="mb-6 rounded-2xl border border-border bg-card p-6">
                   <div className="mb-4 flex items-center gap-2">
                     <BookOpen className="h-5 w-5 text-muted-foreground" />
-                    <h2 className="font-semibold">المحتوى النصي</h2>
+                    <h2 className="font-semibold">{t("Lecture text", "المحتوى النصي")}</h2>
                   </div>
                   <div className="max-h-[50rem] overflow-auto">
                     <MarkdownContent content={lectureRow.content} />
@@ -204,11 +206,11 @@ export default async function LecturePage({
                 <div className="mb-6 rounded-2xl border border-border bg-card p-6">
                   <div className="mb-4 flex items-center gap-2">
                     <BookOpen className="h-5 w-5 text-muted-foreground" />
-                    <h2 className="font-semibold">المحتوى</h2>
+                    <h2 className="font-semibold">{t("Content", "المحتوى")}</h2>
                   </div>
                   <p className="leading-relaxed text-muted-foreground">
                     {lectureRow.summary ??
-                      "المحتوى الكامل لهذه المحاضرة متاح في الملف الأصلي أعلاه."}
+                      t("The complete lecture content is available in the original file above.", "المحتوى الكامل لهذه المحاضرة متاح في الملف الأصلي أعلاه.")}
                   </p>
                 </div>
               )}
@@ -219,7 +221,7 @@ export default async function LecturePage({
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={`/study-cards/${slug}.svg`}
-                    alt={`ملخص ${lectureRow.title}`}
+                    alt={t(`Summary of ${lectureRow.title}`, `ملخص ${lectureRow.title}`)}
                     className="w-full"
                   />
                 </div>
@@ -230,14 +232,14 @@ export default async function LecturePage({
                 <div className="mb-6 rounded-2xl border border-primary/20 bg-primary/5 p-6">
                   <div className="mb-4 flex items-center gap-2">
                     <Lightbulb className="h-5 w-5 text-primary" />
-                    <h2 className="font-bold text-primary">ملخص المحاضرة</h2>
+                    <h2 className="font-bold text-primary">{t("Lecture summary", "ملخص المحاضرة")}</h2>
                   </div>
                   <p className="mb-4 text-sm leading-relaxed text-foreground">
                     {lectureRow.summaryJson.overview}
                   </p>
                   {lectureRow.summaryJson.keyPoints.length > 0 && (
                     <div className="mb-4">
-                      <h3 className="mb-2 text-sm font-semibold text-foreground">النقاط الرئيسية</h3>
+                      <h3 className="mb-2 text-sm font-semibold text-foreground">{t("Key points", "النقاط الرئيسية")}</h3>
                       <ul className="space-y-1.5">
                         {lectureRow.summaryJson.keyPoints.map((point, i) => (
                           <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
@@ -250,7 +252,7 @@ export default async function LecturePage({
                   )}
                   {lectureRow.summaryJson.clinicalPearls.length > 0 && (
                     <div>
-                      <h3 className="mb-2 text-sm font-semibold text-amber-600">لؤلؤات سريرية</h3>
+                      <h3 className="mb-2 text-sm font-semibold text-amber-600">{t("Clinical pearls", "لؤلؤات سريرية")}</h3>
                       <ul className="space-y-1.5">
                         {lectureRow.summaryJson.clinicalPearls.map((pearl, i) => (
                           <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
@@ -269,7 +271,7 @@ export default async function LecturePage({
                 <div className="mb-6 rounded-2xl border border-border bg-card p-6">
                   <div className="mb-4 flex items-center gap-2">
                     <Brain className="h-5 w-5 text-muted-foreground" />
-                    <h2 className="font-semibold">خريطة ذهنية</h2>
+                    <h2 className="font-semibold">{t("Mind map", "خريطة ذهنية")}</h2>
                   </div>
                   <MindMap data={lectureRow.mindmapJson} />
                 </div>
@@ -283,16 +285,16 @@ export default async function LecturePage({
                       <ClipboardCheck className="h-5 w-5 text-primary" />
                     </div>
                     <div className="flex-1">
-                      <h2 className="font-semibold">اختبر معلوماتك</h2>
+                      <h2 className="font-semibold">{t("Test your knowledge", "اختبر معلوماتك")}</h2>
                       <p className="text-sm text-muted-foreground">
-                        اختبر فهمك لمحتوى هذا الموديول بعد قراءة المحاضرة.
+                        {t("Test your understanding after reviewing this lecture.", "اختبر فهمك لمحتوى هذا الموديول بعد قراءة المحاضرة.")}
                       </p>
                     </div>
                     <Link
                       href={`/quiz/${quizBank.slug}`}
                       className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
                     >
-                      ابدأ الاختبار
+                      {t("Start quiz", "ابدأ الاختبار")}
                     </Link>
                   </div>
                 </div>
@@ -301,9 +303,9 @@ export default async function LecturePage({
                   <div className="flex items-center gap-3">
                     <AlertCircle className="h-5 w-5 text-muted-foreground" />
                     <div>
-                      <h2 className="font-semibold">اختبار</h2>
+                      <h2 className="font-semibold">{t("Quiz", "اختبار")}</h2>
                       <p className="text-sm text-muted-foreground">
-                        لا توجد أسئلة اختبار لهذا الموديول بعد.
+                        {t("No quiz questions are available for this module yet.", "لا توجد أسئلة اختبار لهذا الموديول بعد.")}
                       </p>
                     </div>
                   </div>
@@ -314,7 +316,7 @@ export default async function LecturePage({
               <div className="rounded-2xl border border-border bg-card p-6">
                 <div className="mb-4 flex items-center gap-2">
                   <MessageCircle className="h-5 w-5 text-muted-foreground" />
-                  <h2 className="font-semibold">المعلم الذكي (AI Tutor)</h2>
+                  <h2 className="font-semibold">{t("Study tutor", "المعلم الذكي (AI Tutor)")}</h2>
                 </div>
                 <TutorChat lectureId={lectureRow.id} />
               </div>

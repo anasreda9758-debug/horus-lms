@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { LecturePicker } from "@/components/lecture-picker";
 import type { ReviewLecture } from "@/features/review/queries";
+import { useLocale } from "@/components/locale-provider";
 
 type DueCard = {
   id: string;
@@ -13,6 +14,7 @@ type DueCard = {
 };
 
 export function FlashcardDeck({ lectures }: { lectures: ReviewLecture[] }) {
+  const { t } = useLocale();
   const [lectureId, setLectureId] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -43,10 +45,10 @@ export function FlashcardDeck({ lectures }: { lectures: ReviewLecture[] }) {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(data.message ?? "تعذر توليد البطاقات.");
+        setError(data.message ?? t("Could not generate flashcards.", "تعذر توليد البطاقات."));
         return;
       }
-      setNotice(`أُضيفت ${data.count} بطاقة مستحقة اليوم.`);
+      setNotice(t(`${data.count} cards were added for review today.`, `أُضيفت ${data.count} بطاقة مستحقة اليوم.`));
       loadDue();
       setIndex(0);
       setRevealed(false);
@@ -90,19 +92,22 @@ export function FlashcardDeck({ lectures }: { lectures: ReviewLecture[] }) {
           <p className="mt-3 text-sm text-emerald-600">{notice}</p>
         ) : (
           <p className="mt-3 text-sm text-muted-foreground">
-            تُنشأ حتى 12 بطاقة من محتوى المحاضرة، وتُجدول تلقائيًا (مرة أخرى بعد يوم، جيد بعد 3 أيام، سهل بعد 7).
+            {t(
+              "Generate up to 12 source-based cards. They are scheduled automatically: Again after 1 day, Good after 3 days, Easy after 7 days.",
+              "تُنشأ حتى 12 بطاقة من محتوى المحاضرة، وتُجدول تلقائيًا (مرة أخرى بعد يوم، جيد بعد 3 أيام، سهل بعد 7).",
+            )}
           </p>
         )}
       </div>
 
       {cards.length === 0 ? (
         <div className="rounded-xl bg-card p-10 text-center text-muted-foreground ring-1 ring-foreground/10">
-          لا بطاقات مستحقة اليوم. ولّد بطاقات من محاضرة أعلاه.
+          {t("No flashcards are due today. Generate cards from a lecture above.", "لا بطاقات مستحقة اليوم. ولّد بطاقات من محاضرة أعلاه.")}
         </div>
       ) : card ? (
         <div className="overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10">
           <div className="border-b px-5 py-3 text-sm text-muted-foreground">
-            {card.lectureTitle} · بطاقة {index + 1} من {cards.length}
+            {card.lectureTitle} · {t(`Card ${index + 1} of ${cards.length}`, `بطاقة ${index + 1} من ${cards.length}`)}
           </div>
           <button
             type="button"
@@ -113,14 +118,14 @@ export function FlashcardDeck({ lectures }: { lectures: ReviewLecture[] }) {
             {revealed ? (
               <p dir="auto" className="mt-6 text-lg leading-relaxed text-muted-foreground">{card.back}</p>
             ) : (
-              <p className="mt-6 text-sm text-primary">انقر لإظهار الإجابة</p>
+              <p className="mt-6 text-sm text-primary">{t("Click to reveal the answer", "انقر لإظهار الإجابة")}</p>
             )}
           </button>
           {revealed ? (
             <div className="flex flex-wrap gap-3 border-t px-5 py-4">
-              <Button variant="outline" onClick={() => rate("again")}>مرة أخرى (1 يوم)</Button>
-              <Button variant="outline" onClick={() => rate("good")}>جيد (3 أيام)</Button>
-              <Button variant="outline" onClick={() => rate("easy")}>سهل (7 أيام)</Button>
+              <Button variant="outline" onClick={() => rate("again")}>{t("Again (1 day)", "مرة أخرى (1 يوم)")}</Button>
+              <Button variant="outline" onClick={() => rate("good")}>{t("Good (3 days)", "جيد (3 أيام)")}</Button>
+              <Button variant="outline" onClick={() => rate("easy")}>{t("Easy (7 days)", "سهل (7 أيام)")}</Button>
             </div>
           ) : null}
         </div>

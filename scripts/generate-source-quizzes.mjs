@@ -15,6 +15,10 @@ function clean(value) {
     .trim();
 }
 
+function containsArabic(value) {
+  return /[\u0600-\u06FF]/.test(value);
+}
+
 function factsFor(lecture) {
   const fromSummary = Array.isArray(lecture.summary_json?.keyPoints)
     ? lecture.summary_json.keyPoints
@@ -27,7 +31,7 @@ function factsFor(lecture) {
       )
     : [];
   return [...new Set([...fromSummary, ...fromMap].map(clean))]
-    .filter((fact) => fact.length >= 8 && fact.length <= 180)
+    .filter((fact) => fact.length >= 8 && fact.length <= 180 && !containsArabic(fact))
     .slice(0, 3);
 }
 
@@ -62,8 +66,8 @@ async function main() {
     const bankSlug = `source-quiz-${module.slug}`;
     await sql`
       INSERT INTO question_bank (id, module_id, slug, title)
-      VALUES (${bankId}, ${module.id}, ${bankSlug}, ${`مراجعة ${module.name}`})
-      ON CONFLICT (slug) DO NOTHING
+      VALUES (${bankId}, ${module.id}, ${bankSlug}, ${`${module.name} source review`})
+      ON CONFLICT (slug) DO UPDATE SET title = EXCLUDED.title
     `;
     bankCount++;
 
@@ -73,7 +77,7 @@ async function main() {
       for (let index = 0; index < facts.length; index++) {
         const correct = facts[index];
         const questionId = `source-question-${lecture.slug}-${index + 1}`;
-        const prompt = `أي عبارة وردت صراحةً في محاضرة «${lecture.title}»؟`;
+        const prompt = `Which statement appears explicitly in the lecture “${lecture.title}”?`;
         await sql`
           INSERT INTO question (id, bank_id, lecture_id, prompt, explanation, difficulty, "order")
           VALUES (
@@ -81,11 +85,15 @@ async function main() {
             ${bankId},
             ${lecture.id},
             ${prompt},
-            ${`الإجابة مستخرجة من ملخص محاضرة «${lecture.title}».`},
+            ${`The answer is taken directly from the summary of “${lecture.title}”.`},
             ${index === 0 ? "easy" : index === 1 ? "medium" : "hard"},
             ${index + 1}
           )
-          ON CONFLICT (id) DO NOTHING
+          ON CONFLICT (id) DO UPDATE SET
+            prompt = EXCLUDED.prompt,
+            explanation = EXCLUDED.explanation,
+            difficulty = EXCLUDED.difficulty,
+            "order" = EXCLUDED."order"
         `;
 
         const options = stableOptions(correct, allFacts, questionCount + index);
@@ -99,7 +107,10 @@ async function main() {
               ${options[optionIndex] === correct},
               ${optionIndex + 1}
             )
-            ON CONFLICT (id) DO NOTHING
+            ON CONFLICT (id) DO UPDATE SET
+              text = EXCLUDED.text,
+              is_correct = EXCLUDED.is_correct,
+              "order" = EXCLUDED."order"
           `;
         }
         questionCount++;

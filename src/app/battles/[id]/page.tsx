@@ -2,6 +2,7 @@
 
 import { useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
+import { useLocale } from "@/components/locale-provider";
 
 type Question = {
   id: string;
@@ -20,6 +21,7 @@ type BattleData = {
 export default function BattleGamePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
+  const { t, isArabic } = useLocale();
   const [battle, setBattle] = useState<BattleData | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [current, setCurrent] = useState(0);
@@ -100,7 +102,7 @@ export default function BattleGamePage({ params }: { params: Promise<{ id: strin
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <p className="text-muted-foreground">جارٍ تحميل التحدي…</p>
+        <p className="text-muted-foreground">{t("Loading challenge…", "جارٍ تحميل التحدي…")}</p>
       </div>
     );
   }
@@ -114,23 +116,23 @@ export default function BattleGamePage({ params }: { params: Promise<{ id: strin
         <div className="text-center">
           <p className="text-6xl">{won ? "🏆" : result.winnerId ? "💀" : "🤝"}</p>
           <h1 className="mt-4 text-3xl font-bold">
-            {won ? "فزت!" : result.winnerId ? "خسرت!" : "تعادل!"}
+            {won ? t("You won!", "فزت!") : result.winnerId ? t("You lost", "خسرت!") : t("Draw", "تعادل!")}
           </h1>
           <p className="mt-2 text-lg text-muted-foreground">
-            نتيجتك: {score}/{questions.length}
+            {t("Your score", "نتيجتك")}: {score}/{questions.length}
           </p>
           <div className="mt-6 flex gap-4">
             <button
               onClick={() => router.push("/battles")}
               className="rounded-lg bg-primary px-6 py-2 font-medium text-primary-foreground hover:bg-primary/90"
             >
-              العودة
+              {t("Back", "العودة")}
             </button>
             <button
               onClick={() => router.push("/leaderboard")}
               className="rounded-lg bg-muted px-6 py-2 font-medium hover:bg-muted/80"
             >
-              لوحة المتصدرين
+              {t("Leaderboard", "لوحة المتصدرين")}
             </button>
           </div>
         </div>
@@ -141,7 +143,7 @@ export default function BattleGamePage({ params }: { params: Promise<{ id: strin
   if (questions.length === 0) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <p className="text-muted-foreground">لا توجد أسئلة متاحة لهذا البنك.</p>
+        <p className="text-muted-foreground">{t("No questions are available in this bank.", "لا توجد أسئلة متاحة لهذا البنك.")}</p>
       </div>
     );
   }
@@ -151,7 +153,7 @@ export default function BattleGamePage({ params }: { params: Promise<{ id: strin
   return (
     <div className="mx-auto max-w-2xl px-4 py-10">
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-xl font-bold">⚔️ سؤال {current + 1} / {questions.length}</h1>
+        <h1 className="text-xl font-bold">⚔️ {t("Question", "سؤال")} {current + 1} / {questions.length}</h1>
         <span className="rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
           {score} ✅
         </span>
@@ -173,7 +175,7 @@ export default function BattleGamePage({ params }: { params: Promise<{ id: strin
               key={opt.id}
               onClick={() => !answered && setSelected(opt.id)}
               disabled={answered}
-              className={`w-full rounded-lg border px-4 py-3 text-right text-sm transition ${
+              className={`w-full rounded-lg border px-4 py-3 ${isArabic ? "text-right" : "text-left"} text-sm transition ${
                 answered && opt.id === selected
                   ? correct
                     ? "border-green-500 bg-green-500/10 text-green-700"
@@ -197,7 +199,7 @@ export default function BattleGamePage({ params }: { params: Promise<{ id: strin
               onClick={next}
               className="rounded-lg bg-primary px-6 py-2 font-medium text-primary-foreground hover:bg-primary/90"
             >
-              {current + 1 >= questions.length ? "إنهاء التحدي" : "السؤال التالي"}
+              {current + 1 >= questions.length ? t("Finish challenge", "إنهاء التحدي") : t("Next question", "السؤال التالي")}
             </button>
           </div>
         )}
@@ -208,7 +210,7 @@ export default function BattleGamePage({ params }: { params: Promise<{ id: strin
               onClick={answer}
               className="rounded-lg bg-primary px-6 py-2 font-medium text-primary-foreground hover:bg-primary/90"
             >
-              تأكيد الإجابة
+              {t("Confirm answer", "تأكيد الإجابة")}
             </button>
           </div>
         )}

@@ -7,9 +7,12 @@ import { and, eq, lte, desc, asc, sql, gte } from "drizzle-orm";
 import { Navigation } from "@/components/navigation";
 import { ReviewSession } from "@/components/review-session";
 import { Brain, Clock, CheckCircle2, AlertCircle, BookOpen } from "lucide-react";
+import { getLocale, localize } from "@/shared/locale";
 
 export default async function ReviewPage() {
   const session = await requireUser();
+  const locale = await getLocale();
+  const t = (english: string, arabic: string) => localize(locale, english, arabic);
 
   // Get due questions with their details
   const dueReviews = await db
@@ -70,9 +73,9 @@ export default async function ReviewPage() {
       <main className="flex-1 p-6 lg:p-8">
         <div className="mx-auto max-w-3xl">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold">مراجعة الأسئلة</h1>
+            <h1 className="text-3xl font-bold">{t("Question review", "مراجعة الأسئلة")}</h1>
             <p className="mt-1 text-muted-foreground">
-              راجع الأسئلة التي حان وقتها بناءً على منحنى النسيان.
+              {t("Review questions that are due, scheduled with spaced repetition.", "راجع الأسئلة التي حان وقتها بناءً على منحنى النسيان.")}
             </p>
           </div>
 
@@ -81,21 +84,21 @@ export default async function ReviewPage() {
             <div className="rounded-2xl border border-border bg-card p-4">
               <div className="mb-2 flex items-center gap-2">
                 <AlertCircle className="h-4 w-4 text-amber-600" />
-                <span className="text-xs font-medium text-muted-foreground">بانتظار المراجعة</span>
+                <span className="text-xs font-medium text-muted-foreground">{t("Due now", "بانتظار المراجعة")}</span>
               </div>
               <p className="text-2xl font-bold">{dueReviews.length}</p>
             </div>
             <div className="rounded-2xl border border-border bg-card p-4">
               <div className="mb-2 flex items-center gap-2">
                 <Brain className="h-4 w-4 text-purple-600" />
-                <span className="text-xs font-medium text-muted-foreground">إجمالي المراجعات</span>
+                <span className="text-xs font-medium text-muted-foreground">{t("Total reviews", "إجمالي المراجعات")}</span>
               </div>
               <p className="text-2xl font-bold">{totalReviewed?.count ?? 0}</p>
             </div>
             <div className="rounded-2xl border border-border bg-card p-4">
               <div className="mb-2 flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                <span className="text-xs font-medium text-muted-foreground">أسئلة متقنة</span>
+                <span className="text-xs font-medium text-muted-foreground">{t("Mastered questions", "أسئلة متقنة")}</span>
               </div>
               <p className="text-2xl font-bold">{masteredCount?.count ?? 0}</p>
             </div>
@@ -104,16 +107,16 @@ export default async function ReviewPage() {
           {questionsWithOptions.length === 0 ? (
             <div className="rounded-2xl border border-border bg-card p-12 text-center">
               <Clock className="mx-auto mb-4 h-12 w-12 text-muted-foreground/40" />
-              <h2 className="mb-2 text-xl font-semibold">لا توجد أسئلة للمراجعة</h2>
+              <h2 className="mb-2 text-xl font-semibold">{t("No questions due for review", "لا توجد أسئلة للمراجعة")}</h2>
               <p className="mb-6 text-muted-foreground">
-                أجب على بعض الاختبارات أولاً، وسيتم جدولة الأسئلة للمراجعة هنا.
+                {t("Complete a quiz first; your questions will then be scheduled here for review.", "أجب على بعض الاختبارات أولاً، وسيتم جدولة الأسئلة للمراجعة هنا.")}
               </p>
               <Link
                 href="/curriculum"
                 className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-medium text-primary-foreground hover:bg-primary/90"
               >
                 <BookOpen className="h-4 w-4" />
-                تصفح المنهج
+                {t("Browse curriculum", "تصفح المنهج")}
               </Link>
             </div>
           ) : (

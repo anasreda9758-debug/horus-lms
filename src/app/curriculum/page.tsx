@@ -5,12 +5,17 @@ import { getCachedCurriculum } from "@/shared/query-cache";
 import { ProgressBar } from "@/components/progress-bar";
 import { Navigation } from "@/components/navigation";
 import { BookOpen, Lock, Unlock, Calendar } from "lucide-react";
+import { getLocale, localize } from "@/shared/locale";
+import type { AppLocale } from "@/components/locale-provider";
 
 function ModuleCard({
   m,
+  locale,
 }: {
   m: NonNullable<Awaited<ReturnType<typeof getCurriculum>>>[number];
+  locale: AppLocale;
 }) {
+  const t = (english: string, arabic: string) => localize(locale, english, arabic);
   return (
     <li>
       <Link
@@ -36,12 +41,12 @@ function ModuleCard({
           {m.isFree ? (
             <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-600">
               <Unlock className="h-3 w-3" />
-              مجاني
+              {t("Open", "مجاني")}
             </span>
           ) : (
             <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-600">
               <Lock className="h-3 w-3" />
-              مدفوع
+              {t("Locked", "مدفوع")}
             </span>
           )}
         </div>
@@ -62,6 +67,8 @@ export default async function CurriculumPage({
   searchParams: Promise<{ term?: string }>;
 }) {
   const session = await requireUser();
+  const locale = await getLocale();
+  const t = (english: string, arabic: string) => localize(locale, english, arabic);
   const params = await searchParams;
   const curriculum = await getCachedCurriculum(session.user.id);
   const activeTerm = params.term ? Number(params.term) : 0;
@@ -86,16 +93,16 @@ export default async function CurriculumPage({
       <main className="flex-1 p-6 lg:p-8">
         <div className="mx-auto max-w-4xl">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold">المنهج</h1>
+            <h1 className="text-3xl font-bold">{t("Curriculum", "المنهج")}</h1>
             <p className="mt-1 text-muted-foreground">
-              اختر الترم ثم الموديول لتصفح المحاضرات.
+              {t("Choose a term, then a module to browse its lectures.", "اختر الترم ثم الموديول لتصفح المحاضرات.")}
             </p>
           </div>
 
           {curriculum.length === 0 ? (
             <div className="rounded-2xl border border-border bg-card p-12 text-center">
               <BookOpen className="mx-auto mb-4 h-12 w-12 text-muted-foreground/40" />
-              <p className="text-muted-foreground">لا توجد وحدات بعد.</p>
+              <p className="text-muted-foreground">{t("No modules are available yet.", "لا توجد وحدات بعد.")}</p>
             </div>
           ) : (
             <>
@@ -114,9 +121,9 @@ export default async function CurriculumPage({
                       <Calendar className="h-5 w-5" />
                     </div>
                     <div>
-                      <h3 className="text-lg font-bold">الترم الأول</h3>
+                      <h3 className="text-lg font-bold">{t("Term 1", "الترم الأول")}</h3>
                       <p className="text-sm text-muted-foreground">
-                        3 موديولات + مادتين
+                        {t("3 modules · 2 subjects", "3 موديولات + مادتين")}
                       </p>
                     </div>
                   </div>
@@ -141,9 +148,9 @@ export default async function CurriculumPage({
                       <Calendar className="h-5 w-5" />
                     </div>
                     <div>
-                      <h3 className="text-lg font-bold">الترم الثاني</h3>
+                      <h3 className="text-lg font-bold">{t("Term 2", "الترم الثاني")}</h3>
                       <p className="text-sm text-muted-foreground">
-                        4 موديولات + مادة
+                        {t("4 modules · 1 subject", "4 موديولات + مادة")}
                       </p>
                     </div>
                   </div>
@@ -160,17 +167,17 @@ export default async function CurriculumPage({
               <div className="mb-4 flex items-center justify-between">
                 <h2 className="text-xl font-bold">
                   {activeTerm === 1
-                    ? "الترم الأول"
+                    ? t("Term 1", "الترم الأول")
                     : activeTerm === 2
-                      ? "الترم الثاني"
-                      : "جميع الموديولات"}
+                      ? t("Term 2", "الترم الثاني")
+                      : t("All modules", "جميع الموديولات")}
                 </h2>
                 {activeTerm !== 0 && (
                   <Link
                     href="/curriculum"
                     className="text-sm text-primary hover:underline"
                   >
-                    عرض الكل
+                    {t("View all", "عرض الكل")}
                   </Link>
                 )}
               </div>
@@ -178,7 +185,7 @@ export default async function CurriculumPage({
               {/* Modules Grid */}
               <ul className="grid gap-4 sm:grid-cols-2">
                 {filtered.map((m) => (
-                  <ModuleCard key={m.id} m={m} />
+                  <ModuleCard key={m.id} m={m} locale={locale} />
                 ))}
               </ul>
             </>

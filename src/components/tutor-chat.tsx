@@ -3,6 +3,7 @@
 import { useRef, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { RotateCcw, ThumbsUp, ThumbsDown, BookOpen } from "lucide-react";
+import { useLocale } from "@/components/locale-provider";
 
 type Message = {
   role: "user" | "assistant";
@@ -12,6 +13,7 @@ type Message = {
 };
 
 export function TutorChat({ lectureId }: { lectureId: string }) {
+  const { t } = useLocale();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
@@ -55,11 +57,11 @@ export function TutorChat({ lectureId }: { lectureId: string }) {
       if (res.status === 429) {
         const data = await res.json();
         setLimitReached(true);
-        setError(data.message ?? "وصلت إلى الحد المجاني اليوم.");
+        setError(data.message ?? t("You have reached today's free limit.", "وصلت إلى الحد المجاني اليوم."));
         return;
       }
       if (!res.ok) {
-        setError("حدث خطأ أثناء الاتصال بالمعلم الذكي. حاول مجددًا.");
+        setError(t("The study tutor could not be reached. Please try again.", "حدث خطأ أثناء الاتصال بالمعلم الذكي. حاول مجددًا."));
         return;
       }
 
@@ -84,10 +86,10 @@ export function TutorChat({ lectureId }: { lectureId: string }) {
       if (fullText) {
         setMessages((prev) => [...prev, { role: "assistant", content: fullText, sources, rating: null }]);
       } else {
-        setError("لم يصل رد مقروء من المعلم. حاول مرة أخرى.");
+        setError(t("The study tutor returned no readable response. Please try again.", "لم يصل رد مقروء من المعلم. حاول مرة أخرى."));
       }
     } catch {
-      setError("تعذّر الاتصال بالمعلم الذكي.");
+      setError(t("Could not connect to the study tutor.", "تعذّر الاتصال بالمعلم الذكي."));
     } finally {
       setBusy(false);
       setStreaming("");
@@ -122,33 +124,33 @@ export function TutorChat({ lectureId }: { lectureId: string }) {
         {messages.length === 0 ? (
           <div className="flex flex-col gap-3">
             <p className="text-sm text-muted-foreground">
-              ابدأ بسؤال عن محتوى هذه المحاضرة…
+              {t("Ask about this lecture's content…", "ابدأ بسؤال عن محتوى هذه المحاضرة…")}
             </p>
             <div className="flex flex-col gap-2">
-              <p className="text-xs font-semibold text-muted-foreground">اقتراحات:</p>
+              <p className="text-xs font-semibold text-muted-foreground">{t("Suggestions", "اقتراحات:")}</p>
               <Button
                 variant="outline"
                 size="sm"
                 className="justify-start text-xs h-auto py-1"
-                onClick={() => handleSuggestionClick("ملخص المحاضرة")}
+                onClick={() => handleSuggestionClick("Summarize this lecture")}
               >
-                📝 ملخص المحاضرة
+                {t("📝 Summarize this lecture", "📝 ملخص المحاضرة")}
               </Button>
               <Button
                 variant="outline"
                 size="sm"
                 className="justify-start text-xs h-auto py-1"
-                onClick={() => handleSuggestionClick("اشرح المصطلحات المهمة")}
+                onClick={() => handleSuggestionClick("Explain the key medical terms")}
               >
-                📚 اشرح المصطلحات المهمة
+                {t("📚 Explain the key medical terms", "📚 اشرح المصطلحات المهمة")}
               </Button>
               <Button
                 variant="outline"
                 size="sm"
                 className="justify-start text-xs h-auto py-1"
-                onClick={() => handleSuggestionClick("أسئلة امتحان محتملة")}
+                onClick={() => handleSuggestionClick("Create one source-based review question")}
               >
-                ❓ أسئلة امتحان محتملة
+                {t("❓ Create a review question", "❓ أسئلة امتحان محتملة")}
               </Button>
             </div>
           </div>
@@ -182,7 +184,7 @@ export function TutorChat({ lectureId }: { lectureId: string }) {
                     size="icon"
                     className="h-6 w-6"
                     onClick={() => regenerate(i)}
-                    title="إعادة توليد"
+                    title={t("Regenerate", "إعادة توليد")}
                   >
                     <RotateCcw className="h-3 w-3" />
                   </Button>
@@ -215,7 +217,7 @@ export function TutorChat({ lectureId }: { lectureId: string }) {
           </div>
         ) : busy ? (
           <div className="self-start rounded-xl bg-muted px-4 py-2 text-sm text-muted-foreground">
-            جارٍ التفكير…
+            {t("Thinking…", "جارٍ التفكير…")}
           </div>
         ) : null}
 
@@ -238,11 +240,11 @@ export function TutorChat({ lectureId }: { lectureId: string }) {
                 send();
               }
             }}
-            placeholder="اكتب سؤالك هنا… (Shift+Enter لسطر جديد)"
+            placeholder={t("Ask about this lecture… (Shift+Enter for a new line)", "اكتب سؤالك هنا… (Shift+Enter لسطر جديد)")}
             disabled={busy}
           />
           <Button onClick={() => send()} disabled={busy || !input.trim()}>
-            إرسال
+            {t("Send", "إرسال")}
           </Button>
         </div>
       ) : null}

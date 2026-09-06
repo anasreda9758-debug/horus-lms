@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Save, CheckCircle2, AlertCircle } from "lucide-react";
+import { useLocale } from "@/components/locale-provider";
 
 type Props = {
   user: { name: string; email: string; role: string; createdAt: Date };
@@ -13,6 +14,7 @@ type Props = {
 
 export function SettingsForm({ user, profile, subscription }: Props) {
   const router = useRouter();
+  const { locale, t } = useLocale();
   const [name, setName] = useState(user.name);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
@@ -28,10 +30,10 @@ export function SettingsForm({ user, profile, subscription }: Props) {
         body: JSON.stringify({ name: name.trim() }),
       });
       if (res.ok) {
-        setMsg({ type: "ok", text: "تم تحديث الاسم" });
+        setMsg({ type: "ok", text: t("Name updated", "تم تحديث الاسم") });
         router.refresh();
       } else {
-        setMsg({ type: "err", text: "فشل التحديث" });
+        setMsg({ type: "err", text: t("Update failed", "فشل التحديث") });
       }
     } finally {
       setBusy(false);
@@ -49,10 +51,10 @@ export function SettingsForm({ user, profile, subscription }: Props) {
 
       {/* Profile Info */}
       <section className="rounded-2xl border border-border bg-card p-6">
-        <h2 className="mb-4 text-lg font-semibold">المعلومات الشخصية</h2>
+        <h2 className="mb-4 text-lg font-semibold">{t("Profile", "المعلومات الشخصية")}</h2>
         <div className="space-y-4">
           <div>
-            <label className="text-sm text-muted-foreground">الاسم</label>
+            <label className="text-sm text-muted-foreground">{t("Name", "الاسم")}</label>
             <div className="mt-1 flex gap-2">
               <input
                 className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm"
@@ -61,12 +63,12 @@ export function SettingsForm({ user, profile, subscription }: Props) {
               />
               <Button size="sm" onClick={saveName} disabled={busy || !name.trim() || name.trim() === user.name}>
                 <Save className="ml-1 h-3.5 w-3.5" />
-                حفظ
+                {t("Save", "حفظ")}
               </Button>
             </div>
           </div>
           <div>
-            <label className="text-sm text-muted-foreground">البريد الإلكتروني</label>
+            <label className="text-sm text-muted-foreground">{t("Email", "البريد الإلكتروني")}</label>
             <input
               className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm opacity-60"
               value={user.email}
@@ -74,10 +76,10 @@ export function SettingsForm({ user, profile, subscription }: Props) {
             />
           </div>
           <div>
-            <label className="text-sm text-muted-foreground">الدور</label>
+            <label className="text-sm text-muted-foreground">{t("Role", "الدور")}</label>
             <input
               className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm opacity-60"
-              value={user.role === "admin" ? "مدير" : "طالب"}
+              value={user.role === "admin" ? t("Administrator", "مدير") : t("Student", "طالب")}
               disabled
             />
           </div>
@@ -86,44 +88,44 @@ export function SettingsForm({ user, profile, subscription }: Props) {
 
       {/* Stats Summary */}
       <section className="rounded-2xl border border-border bg-card p-6">
-        <h2 className="mb-4 text-lg font-semibold">ملخص الحساب</h2>
+        <h2 className="mb-4 text-lg font-semibold">{t("Account summary", "ملخص الحساب")}</h2>
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           <div>
-            <p className="text-xs text-muted-foreground">المستوى</p>
+            <p className="text-xs text-muted-foreground">{t("Level", "المستوى")}</p>
             <p className="text-lg font-bold">{profile.level}</p>
           </div>
           <div>
-            <p className="text-xs text-muted-foreground">الخبرة</p>
+            <p className="text-xs text-muted-foreground">{t("Experience", "الخبرة")}</p>
             <p className="text-lg font-bold">{profile.totalXp} XP</p>
           </div>
           <div>
-            <p className="text-xs text-muted-foreground">الستريك</p>
-            <p className="text-lg font-bold">{profile.streak} يوم</p>
+            <p className="text-xs text-muted-foreground">{t("Streak", "الستريك")}</p>
+            <p className="text-lg font-bold">{t(`${profile.streak} days`, `${profile.streak} يوم`)}</p>
           </div>
           <div>
-            <p className="text-xs text-muted-foreground">تاريخ التسجيل</p>
-            <p className="text-lg font-bold">{user.createdAt.toLocaleDateString("ar-EG")}</p>
+            <p className="text-xs text-muted-foreground">{t("Joined", "تاريخ التسجيل")}</p>
+            <p className="text-lg font-bold">{user.createdAt.toLocaleDateString(locale === "ar" ? "ar-EG" : "en-US")}</p>
           </div>
         </div>
       </section>
 
       {/* Subscription */}
       <section className="rounded-2xl border border-border bg-card p-6">
-        <h2 className="mb-4 text-lg font-semibold">الاشتراك</h2>
+        <h2 className="mb-4 text-lg font-semibold">{t("Subscription", "الاشتراك")}</h2>
         {subscription ? (
           <div className="flex items-center justify-between rounded-xl bg-emerald-500/5 p-4">
             <div>
               <p className="font-medium text-emerald-600">{subscription.planName}</p>
               <p className="text-xs text-muted-foreground">
-                ينتهي في {subscription.expiresAt.toLocaleDateString("ar-EG")}
+                {t("Ends", "ينتهي في")} {subscription.expiresAt.toLocaleDateString(locale === "ar" ? "ar-EG" : "en-US")}
               </p>
             </div>
-            <span className="rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-600">نشط</span>
+            <span className="rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-600">{t("Active", "نشط")}</span>
           </div>
         ) : (
           <div className="rounded-xl bg-muted/50 p-4 text-center">
-            <p className="text-sm text-muted-foreground">ليس لديك اشتراك نشط.</p>
-            <Button size="sm" className="mt-2" onClick={() => router.push("/pricing")}>اشترك الآن</Button>
+            <p className="text-sm text-muted-foreground">{t("You do not have an active subscription.", "ليس لديك اشتراك نشط.")}</p>
+            <Button size="sm" className="mt-2" onClick={() => router.push("/pricing")}>{t("View plans", "اشترك الآن")}</Button>
           </div>
         )}
       </section>

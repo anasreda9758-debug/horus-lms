@@ -5,9 +5,11 @@ import { withModuleAccess } from "@/features/billing/queries";
 import { getBankBySlug } from "@/features/practice/queries";
 import { Navigation } from "@/components/navigation";
 import { BookOpen, Lock, Stethoscope } from "lucide-react";
+import { getLocale, localize } from "@/shared/locale";
 
 export default async function OspeModuleSelectPage() {
   const session = await requireUser();
+  const locale = await getLocale();
   const curriculum = await getCurriculum(session.user.id);
   const withAccess = await withModuleAccess(session.user.id, curriculum);
   const accessible = withAccess.filter((m) => m.access);
@@ -32,31 +34,31 @@ export default async function OspeModuleSelectPage() {
       <main className="flex-1 p-6 lg:p-8">
         <div className="mx-auto max-w-4xl">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold">اختبار OSPE</h1>
+            <h1 className="text-3xl font-bold">{localize(locale, "OSPE quiz", "اختبار OSPE")}</h1>
             <p className="mt-1 text-muted-foreground">
-              اختار الموديول لبدء اختبار السريري.
+              {localize(locale, "Choose a module to begin a clinical quiz.", "اختار الموديول لبدء اختبار السريري.")}
             </p>
           </div>
 
           {modulesWithOspe.length === 0 ? (
             <div className="rounded-2xl border border-border bg-card p-12 text-center">
               <Lock className="mx-auto mb-4 h-12 w-12 text-muted-foreground/40" />
-              <p className="text-muted-foreground">لا توجد موديولات متاحة. اشترِ موديولاً أو ترماً أولاً.</p>
+              <p className="text-muted-foreground">{localize(locale, "No modules are currently available. Subscribe to a module or term first.", "لا توجد موديولات متاحة. اشترِ موديولاً أو ترماً أولاً.")}</p>
               <Link
                 href="/pricing"
                 className="mt-4 inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
               >
-                عرض الأسعار
+                {localize(locale, "View plans", "عرض الأسعار")}
               </Link>
             </div>
           ) : (
             <>
               {term1.length > 0 && (
                 <section className="mb-8">
-                  <h2 className="mb-4 text-xl font-bold">الترم الأول</h2>
+                  <h2 className="mb-4 text-xl font-bold">{localize(locale, "Term 1", "الترم الأول")}</h2>
                   <ul className="grid gap-4 sm:grid-cols-2">
                     {term1.map((m) => (
-                      <OspeModuleCard key={m.id} m={m} />
+                      <OspeModuleCard key={m.id} m={m} locale={locale} />
                     ))}
                   </ul>
                 </section>
@@ -64,10 +66,10 @@ export default async function OspeModuleSelectPage() {
 
               {term2.length > 0 && (
                 <section>
-                  <h2 className="mb-4 text-xl font-bold">الترم الثاني</h2>
+                  <h2 className="mb-4 text-xl font-bold">{localize(locale, "Term 2", "الترم الثاني")}</h2>
                   <ul className="grid gap-4 sm:grid-cols-2">
                     {term2.map((m) => (
-                      <OspeModuleCard key={m.id} m={m} />
+                      <OspeModuleCard key={m.id} m={m} locale={locale} />
                     ))}
                   </ul>
                 </section>
@@ -82,6 +84,7 @@ export default async function OspeModuleSelectPage() {
 
 function OspeModuleCard({
   m,
+  locale,
 }: {
   m: {
     id: string;
@@ -91,6 +94,7 @@ function OspeModuleCard({
     term: number;
     bank: { id: string; title: string } | undefined;
   };
+  locale: "en" | "ar";
 }) {
   if (!m.bank) return null;
   return (
@@ -113,7 +117,7 @@ function OspeModuleCard({
               </p>
             ) : null}
             <p className="mt-2 text-xs text-muted-foreground">
-              اختبار سريري · {m.bank.title}
+              {localize(locale, "Clinical quiz", "اختبار سريري")} · {m.bank.title}
             </p>
           </div>
           <BookOpen className="h-4 w-4 text-muted-foreground/40" />
