@@ -1,18 +1,24 @@
 import Link from "next/link";
 import { requireUser } from "@/shared/session";
 import { getCurriculum } from "@/features/curriculum/queries";
-import { withModuleAccess } from "@/features/billing/queries";
 import { getBankBySlug } from "@/features/practice/queries";
 import { Navigation } from "@/components/navigation";
 import { BookOpen, Lock, Stethoscope } from "lucide-react";
 import { getLocale, localize } from "@/shared/locale";
+import { canAccessModule } from "@/features/access/learning-access";
 
 export default async function OspeModuleSelectPage() {
   const session = await requireUser();
   const locale = await getLocale();
   const curriculum = await getCurriculum(session.user.id);
-  const withAccess = await withModuleAccess(session.user.id, curriculum);
-  const accessible = withAccess.filter((m) => m.access);
+  const accessible = (
+    await Promise.all(
+      curriculum.map(async (module) => ({
+        ...module,
+        access: (await canAccessModule(session.user, module)).ok,
+      })),
+    )
+  ).filter((module) => module.access);
 
   const modulesWithOspe = await Promise.all(
     accessible.map(async (m) => {

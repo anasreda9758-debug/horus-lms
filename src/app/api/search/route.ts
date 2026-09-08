@@ -3,8 +3,8 @@ import { getSession } from "@/shared/session";
 import { getRAGIndex, retrieve } from "@/features/rag";
 import { db } from "@/shared/db";
 import { lecture } from "@/features/curriculum/schema";
-import { hasModuleAccess } from "@/features/billing/queries";
 import { inArray } from "drizzle-orm";
+import { getAccessibleLecture } from "@/features/access/learning-access";
 
 export async function GET(request: NextRequest) {
   const session = await getSession();
@@ -25,11 +25,12 @@ export async function GET(request: NextRequest) {
     const results = retrieve(index, q, { topK, moduleSlug });
     const lectureIds = [...new Set(results.map((result) => result.chunk.lectureId))];
     const lectures = lectureIds.length
-      ? await db.query.lecture.findMany({ where: inArray(lecture.id, lectureIds), with: { module: true } })
+      ? await db.query.lecture.findMany({ where: inArray(lecture.id, lectureIds) })
       : [];
     const available = new Map<string, string>();
     for (const lectureRow of lectures) {
-      if (lectureRow.module && (lectureRow.order === 1 || await hasModuleAccess(session.user.id, lectureRow.module))) {
+      const access = await getAccessibleLecture(session.user, lectureRow.id, { allowPreview: true });
+      if (access.ok) {
         available.set(lectureRow.id, lectureRow.slug);
       }
     }

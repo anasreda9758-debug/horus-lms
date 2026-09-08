@@ -1,13 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/shared/session";
-import { hasModuleAccess } from "@/shared/entitlements";
 import { getModuleBySlug } from "@/features/curriculum/queries";
 import { getBankForModule } from "@/features/practice/queries";
 import { ProgressBar } from "@/components/progress-bar";
 import { CompleteButton } from "@/components/complete-button";
 import { Navigation } from "@/components/navigation";
 import { getLocale, localize } from "@/shared/locale";
+import { canAccessModule } from "@/features/access/learning-access";
 import {
   BookOpen,
   FileText,
@@ -28,7 +28,7 @@ export default async function ModulePage({
   const mod = await getModuleBySlug(session.user.id, slug);
   if (!mod) notFound();
   const bank = await getBankForModule(mod.id);
-  const access = await hasModuleAccess(session.user.id, mod);
+  const access = (await canAccessModule(session.user, mod)).ok;
   const previewLecture = mod.lectures[0] ?? null;
 
   return (
@@ -110,6 +110,7 @@ export default async function ModulePage({
           ) : (
             <>
               {/* Quiz Button */}
+              {mod.slug === "rau-203" && <Link href={`/curriculum/${mod.slug}/practical`} className="mb-6 me-3 inline-flex items-center gap-2 rounded-xl border border-primary px-5 py-2.5 text-sm font-medium text-primary hover:bg-primary/10"><FlaskConical className="h-4 w-4" />{localize(locale, "Renal Practical · Anatomy", "عملي الرينال · التشريح")}</Link>}
               {bank ? (
                 <Link
                   href={`/quiz/${bank.slug}`}

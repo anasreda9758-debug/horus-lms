@@ -10,7 +10,7 @@ export async function GET() {
   }
 
   const folders = await listOspeFolders();
-  const access = await getOspeModuleAccess(session.user.id);
+  const access = await getOspeModuleAccess(session.user);
   const countByFolder = new Map(folders.map((f) => [f.folder, f.count]));
 
   return NextResponse.json({

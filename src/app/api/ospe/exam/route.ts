@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/shared/session";
-import { createExam, getExam, startExam } from "@/features/ospe/exam";
+import { createExam, startExam } from "@/features/ospe/exam";
+import { studentExam } from "@/features/ospe/integrity";
+import {
+  getAccessibleOspeFolder,
+  getAccessibleOspeFolders,
+  getAccessibleOspeExam,
+} from "@/features/access/learning-access";
 
 /**
  * POST /api/ospe/exam
@@ -25,9 +31,27 @@ export async function POST(request: NextRequest) {
     body = {};
   }
 
+  if (body.folder !== undefined && (typeof body.folder !== "string" || body.folder.length === 0)) {
+    return NextResponse.json({ error: "invalid OSPE folder" }, { status: 400 });
+  }
+
   const stationCount = Math.min(Math.max(body.stationCount ?? 10, 1), 30);
   const timePerStationSec = Math.min(Math.max(body.timePerStationSec ?? 60, 15), 300);
   const totalTimeLimitSec = Math.min(Math.max(body.totalTimeLimitSec ?? stationCount * timePerStationSec, 60), 3600);
+
+  let permittedFolders: string[];
+  if (body.folder) {
+    const folderAccess = await getAccessibleOspeFolder(session.user, body.folder);
+    if (!folderAccess.ok) return NextResponse.json({ error: "OSPE content not available" }, { status: 403 });
+    permittedFolders = [folderAccess.value.folder];
+  } else {
+    const foldersAccess = await getAccessibleOspeFolders(session.user);
+    if (!foldersAccess.ok) return NextResponse.json({ error: "OSPE content not available" }, { status: 403 });
+    permittedFolders = foldersAccess.value.map((item) => item.folder);
+  }
+  if (permittedFolders.length === 0) {
+    return NextResponse.json({ error: "OSPE content not available" }, { status: 403 });
+  }
 
   try {
     const examId = await createExam({
@@ -38,31 +62,16 @@ export async function POST(request: NextRequest) {
       totalTimeLimitSec,
     });
 
-    const result = await startExam(examId);
+    await startExam(examId, permittedFolders);
 
-    // Fetch full exam with stations for the client
-    const fullExam = await getExam(examId, session.user.id);
-    if (!fullExam) {
+    // Fetch only an exam whose stations remain inside the user's access scope.
+    const fullExamAccess = await getAccessibleOspeExam(session.user, examId);
+    if (!fullExamAccess.ok) {
       return NextResponse.json({ error: "exam created but could not be loaded" }, { status: 500 });
     }
+    const fullExam = fullExamAccess.value;
 
-    return NextResponse.json({
-      ok: true,
-      examId,
-      stationCount: fullExam.stations.length,
-      totalTimeLimitSec: fullExam.totalTimeLimitSec,
-      timePerStationSec: fullExam.timePerStationSec,
-      status: fullExam.status,
-      stations: fullExam.stations.map((s) => ({
-        id: s.id,
-        order: s.order,
-        folder: s.folder,
-        fileName: s.fileName,
-        studentAnswer: s.studentAnswer,
-        score: s.score,
-        timeSpentSec: s.timeSpentSec,
-      })),
-    });
+    return NextResponse.json({ ok: true, ...studentExam(fullExam) }, { headers: { "Cache-Control": "private, no-store" } });
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "failed to create exam" },

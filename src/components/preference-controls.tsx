@@ -1,7 +1,7 @@
 "use client";
 
 import { Languages, Moon, Sun } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useLocale } from "@/components/locale-provider";
 
 function savePreference(key: "horus_locale" | "horus_theme", value: string) {
@@ -10,11 +10,9 @@ function savePreference(key: "horus_locale" | "horus_theme", value: string) {
 
 export function PreferenceControls({ compact = false }: { compact?: boolean }) {
   const { locale, t } = useLocale();
-  const [dark, setDark] = useState(true);
-
-  useEffect(() => {
-    setDark(document.documentElement.classList.contains("dark"));
-  }, []);
+  const [dark, setDark] = useState(
+    () => typeof document !== "undefined" && document.documentElement.classList.contains("dark"),
+  );
 
   function toggleLocale() {
     const next = locale === "en" ? "ar" : "en";

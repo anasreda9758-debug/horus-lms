@@ -4,6 +4,7 @@ import { db } from "@/shared/db";
 import { questionBookmark } from "@/features/practice/schema";
 import { eq, and } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
+import { getAccessibleQuestion } from "@/features/access/learning-access";
 
 // GET /api/quiz/bookmark?questionId=xxx — check if bookmarked
 export async function GET(request: NextRequest) {
@@ -13,6 +14,8 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const questionId = searchParams.get("questionId");
   if (!questionId) return NextResponse.json({ error: "missing questionId" }, { status: 400 });
+  const access = await getAccessibleQuestion(session.user, questionId);
+  if (!access.ok) return NextResponse.json({ error: "not found" }, { status: 404 });
 
   const [existing] = await db
     .select({ id: questionBookmark.id })
@@ -30,6 +33,9 @@ export async function POST(request: NextRequest) {
 
   const { questionId } = await request.json();
   if (!questionId) return NextResponse.json({ error: "missing questionId" }, { status: 400 });
+  if (typeof questionId !== "string") return NextResponse.json({ error: "invalid questionId" }, { status: 400 });
+  const access = await getAccessibleQuestion(session.user, questionId);
+  if (!access.ok) return NextResponse.json({ error: "not found" }, { status: 404 });
 
   const [existing] = await db
     .select({ id: questionBookmark.id })

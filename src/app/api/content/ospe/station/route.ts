@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
   }
 
   const folder = request.nextUrl.searchParams.get("folder") ?? "all";
-  const access = await getOspeModuleAccess(session.user.id);
+  const access = await getOspeModuleAccess(session.user);
 
   // Pick uniformly among all accessible images (or restrict to one folder).
   const pools: { folder: string; fileName: string }[] = [];

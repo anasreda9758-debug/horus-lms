@@ -3,9 +3,9 @@ import { getSession } from "@/shared/session";
 import { hasAnySubscription } from "@/features/billing/queries";
 import { getAiUsageToday, FREE_DAILY_LIMIT, recordAiUsage } from "@/features/ai/queries";
 import { generateJson } from "@/shared/ai-client";
-import { getClinicalCase } from "@/features/review/queries";
 import { awardXp } from "@/features/gamification/queries";
 import { evaluateSourceAnswers } from "@/features/review/source-generators";
+import { getAccessibleClinicalCase } from "@/features/access/learning-access";
 
 const SYSTEM_PROMPT =
   "You are a medical examiner. Evaluate the student's answers against the model answers. Give clear, concise feedback " +
@@ -34,10 +34,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "invalid json" }, { status: 400 });
   }
 
-  const caseRow = await getClinicalCase(caseId, session.user.id);
-  if (!caseRow) {
+  const access = await getAccessibleClinicalCase(session.user, caseId);
+  if (!access.ok) {
     return NextResponse.json({ error: "case not found" }, { status: 404 });
   }
+  const caseRow = access.value.case;
 
   const premium = await hasAnySubscription(session.user.id);
   if (!premium) {

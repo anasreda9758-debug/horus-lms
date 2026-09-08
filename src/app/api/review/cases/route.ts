@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { eq } from "drizzle-orm";
 import { getSession } from "@/shared/session";
-import { db } from "@/shared/db";
-import { lecture } from "@/features/curriculum/schema";
-import { hasAnySubscription, hasModuleAccess } from "@/features/billing/queries";
+import { hasAnySubscription } from "@/features/billing/queries";
 import { getAiUsageToday, FREE_DAILY_LIMIT, recordAiUsage } from "@/features/ai/queries";
 import { generateJson } from "@/shared/ai-client";
 import { createClinicalCase, listMyCases } from "@/features/review/queries";
 import { createSourceClinicalCase } from "@/features/review/source-generators";
+import { getAccessibleClinicalCase, getAccessibleLecture } from "@/features/access/learning-access";
 
 const SYSTEM_PROMPT =
   "You are a medical educator. Create one realistic medical clinical case based strictly on the content given. " +
@@ -32,21 +30,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "invalid json" }, { status: 400 });
   }
 
-  const lectureRow = await db.query.lecture.findFirst({
-    where: eq(lecture.id, lectureId),
-    with: { module: true },
-  });
-  if (!lectureRow || !lectureRow.module) {
-    return NextResponse.json({ error: "lecture not found" }, { status: 400 });
-  }
+  const lectureAccess = await getAccessibleLecture(session.user, lectureId, { allowPreview: false });
+  if (!lectureAccess.ok) return NextResponse.json({ error: "lecture not found" }, { status: 404 });
+  const lectureRow = lectureAccess.value;
   if (!lectureRow.content || lectureRow.content.trim().length === 0) {
     return NextResponse.json({ error: "no readable content for this lecture" }, { status: 400 });
   }
 
   const premium = await hasAnySubscription(session.user.id);
-  if (!lectureRow.module.isFree && !(await hasModuleAccess(session.user.id, lectureRow.module))) {
-    return NextResponse.json({ error: "premium required" }, { status: 403 });
-  }
   if (!premium) {
     const usedToday = await getAiUsageToday(session.user.id);
     if (usedToday >= FREE_DAILY_LIMIT) {
@@ -108,7 +99,12 @@ export async function GET() {
   if (!session) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
-  const cases = await listMyCases(session.user.id);
+  const myCases = await listMyCases(session.user.id);
+  const cases = [] as typeof myCases;
+  for (const caseRow of myCases) {
+    const access = await getAccessibleClinicalCase(session.user, caseRow.id);
+    if (access.ok) cases.push(caseRow);
+  }
   return NextResponse.json({
     cases: cases.map((c) => ({
       id: c.id,

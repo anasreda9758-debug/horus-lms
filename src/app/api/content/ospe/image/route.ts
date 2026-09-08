@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "missing params" }, { status: 400 });
   }
 
-  const access = await getOspeModuleAccess(session.user.id);
+  const access = await getOspeModuleAccess(session.user);
   const meta = access.find((a) => a.folder === folder);
   if (!meta) {
     return NextResponse.json({ error: "unknown folder" }, { status: 404 });

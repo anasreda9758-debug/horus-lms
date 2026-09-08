@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/shared/session";
-import { getBankBySlug, gradeAnswer, resolveAttempt, getOwnedAttempt } from "@/features/practice/queries";
+import { gradeAnswer, resolveAttempt } from "@/features/practice/queries";
 import { awardXp } from "@/features/gamification/queries";
 import { quizAnswerSchema } from "@/shared/validation";
+import {
+  getAccessibleQuestion,
+  getAccessibleQuestionBankBySlug,
+  getAccessibleQuizAttempt,
+  questionBelongsToBank,
+} from "@/features/access/learning-access";
 
 export async function POST(request: NextRequest) {
   const session = await getSession();
@@ -30,14 +36,24 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "invalid json" }, { status: 400 });
   }
 
-  const bank = await getBankBySlug(bankSlug);
-  if (!bank) {
-    return NextResponse.json({ error: "bank not found" }, { status: 400 });
+  const bankAccess = await getAccessibleQuestionBankBySlug(session.user, bankSlug);
+  if (!bankAccess.ok) return NextResponse.json({ error: "not found" }, { status: 404 });
+  const bank = bankAccess.value;
+
+  const questionAccess = await getAccessibleQuestion(session.user, questionId);
+  if (!questionAccess.ok || !questionBelongsToBank(questionAccess.value.bankId, bank.id)) {
+    return NextResponse.json({ error: "question not found" }, { status: 404 });
   }
 
-  let attempt = attemptId ? await getOwnedAttempt(session.user.id, attemptId) : null;
-  if (attempt && attempt.status !== "in_progress") attempt = null;
-  if (!attempt || attempt.bankId !== bank.id) {
+  let attempt;
+  if (attemptId) {
+    const attemptAccess = await getAccessibleQuizAttempt(session.user, attemptId);
+    if (!attemptAccess.ok) return NextResponse.json({ error: "attempt not found" }, { status: 404 });
+    if (attemptAccess.value.status !== "in_progress" || attemptAccess.value.bankId !== bank.id) {
+      return NextResponse.json({ error: "attempt does not match quiz" }, { status: 400 });
+    }
+    attempt = attemptAccess.value;
+  } else {
     attempt = await resolveAttempt(session.user.id, bank.id);
   }
 

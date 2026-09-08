@@ -2,7 +2,7 @@ import { and, eq, lte } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 import { db } from "@/shared/db";
 import { clinicalCase, flashcard } from "./schema";
-import { hasModuleAccess } from "@/features/billing/queries";
+import { canAccessModule, type LearningActor } from "@/features/access/learning-access";
 
 export type ReviewLecture = {
   id: string;
@@ -14,7 +14,7 @@ export type ReviewLecture = {
 
 // Lectures the user can generate flashcards/cases from: accessible modules
 // (free always, unlocked when subscribed) that have readable content.
-export async function listLecturesForReview(userId: string): Promise<ReviewLecture[]> {
+export async function listLecturesForReview(user: LearningActor): Promise<ReviewLecture[]> {
   const modules = await db.query.curriculumModule.findMany({
     orderBy: (m, { asc }) => [asc(m.order)],
     with: {
@@ -26,7 +26,7 @@ export async function listLecturesForReview(userId: string): Promise<ReviewLectu
 
   const out: ReviewLecture[] = [];
   for (const m of modules) {
-    if (!(await hasModuleAccess(userId, m))) continue;
+    if (!(await canAccessModule(user, m)).ok) continue;
     for (const l of m.lectures) {
       if (!l.content || l.content.trim().length === 0) continue;
       out.push({

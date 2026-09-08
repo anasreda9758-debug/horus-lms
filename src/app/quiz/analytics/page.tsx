@@ -17,7 +17,7 @@ export default async function QuizAnalyticsPage() {
   const session = await requireUser();
   const locale = await getLocale();
   const t = (english: string, arabic: string) => localize(locale, english, arabic);
-  const analytics = await getQuizAnalytics(session.user.id);
+  const analytics = await getQuizAnalytics(session.user);
   const { overall, accuracyOverTime, perModule, byDifficulty, avgTimeByDifficulty } = analytics;
 
   return (

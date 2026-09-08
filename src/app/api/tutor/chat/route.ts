@@ -1,15 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { eq } from "drizzle-orm";
 import { getSession } from "@/shared/session";
-import { db } from "@/shared/db";
 import { streamTutorReply, type TutorMessage } from "@/shared/ai-client";
 import { FREE_DAILY_LIMIT, getAiUsageToday, recordAiUsage } from "@/features/ai/queries";
-import { hasModuleAccess, hasAnySubscription } from "@/features/billing/queries";
-import { lecture } from "@/features/curriculum/schema";
+import { hasAnySubscription } from "@/features/billing/queries";
 import { getRAGIndex, retrieve } from "@/features/rag";
 import { tutorChatSchema } from "@/shared/validation";
 import { updateStreak } from "@/features/gamification/queries";
 import { createSourceTutorReply } from "@/features/review/source-generators";
+import { getAccessibleLecture } from "@/features/access/learning-access";
 
 // ── Principle 1: Role Playing ──────────────────────────────────────────────
 function buildSystemPrompt(
@@ -115,8 +113,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  updateStreak(session.user.id).catch(() => {});
-
   let lectureId: string;
   let messages: TutorMessage[];
   try {
@@ -131,21 +127,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "invalid json" }, { status: 400 });
   }
 
-  const lectureRow = await db.query.lecture.findFirst({
-    where: eq(lecture.id, lectureId),
-    with: { module: true },
-  });
-  if (!lectureRow || !lectureRow.module) {
-    return NextResponse.json({ error: "lecture not found" }, { status: 400 });
-  }
+  const lectureAccess = await getAccessibleLecture(session.user, lectureId, { allowPreview: true });
+  if (!lectureAccess.ok) return NextResponse.json({ error: "lecture not found" }, { status: 404 });
+  const lectureRow = lectureAccess.value;
+  updateStreak(session.user.id).catch(() => {});
   // Local source-grounded study tools are the default. A hosted model is an
   // explicit opt-in, never an accidental dependency just because a key exists.
   const useHostedModel = process.env.USE_HOSTED_AI === "true" && Boolean(process.env.GROQ_API_KEY);
   const premium = useHostedModel && await hasAnySubscription(session.user.id);
-  if (!lectureRow.module.isFree && !(await hasModuleAccess(session.user.id, lectureRow.module))) {
-    return NextResponse.json({ error: "premium required" }, { status: 403 });
-  }
-
   if (useHostedModel && !premium) {
     const usedToday = await getAiUsageToday(session.user.id);
     if (usedToday >= FREE_DAILY_LIMIT) {

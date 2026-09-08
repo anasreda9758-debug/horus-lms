@@ -4,16 +4,8 @@ import { ExamMode } from "@/components/exam-mode";
 import { Navigation } from "@/components/navigation";
 import { FileText } from "lucide-react";
 import { getLocale, localize } from "@/shared/locale";
-
-const OSPE_PDFS = [
-  { name: "OSPE CVS", file: "OSPE CVS.pdf", size: "80 MB" },
-  { name: "OSPE IBL", file: "OSPE IBL.pdf", size: "18 MB" },
-  { name: "Module 1 — Sites & Stains", file: "Ospe module 1 ?? sites & stains.pdf", size: "4.3 MB" },
-  { name: "Module 2 — EB", file: "Ospe module 2 EB.pdf", size: "2.7 MB" },
-  { name: "Module 3", file: "Ospe module 3.pdf", size: "12 MB" },
-  { name: "OSPE RENAL (1)", file: "OSPE RENAL.pdf", size: "43 MB" },
-  { name: "OSPE RENAL (2)", file: "OSPE RENAL.pdf-1.pdf", size: "27 MB" },
-];
+import { getAccessibleOspeFolder } from "@/features/access/learning-access";
+import { OSPE_PDF_REFERENCES } from "@/features/ospe/data";
 
 export default async function OspePage({
   searchParams,
@@ -24,6 +16,16 @@ export default async function OspePage({
   const locale = await getLocale();
   const { mode } = await searchParams;
   const isExamMode = mode === "exam";
+  const accessiblePdfReferences = (
+    await Promise.all(
+      OSPE_PDF_REFERENCES.map(async (reference) => ({
+        reference,
+        access: await getAccessibleOspeFolder(session.user, reference.folder),
+      })),
+    )
+  )
+    .filter(({ access }) => access.ok)
+    .map(({ reference }) => reference);
 
   return (
     <div className="flex flex-1">
@@ -62,13 +64,18 @@ export default async function OspePage({
               <h2 className="text-lg font-bold">{localize(locale, "Reference PDFs", "ملفات PDF للمرجع")}</h2>
             </div>
             <p className="mb-4 text-sm text-muted-foreground">
-              {localize(locale, "PDF reference files with the stations and model answers.", "ملفات PDF فيها كل المحطات مع الإجابات النموذجية.")}
+              {localize(locale, "Reference PDFs available through your current module access.", "ملفات PDF المرجعية المتاحة حسب صلاحية الموديولات الحالية.")}
             </p>
+            {accessiblePdfReferences.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                {localize(locale, "No OSPE reference PDFs are available with your current access.", "لا توجد ملفات OSPE مرجعية متاحة بصلاحية حسابك الحالية.")}
+              </p>
+            ) : (
             <div className="grid gap-3 sm:grid-cols-2">
-              {OSPE_PDFS.map((pdf) => (
+              {accessiblePdfReferences.map((pdf) => (
                 <a
                   key={pdf.file}
-                  href={`/ospe-pdfs/${encodeURIComponent(pdf.file)}`}
+                  href={`/api/content/ospe/pdf?file=${encodeURIComponent(pdf.file)}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-3 rounded-lg border border-border p-3 text-sm transition-colors hover:border-primary/30 hover:bg-primary/5"
@@ -81,6 +88,7 @@ export default async function OspePage({
                 </a>
               ))}
             </div>
+            )}
           </div>
         </div>
       </main>

@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { eq } from "drizzle-orm";
 import { getSession } from "@/shared/session";
-import { db } from "@/shared/db";
-import { lecture } from "@/features/curriculum/schema";
-import { hasAnySubscription, hasModuleAccess } from "@/features/billing/queries";
+import { hasAnySubscription } from "@/features/billing/queries";
 import { getAiUsageToday, FREE_DAILY_LIMIT, recordAiUsage } from "@/features/ai/queries";
 import { generateJson } from "@/shared/ai-client";
 import { createFlashcards, getDueFlashcards } from "@/features/review/queries";
 import { createSourceFlashcards } from "@/features/review/source-generators";
+import { getAccessibleLecture } from "@/features/access/learning-access";
 
 const SYSTEM_PROMPT =
   "You are a medical education assistant. Create concise medical flashcards strictly from the content given. " +
@@ -31,21 +29,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "invalid json" }, { status: 400 });
   }
 
-  const lectureRow = await db.query.lecture.findFirst({
-    where: eq(lecture.id, lectureId),
-    with: { module: true },
-  });
-  if (!lectureRow || !lectureRow.module) {
-    return NextResponse.json({ error: "lecture not found" }, { status: 400 });
-  }
+  const lectureAccess = await getAccessibleLecture(session.user, lectureId, { allowPreview: false });
+  if (!lectureAccess.ok) return NextResponse.json({ error: "lecture not found" }, { status: 404 });
+  const lectureRow = lectureAccess.value;
   if (!lectureRow.content || lectureRow.content.trim().length === 0) {
     return NextResponse.json({ error: "no readable content for this lecture" }, { status: 400 });
   }
 
   const premium = await hasAnySubscription(session.user.id);
-  if (!lectureRow.module.isFree && !(await hasModuleAccess(session.user.id, lectureRow.module))) {
-    return NextResponse.json({ error: "premium required" }, { status: 403 });
-  }
   if (!premium) {
     const usedToday = await getAiUsageToday(session.user.id);
     if (usedToday >= FREE_DAILY_LIMIT) {
@@ -96,7 +87,12 @@ export async function GET() {
   if (!session) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
-  const cards = await getDueFlashcards(session.user.id);
+  const dueCards = await getDueFlashcards(session.user.id);
+  const cards = [] as typeof dueCards;
+  for (const card of dueCards) {
+    const access = await getAccessibleLecture(session.user, card.lectureId, { allowPreview: false });
+    if (access.ok) cards.push(card);
+  }
   return NextResponse.json({
     cards: cards.map((c) => {
       // Legacy offline cards used a generic "key point 1" front. Keep their

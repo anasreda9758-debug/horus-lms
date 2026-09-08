@@ -6,6 +6,7 @@ import { getSession } from "@/shared/session";
 import { db } from "@/shared/db";
 import { lectureProgress } from "@/features/curriculum/schema";
 import { awardXp, updateStreak } from "@/features/gamification/queries";
+import { getAccessibleLecture } from "@/features/access/learning-access";
 
 export async function POST(request: NextRequest) {
   const session = await getSession();
@@ -25,6 +26,9 @@ export async function POST(request: NextRequest) {
   } catch {
     return NextResponse.json({ error: "invalid json" }, { status: 400 });
   }
+
+  const lectureAccess = await getAccessibleLecture(session.user, lectureId, { allowPreview: true });
+  if (!lectureAccess.ok) return NextResponse.json({ error: "lecture not found" }, { status: 404 });
 
   const existing = await db
     .select({ id: lectureProgress.id })
@@ -53,7 +57,7 @@ export async function POST(request: NextRequest) {
       updateStreak(session.user.id).catch(() => {});
     }
   } catch {
-    return NextResponse.json({ error: "lecture not found" }, { status: 400 });
+    return NextResponse.json({ error: "progress could not be updated" }, { status: 400 });
   }
 
   revalidatePath("/curriculum");

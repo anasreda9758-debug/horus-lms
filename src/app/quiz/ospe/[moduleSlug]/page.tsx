@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/shared/session";
-import { hasModuleAccess } from "@/shared/entitlements";
 import { getBankBySlug, getQuizQuestionsRandom, startAttempt } from "@/features/practice/queries";
 import { OspeQuizRunner } from "@/components/ospe-quiz-runner";
 import { Navigation } from "@/components/navigation";
 import { Lock, HelpCircle, Clock, Stethoscope } from "lucide-react";
+import { canAccessModule } from "@/features/access/learning-access";
 
 export default async function OspeQuizPage({
   params,
@@ -21,10 +21,7 @@ export default async function OspeQuizPage({
   if (!bank) notFound();
 
   const moduleName = bank.module?.name ?? "هذا الموديول";
-  const access = await hasModuleAccess(
-    session.user.id,
-    bank.module ?? { id: "", slug: "", isFree: true, term: 1 },
-  );
+  const access = bank.module ? (await canAccessModule(session.user, bank.module)).ok : false;
 
   const count = countParam ? parseInt(countParam, 10) : 0;
   const validCount = [10, 25, 50].includes(count) ? count : 0;

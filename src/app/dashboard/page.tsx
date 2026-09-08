@@ -2,7 +2,7 @@ import Link from "next/link";
 import { requireUser } from "@/shared/session";
 import { getCurriculum, getStudyYears } from "@/features/curriculum/queries";
 import { getModuleAccuracy, getDueReviewCount } from "@/features/practice/queries";
-import { getActiveSubscriptions, withModuleAccess } from "@/features/billing/queries";
+import { getActiveSubscriptions } from "@/features/billing/queries";
 import { getProfile } from "@/features/gamification/queries";
 import { db } from "@/shared/db";
 import { quizAttempt, questionBank } from "@/features/practice/schema";
@@ -13,6 +13,7 @@ import { getLocale, localize } from "@/shared/locale";
 import { getSelectedStudyYear } from "@/shared/study-year";
 import { AcademicYearSelector } from "@/components/academic-year-selector";
 import { DailyStudyPlan } from "@/components/daily-study-plan";
+import { canAccessModule } from "@/features/access/learning-access";
 import {
   BookOpen,
   FlaskConical,
@@ -39,13 +40,18 @@ export default async function DashboardPage() {
   const savedYear = await getSelectedStudyYear();
   const studyYear = availableYears.includes(savedYear) ? savedYear : availableYears[0];
   const curriculum = await getCurriculum(user.id, studyYear);
-  const accessibleCurriculum = await withModuleAccess(user.id, curriculum);
-  const accuracy = await getModuleAccuracy(user.id, studyYear);
+  const accessibleCurriculum = await Promise.all(
+    curriculum.map(async (module) => ({
+      ...module,
+      access: (await canAccessModule(user, module)).ok,
+    })),
+  );
+  const accuracy = await getModuleAccuracy(user, studyYear);
   const subs = (await getActiveSubscriptions(user.id)).filter(
     (s) => s.expiresAt > new Date()
   );
   const profile = await getProfile(user.id);
-  const dueReviewCount = await getDueReviewCount(user.id);
+  const dueReviewCount = await getDueReviewCount(user);
   const nextLecture = accessibleCurriculum
     .flatMap((module) => module.lectures.map((lecture) => ({ ...lecture, moduleName: module.name, accessible: module.access })))
     .find((lecture) => lecture.accessible && !lecture.completed) ?? null;

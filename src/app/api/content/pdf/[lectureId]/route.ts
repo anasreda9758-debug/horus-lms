@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { eq } from "drizzle-orm";
 import { getSession } from "@/shared/session";
-import { db } from "@/shared/db";
-import { lecture } from "@/features/curriculum/schema";
 import { streamFile } from "@/shared/storage";
+import { getAccessibleLecture } from "@/features/access/learning-access";
 
 export async function GET(
   request: NextRequest,
@@ -15,20 +13,10 @@ export async function GET(
   }
 
   const { lectureId } = await params;
-  const row = await db.query.lecture.findFirst({
-    where: eq(lecture.id, lectureId),
-    with: { module: true },
-  });
-  if (!row || !row.module) {
-    return NextResponse.json({ error: "lecture not found" }, { status: 404 });
-  }
-
-  if (!row.module.isFree) {
-    const { hasModuleAccess } = await import("@/features/billing/queries");
-    if (!(await hasModuleAccess(session.user.id, row.module))) {
-      return NextResponse.json({ error: "premium required" }, { status: 403 });
-    }
-  }
+  const access = await getAccessibleLecture(session.user, lectureId, { allowPreview: true });
+  // A direct ID must not reveal whether a protected lecture/PDF exists.
+  if (!access.ok) return NextResponse.json({ error: "not found" }, { status: 404 });
+  const row = access.value;
 
   if (!row.pdfFile) {
     return NextResponse.json({ error: "no pdf on file for this lecture" }, { status: 404 });

@@ -4,6 +4,7 @@ import { getSession } from "@/shared/session";
 import { finishAttempt } from "@/features/practice/queries";
 import { quizFinishSchema } from "@/shared/validation";
 import { updateStreak } from "@/features/gamification/queries";
+import { getAccessibleQuizAttempt } from "@/features/access/learning-access";
 
 export async function POST(request: NextRequest) {
   const session = await getSession();
@@ -22,6 +23,9 @@ export async function POST(request: NextRequest) {
     }
     return NextResponse.json({ error: "invalid json" }, { status: 400 });
   }
+
+  const access = await getAccessibleQuizAttempt(session.user, attemptId);
+  if (!access.ok) return NextResponse.json({ error: "attempt not found" }, { status: 404 });
 
   const result = await finishAttempt(session.user.id, attemptId);
   if (!result) {
