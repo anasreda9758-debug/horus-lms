@@ -27,13 +27,16 @@ export function PracticalPractice({ fixtures, wrongOnly }: { fixtures: boolean; 
     const res = await fetch(`${endpoint}&mode=${wrongOnly ? "wrong" : "practice"}`, { signal, cache: "no-store" });
     const body = await res.json();
     if (!res.ok) throw new Error(body.error ?? "Could not load practical questions");
-    setData(body); setIndex(0); setSelected(""); setFeedback({}); setError("");
+    return body as PracticePayload;
   }, [endpoint, wrongOnly]);
+  const applyLoadedData = useCallback((body: PracticePayload) => {
+    setData(body); setIndex(0); setSelected(""); setFeedback({}); setError("");
+  }, []);
   useEffect(() => {
     const controller = new AbortController();
-    load(controller.signal).catch((e: Error) => { if (!controller.signal.aborted) setError(e.message); });
+    load(controller.signal).then(applyLoadedData).catch((e: Error) => { if (!controller.signal.aborted) setError(e.message); });
     return () => controller.abort();
-  }, [load]);
+  }, [load, applyLoadedData]);
 
   const question = data?.questions[index];
   const image = data?.images.find((i) => i.id === question?.imageId);
@@ -88,7 +91,7 @@ export function PracticalPractice({ fixtures, wrongOnly }: { fixtures: boolean; 
       </div>
       <p className="mt-4 text-xs text-muted-foreground">Counts include retries. Wrong remaining counts questions whose latest answer is incorrect. Practical progress is separate from theory quizzes.</p>
     </section>}
-    {error && <div role="alert" className="rounded-lg border border-red-600 bg-red-50 p-4 text-red-950 dark:bg-red-950 dark:text-red-100">{error} {!data && <Button variant="outline" className="ms-3" onClick={() => load().catch((e: Error) => setError(e.message))}>Retry</Button>}</div>}
+    {error && <div role="alert" className="rounded-lg border border-red-600 bg-red-50 p-4 text-red-950 dark:bg-red-950 dark:text-red-100">{error} {!data && <Button variant="outline" className="ms-3" onClick={() => load().then(applyLoadedData).catch((e: Error) => setError(e.message))}>Retry</Button>}</div>}
     {!data && !error && <p role="status">{t("Loading practical…", "جارٍ تحميل التدريب…")}</p>}
     {data && !question && <div className="rounded-2xl border bg-card p-8">
       <h2 className="text-xl font-semibold">{wrongOnly ? "No wrong questions remaining" : "No approved Renal Anatomy questions available yet"}</h2>

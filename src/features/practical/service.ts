@@ -21,9 +21,9 @@ export function createPracticalService(store: PracticalStore, authorize: Authori
     if (!actor) throw new PracticalError("Sign in required", 401);
     if (request.moduleSlug !== PILOT_MODULE || request.subject !== PILOT_SUBJECT) throw new PracticalError("Pilot not available for this module/subject", 404);
     if (request.fixtures && !allowFixtures) throw new PracticalError("Development fixtures are disabled", 404);
-    const module = await authorize(actor, request.moduleSlug);
-    if (!module) throw new PracticalError("Module access required", 403);
-    const scope: Scope = { moduleId: module.id, studyYear: module.studyYear, subject: request.subject, fixtures: request.fixtures };
+    const moduleRecord = await authorize(actor, request.moduleSlug);
+    if (!moduleRecord) throw new PracticalError("Module access required", 403);
+    const scope: Scope = { moduleId: moduleRecord.id, studyYear: moduleRecord.studyYear, subject: request.subject, fixtures: request.fixtures };
     const data = await store.catalog(scope);
     const images = data.images.flatMap((i) => { const p = imageSchema.safeParse(i); return p.success ? [p.data] : []; });
     const questions = data.questions.flatMap((q) => { const p = questionSchema.safeParse(q); return p.success ? [p.data] : []; })
