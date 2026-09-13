@@ -7,6 +7,7 @@ import {
   getAccessibleOspeFolders,
   getAccessibleOspeExam,
 } from "@/features/access/learning-access";
+import { resolvePracticalOspeScope } from "@/features/practical/ospe-scope";
 
 /**
  * POST /api/ospe/exam
@@ -21,6 +22,8 @@ export async function POST(request: NextRequest) {
 
   let body: {
     folder?: string;
+    moduleSlug?: string;
+    subjectSlug?: string;
     stationCount?: number;
     timePerStationSec?: number;
     totalTimeLimitSec?: number;
@@ -34,13 +37,22 @@ export async function POST(request: NextRequest) {
   if (body.folder !== undefined && (typeof body.folder !== "string" || body.folder.length === 0)) {
     return NextResponse.json({ error: "invalid OSPE folder" }, { status: 400 });
   }
+  const hasPracticalScope = body.moduleSlug !== undefined || body.subjectSlug !== undefined;
+  if (hasPracticalScope && (typeof body.moduleSlug !== "string" || !body.moduleSlug || typeof body.subjectSlug !== "string" || !body.subjectSlug || body.folder)) {
+    return NextResponse.json({ error: "invalid practical OSPE scope" }, { status: 400 });
+  }
 
   const stationCount = Math.min(Math.max(body.stationCount ?? 10, 1), 30);
   const timePerStationSec = Math.min(Math.max(body.timePerStationSec ?? 60, 15), 300);
   const totalTimeLimitSec = Math.min(Math.max(body.totalTimeLimitSec ?? stationCount * timePerStationSec, 60), 3600);
 
-  let permittedFolders: string[];
-  if (body.folder) {
+  let permittedFolders: string[] | undefined;
+  let practicalTrackId: string | undefined;
+  if (hasPracticalScope) {
+    const track = await resolvePracticalOspeScope(session.user, body.moduleSlug!, body.subjectSlug!);
+    if (!track.ok) return NextResponse.json({ error: "OSPE content not available" }, { status: track.reason === "forbidden" ? 403 : track.reason === "unauthenticated" ? 401 : 404 });
+    practicalTrackId = track.value.id;
+  } else if (body.folder) {
     const folderAccess = await getAccessibleOspeFolder(session.user, body.folder);
     if (!folderAccess.ok) return NextResponse.json({ error: "OSPE content not available" }, { status: 403 });
     permittedFolders = [folderAccess.value.folder];
@@ -49,13 +61,14 @@ export async function POST(request: NextRequest) {
     if (!foldersAccess.ok) return NextResponse.json({ error: "OSPE content not available" }, { status: 403 });
     permittedFolders = foldersAccess.value.map((item) => item.folder);
   }
-  if (permittedFolders.length === 0) {
+  if (permittedFolders && permittedFolders.length === 0) {
     return NextResponse.json({ error: "OSPE content not available" }, { status: 403 });
   }
 
   try {
     const examId = await createExam({
       userId: session.user.id,
+      practicalTrackId,
       folder: body.folder,
       stationCount,
       timePerStationSec,

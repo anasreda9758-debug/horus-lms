@@ -1,12 +1,29 @@
 import { sql } from "drizzle-orm";
-import { boolean, check, integer, jsonb, pgTable, primaryKey, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { boolean, check, index, integer, jsonb, pgTable, primaryKey, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 import { user } from "../auth/schema";
 import { curriculumModule, lecture } from "../curriculum/schema";
 import { academicYear } from "../hierarchy/schema";
-import type { Marker, SourceMaterial, PracticalQuestion } from "./model";
+import type { Marker, SourceMaterial, PracticalQuestion, PracticalSubject, PracticalTrackStatus } from "./model";
+
+export const practicalTrack = pgTable("practical_track", {
+  id: text("id").primaryKey(),
+  moduleId: text("module_id").notNull().references(() => curriculumModule.id),
+  subject: text("subject").$type<PracticalSubject>().notNull(),
+  subjectSlug: text("subject_slug").notNull(),
+  displayNameEn: text("display_name_en").notNull(),
+  displayNameAr: text("display_name_ar"),
+  status: text("status").$type<PracticalTrackStatus>().notNull().default("DRAFT"),
+  sortOrder: integer("sort_order").notNull().default(0),
+  practiceEnabled: boolean("practice_enabled").notNull().default(true),
+  ospeEnabled: boolean("ospe_enabled").notNull().default(false),
+}, (t) => [
+  uniqueIndex("practical_track_module_subject_slug").on(t.moduleId, t.subjectSlug),
+  index("practical_track_module_status_order").on(t.moduleId, t.status, t.sortOrder),
+]);
 
 export const practicalImage = pgTable("practical_image", {
   id: text("id").primaryKey(),
+  trackId: text("practical_track_id").references(() => practicalTrack.id),
   moduleId: text("module_id").notNull().references(() => curriculumModule.id),
   studyYear: integer("study_year").notNull(), subject: text("subject").notNull(),
   storageKey: text("storage_key").notNull(), alt: text("alt").notNull(),
@@ -18,6 +35,7 @@ export const practicalImage = pgTable("practical_image", {
 });
 export const practicalQuestion = pgTable("practical_question", {
   id: text("id").primaryKey(),
+  trackId: text("practical_track_id").references(() => practicalTrack.id),
   academicYearId: text("academic_year_id").references(() => academicYear.id),
   studyYear: integer("study_year").notNull(),
   moduleId: text("module_id").notNull().references(() => curriculumModule.id),

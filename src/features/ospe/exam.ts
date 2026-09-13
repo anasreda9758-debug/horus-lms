@@ -1,8 +1,7 @@
 import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 import { db } from "@/shared/db";
-import { ospeAnswerKey, ospeExam, ospeExamStation, ospeRubric } from "./schema";
-import { OSPE_FOLDER_TO_MODULE } from "./data";
+import { ospeAnswerKey, ospeExam, ospeExamStation, ospeRubric, practicalTrackOspeStation } from "./schema";
 import { rubricMaximum } from "./integrity";
 
 /**
@@ -10,6 +9,7 @@ import { rubricMaximum } from "./integrity";
  */
 export async function createExam(params: {
   userId: string;
+  practicalTrackId?: string | null;
   folder?: string | null;
   stationCount: number;
   timePerStationSec: number;
@@ -19,6 +19,7 @@ export async function createExam(params: {
   await db.insert(ospeExam).values({
     id: examId,
     userId: params.userId,
+    practicalTrackId: params.practicalTrackId ?? null,
     folder: params.folder ?? null,
     stationCount: params.stationCount,
     timePerStationSec: params.timePerStationSec,
@@ -42,11 +43,19 @@ export async function startExam(examId: string, permittedFolders?: string[]) {
   if (exam.folder && permittedFolders && !permittedFolders.includes(exam.folder)) {
     throw new Error("OSPE folder is not available");
   }
-  const folderFilter = exam.folder
-    ? eq(ospeAnswerKey.folder, exam.folder)
-    : permittedFolders
-      ? inArray(ospeAnswerKey.folder, permittedFolders)
-      : undefined;
+  const associatedKeys = exam.practicalTrackId
+    ? await db.select({ answerKeyId: practicalTrackOspeStation.answerKeyId }).from(practicalTrackOspeStation)
+      .where(eq(practicalTrackOspeStation.trackId, exam.practicalTrackId))
+    : null;
+  const folderFilter = exam.practicalTrackId
+    ? inArray(ospeAnswerKey.id, associatedKeys!.map((row) => row.answerKeyId))
+    : exam.folder
+      ? eq(ospeAnswerKey.folder, exam.folder)
+      : permittedFolders
+        ? inArray(ospeAnswerKey.folder, permittedFolders)
+        : undefined;
+
+  if (exam.practicalTrackId && associatedKeys?.length === 0) throw new Error("No stations available for this practical subject");
 
   const allKeys = await db.query.ospeAnswerKey.findMany({
     where: folderFilter,

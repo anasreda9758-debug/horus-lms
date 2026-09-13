@@ -32,7 +32,7 @@ type ExamResult = {
   stations: { id: string; score: number }[];
 };
 
-export function ExamMode({ folder }: { folder?: string }) {
+export function ExamMode({ folder, moduleSlug, subjectSlug }: { folder?: string; moduleSlug?: string; subjectSlug?: string }) {
   const { t } = useLocale();
   const router = useRouter();
   const [exam, setExam] = useState<ExamData | null>(null);
@@ -144,6 +144,8 @@ export function ExamMode({ folder }: { folder?: string }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           folder: folder || undefined,
+          moduleSlug,
+          subjectSlug,
           stationCount: 10,
           timePerStationSec: 60,
         }),
@@ -291,7 +293,9 @@ export function ExamMode({ folder }: { folder?: string }) {
           <h3 className="font-semibold">{station.folder} — {station.fileName}</h3>
         </div>
         <img
-          src={`/api/content/ospe/image?folder=${encodeURIComponent(station.folder)}&file=${encodeURIComponent(station.fileName)}`}
+          src={moduleSlug && subjectSlug
+            ? `/api/practical/ospe/image?module=${encodeURIComponent(moduleSlug)}&subject=${encodeURIComponent(subjectSlug)}&folder=${encodeURIComponent(station.folder)}&file=${encodeURIComponent(station.fileName)}`
+            : `/api/content/ospe/image?folder=${encodeURIComponent(station.folder)}&file=${encodeURIComponent(station.fileName)}`}
           alt={`Station ${currentIdx + 1}`}
           className="max-h-[50vh] w-full bg-black object-contain"
         />

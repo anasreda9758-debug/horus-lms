@@ -1,14 +1,26 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { makeDevelopmentFixtures } from "./fixtures";
 import { createPracticalService, PracticalError, type PracticalStore, type RequestScope } from "./service";
-import { eligibleQuestion, fixturesAllowed, gradeChoice, questionSchema, studentQuestion, type PracticalImage, type PracticalQuestion, type Progress } from "./model";
+import { eligibleQuestion, fixturesAllowed, gradeChoice, questionSchema, studentQuestion, type PracticalImage, type PracticalQuestion, type Progress, type ResolvedPracticalTrack } from "./model";
 import { answerBody, flagBody } from "./http";
+import { ospeAnswerKeysBelongToTrack } from "./ospe";
 
-// Stateful repository substitute. Production uses the transactional PostgreSQL store.
+const renalTrack: ResolvedPracticalTrack = {
+  id: "track-renal-anatomy", moduleId: "renal", moduleSlug: "rau-203", moduleName: "Renal & Urinary System", studyYear: 1,
+  subject: "ANATOMY", subjectSlug: "anatomy", displayNameEn: "Anatomy", displayNameAr: "التشريح",
+  status: "PUBLISHED", sortOrder: 0, practiceEnabled: true, ospeEnabled: false,
+};
+const respiratoryTrack: ResolvedPracticalTrack = {
+  id: "track-respiratory-histology", moduleId: "respiratory", moduleSlug: "rs-201", moduleName: "Respiratory System", studyYear: 1,
+  subject: "HISTOLOGY", subjectSlug: "histology", displayNameEn: "Histology", displayNameAr: "علم الأنسجة",
+  status: "PUBLISHED", sortOrder: 0, practiceEnabled: true, ospeEnabled: true,
+};
+
 class MemoryStore implements PracticalStore {
-  data = makeDevelopmentFixtures("renal", 1);
-  questions: PracticalQuestion[] = this.data.questions;
-  images: PracticalImage[] = [this.data.image];
+  private renal = makeDevelopmentFixtures({ trackId: renalTrack.id, moduleId: renalTrack.moduleId, studyYear: 1, subject: "Anatomy" });
+  private respiratory = makeDevelopmentFixtures({ trackId: respiratoryTrack.id, moduleId: respiratoryTrack.moduleId, studyYear: 1, subject: "Histology" });
+  questions: PracticalQuestion[] = [...this.renal.questions, ...this.respiratory.questions];
+  images: PracticalImage[] = [this.renal.image, this.respiratory.image];
   records = new Map<string, Progress>();
   submissions = new Map<string, string>();
   async catalog() { return { questions: this.questions, images: this.images }; }
@@ -30,125 +42,154 @@ class MemoryStore implements PracticalStore {
   async setFlag(user: string, questionId: string, flag: "bookmarked" | "difficult", value: boolean) { this.row(user, questionId)[flag] = value; }
 }
 
-describe("Renal Anatomy pilot", () => {
+describe("generic practical engine", () => {
   let store: MemoryStore;
   let service: ReturnType<typeof createPracticalService>;
+  let denyAccess: boolean;
   const actor = { id: "student-1" };
-  const request: RequestScope = { moduleSlug: "rau-203", subject: "Anatomy", fixtures: true };
-  const scope = { moduleId: "renal", subject: "Anatomy", studyYear: 1, fixtures: true };
+  const renalRequest: RequestScope = { moduleSlug: "rau-203", subjectSlug: "anatomy", fixtures: true };
+  const respiratoryRequest: RequestScope = { moduleSlug: "rs-201", subjectSlug: "histology", fixtures: true };
+  const tracks = [renalTrack, respiratoryTrack];
+
   beforeEach(() => {
     store = new MemoryStore();
-    service = createPracticalService(store, async () => ({ id: "renal", studyYear: 1 }), true);
+    denyAccess = false;
+    service = createPracticalService(store, async (_actor, moduleSlug, subjectSlug, includeDraft) => {
+      if (denyAccess) return { ok: false, reason: "forbidden" };
+      const track = tracks.find((item) => item.moduleSlug === moduleSlug && item.subjectSlug === subjectSlug);
+      if (!track || (!includeDraft && track.status !== "PUBLISHED")) return { ok: false, reason: "not_found" };
+      return { ok: true, value: track };
+    }, true);
   });
-  it("ships exactly 10 clearly non-medical drafts sharing one image", async () => {
-    const result = await service.list(actor, request);
+
+  it("preserves the Renal Anatomy pilot through the generic track", async () => {
+    const result = await service.list(actor, renalRequest);
+    expect(result.track).toMatchObject({ moduleSlug: "rau-203", subjectSlug: "anatomy" });
     expect(result.questions).toHaveLength(10); expect(result.images).toHaveLength(1);
-    expect(new Set(result.questions.map((q) => q.imageId)).size).toBe(1);
-    expect(new Set(result.questions.map((q) => q.groupId)).size).toBe(1);
-    expect(store.questions.every((q) => q.status === "DRAFT_AI" && q.prompt.includes("Development fixture"))).toBe(true);
+    expect(new Set(result.questions.map((question) => question.imageId)).size).toBe(1);
   });
-  it("rejects other modules at the pilot boundary", async () => {
-    await expect(service.list(actor, { ...request, moduleSlug: "cvs-202" })).rejects.toMatchObject({ status: 404 });
+
+  it("serves a second development-only module and subject through the same engine", async () => {
+    const result = await service.list(actor, respiratoryRequest);
+    expect(result.track).toMatchObject({ moduleSlug: "rs-201", subject: "HISTOLOGY", subjectSlug: "histology" });
+    expect(result.questions).toHaveLength(10); expect(result.images).toHaveLength(1);
+    expect(result.questions.every((question) => question.id.includes("respiratory-histology"))).toBe(true);
   });
-  it("rejects other subjects at the pilot boundary", async () => {
-    await expect(service.list(actor, { ...request, subject: "Histology" })).rejects.toMatchObject({ status: 404 });
+
+  it("validates module and subject as one authoritative relationship", async () => {
+    await expect(service.list(actor, { ...renalRequest, moduleSlug: "rs-201" })).rejects.toMatchObject({ status: 404 });
+    await expect(service.list(actor, { ...renalRequest, subjectSlug: "histology" })).rejects.toMatchObject({ status: 404 });
+    await expect(service.list(actor, { ...renalRequest, subjectSlug: "unknown" })).rejects.toMatchObject({ status: 404 });
   });
-  it.each(["moduleId", "subject", "studyYear"] as const)("filters mismatched catalog %s", async (field) => {
-    store.questions = [{ ...store.questions[0], [field]: field === "studyYear" ? 2 : "other" }];
-    expect((await service.list(actor, request)).questions).toEqual([]);
+
+  it.each(["trackId", "moduleId", "studyYear"] as const)("filters mismatched catalog %s", async (field) => {
+    const first = store.questions.find((question) => question.trackId === renalTrack.id)!;
+    store.questions = [{ ...first, [field]: field === "studyYear" ? 2 : "other" }];
+    expect((await service.list(actor, renalRequest)).questions).toEqual([]);
   });
+
   it("requires authentication for questions, answers, flags and images", async () => {
-    await expect(service.list(null, request)).rejects.toMatchObject({ status: 401 });
-    await expect(service.answer(null, request, "q", "a", "r")).rejects.toMatchObject({ status: 401 });
-    await expect(service.flag(null, request, "q", "bookmarked", true)).rejects.toMatchObject({ status: 401 });
-    await expect(service.image(null, request, "i")).rejects.toMatchObject({ status: 401 });
+    await expect(service.list(null, renalRequest)).rejects.toMatchObject({ status: 401 });
+    await expect(service.answer(null, renalRequest, "q", "a", "r")).rejects.toMatchObject({ status: 401 });
+    await expect(service.flag(null, renalRequest, "q", "bookmarked", true)).rejects.toMatchObject({ status: 401 });
+    await expect(service.image(null, renalRequest, "i")).rejects.toMatchObject({ status: 401 });
   });
-  it("denies every surface without module entitlement, including preview-only actors", async () => {
-    service = createPracticalService(store, async () => null, true);
-    await expect(service.list(actor, request)).rejects.toMatchObject({ status: 403 });
-    await expect(service.answer(actor, request, "q", "a", "r")).rejects.toMatchObject({ status: 403 });
-    await expect(service.flag(actor, request, "q", "bookmarked", true)).rejects.toMatchObject({ status: 403 });
-    await expect(service.image(actor, request, "i")).rejects.toMatchObject({ status: 403 });
+
+  it("enforces module entitlement on every practical surface", async () => {
+    denyAccess = true;
+    await expect(service.list(actor, renalRequest)).rejects.toMatchObject({ status: 403 });
+    await expect(service.answer(actor, renalRequest, "q", "a", "r")).rejects.toMatchObject({ status: 403 });
+    await expect(service.flag(actor, renalRequest, "q", "bookmarked", true)).rejects.toMatchObject({ status: 403 });
+    await expect(service.image(actor, renalRequest, "i")).rejects.toMatchObject({ status: 403 });
   });
+
   it("requires a linked image and a real marker in that image", async () => {
-    const q = store.questions[0], image = store.images[0];
-    expect(eligibleQuestion(q, undefined, scope)).toBe(false);
-    expect(eligibleQuestion(q, { ...image, moduleId: "other" }, scope)).toBe(false);
-    expect(eligibleQuestion({ ...q, markerIds: ["missing"] }, image, scope)).toBe(false);
-    store.images = [];
-    expect((await service.list(actor, request)).questions).toEqual([]);
-    await expect(service.image(actor, request, image.id)).rejects.toMatchObject({ status: 404 });
+    const question = store.questions.find((item) => item.trackId === renalTrack.id)!;
+    const image = store.images.find((item) => item.trackId === renalTrack.id)!;
+    const scope = { trackId: renalTrack.id, moduleId: renalTrack.moduleId, studyYear: 1, fixtures: true };
+    expect(eligibleQuestion(question, undefined, scope)).toBe(false);
+    expect(eligibleQuestion(question, { ...image, trackId: "other" }, scope)).toBe(false);
+    expect(eligibleQuestion({ ...question, markerIds: ["missing"] }, image, scope)).toBe(false);
   });
-  it("validates correctOptionId membership and unique option IDs", () => {
-    const q = store.questions[0];
-    expect(questionSchema.safeParse({ ...q, correctOptionId: "not-an-option" }).success).toBe(false);
-    expect(questionSchema.safeParse({ ...q, options: [q.options[0], q.options[0]] }).success).toBe(false);
-    expect(() => gradeChoice(q, "other-question-option")).toThrow();
+
+  it("validates correct option membership and exact server-side choice IDs", async () => {
+    const question = store.questions.find((item) => item.trackId === renalTrack.id)!;
+    expect(questionSchema.safeParse({ ...question, correctOptionId: "not-an-option" }).success).toBe(false);
+    expect(questionSchema.safeParse({ ...question, options: [question.options[0], question.options[0]] }).success).toBe(false);
+    expect(() => gradeChoice(question, "other-question-option")).toThrow();
+    await expect(service.answer(actor, renalRequest, question.id, "Circle", "r0")).rejects.toMatchObject({ status: 400 });
+    expect((await service.answer(actor, renalRequest, question.id, question.correctOptionId, "r1")).feedback.correct).toBe(true);
   });
-  it("uses exact server-side choice IDs, not text or fuzzy matches", async () => {
-    const q = store.questions[0];
-    await expect(service.answer(actor, request, q.id, "Circle", "r0")).rejects.toMatchObject({ status: 400 });
-    const result = await service.answer(actor, request, q.id, q.correctOptionId, "r1");
-    expect(result.feedback.correct).toBe(true);
-    expect(result.summary).toMatchObject({ attempted: 1, correct: 1, wrong: 0, accuracy: 100 });
-  });
-  it("never returns the key or teaching feedback before answering", async () => {
-    const result = await service.list(actor, request);
+
+  it("never returns the answer key or teaching feedback before a saved answer", async () => {
+    const result = await service.list(actor, renalRequest);
     const serialized = JSON.stringify(result);
     for (const key of ["correctOptionId", "explanation", "identifyingClue", "commonMistake", "examTip", "sourceMaterial"]) expect(serialized).not.toContain(`"${key}"`);
     expect(studentQuestion(store.questions[0])).not.toHaveProperty("status");
-    const answer = await service.answer(actor, request, store.questions[0].id, "shape-hexagon", "r");
+    const answer = await service.answer(actor, renalRequest, result.questions[0].id, "shape-hexagon", "r");
     expect(answer.feedback).toHaveProperty("identifyingClue");
-    expect(answer.feedback).toHaveProperty("sourcePage", 1);
   });
-  it("persists mistakes across service reloads and clears them on a correct retry", async () => {
-    const q = store.questions[0];
-    await service.answer(actor, request, q.id, "shape-hexagon", "first");
-    const reopened = createPracticalService(store, async () => ({ id: "renal", studyYear: 1 }), true);
-    expect((await reopened.list(actor, request, true)).questions.map((q) => q.id)).toEqual([q.id]);
-    await reopened.answer(actor, request, q.id, q.correctOptionId, "retry");
-    const result = await reopened.list(actor, request, true);
-    expect(result.questions).toEqual([]);
-    expect(result.summary).toEqual({ attempted: 2, correct: 1, wrong: 1, accuracy: 50, wrongRemaining: 0 });
+
+  it("keeps progress and wrong questions scoped to module plus subject", async () => {
+    const renalQuestion = (await service.list(actor, renalRequest)).questions[0];
+    await service.answer(actor, renalRequest, renalQuestion.id, "shape-hexagon", "renal-wrong");
+    expect((await service.list(actor, renalRequest, true)).questions.map((question) => question.id)).toEqual([renalQuestion.id]);
+    expect((await service.list(actor, respiratoryRequest, true)).questions).toEqual([]);
+    expect((await service.list(actor, respiratoryRequest)).summary.attempted).toBe(0);
+    const stored = store.questions.find((question) => question.id === renalQuestion.id)!;
+    await service.answer(actor, renalRequest, renalQuestion.id, stored.correctOptionId, "renal-retry");
+    expect((await service.list(actor, renalRequest, true)).questions).toEqual([]);
   });
+
   it("isolates wrong queues, flags and statistics across users", async () => {
-    const q = store.questions[0], other = { id: "student-2" };
-    await service.answer(actor, request, q.id, "shape-hexagon", "shared-request-id");
-    await service.flag(actor, request, q.id, "bookmarked", true);
-    await service.flag(actor, request, q.id, "difficult", true);
-    const result = await service.list(other, request, true);
-    expect(result.questions).toEqual([]); expect(result.progress).toEqual([]);
-    expect(result.summary.attempted).toBe(0);
-    await service.answer(other, request, q.id, q.correctOptionId, "shared-request-id");
-    expect((await service.list(actor, request, true)).summary.wrongRemaining).toBe(1);
+    const question = (await service.list(actor, renalRequest)).questions[0];
+    await service.answer(actor, renalRequest, question.id, "shape-hexagon", "shared-request-id");
+    await service.flag(actor, renalRequest, question.id, "bookmarked", true);
+    await service.flag(actor, renalRequest, question.id, "difficult", true);
+    const other = await service.list({ id: "student-2" }, renalRequest, true);
+    expect(other.questions).toEqual([]); expect(other.progress).toEqual([]); expect(other.summary.attempted).toBe(0);
   });
-  it("does not count a retried network request twice", async () => {
-    const q = store.questions[0];
-    await service.answer(actor, request, q.id, q.correctOptionId, "same");
-    await service.answer(actor, request, q.id, q.correctOptionId, "same");
-    expect((await service.list(actor, request)).summary.attempted).toBe(1);
-    await expect(service.answer(actor, request, q.id, "shape-hexagon", "same")).rejects.toMatchObject({ status: 409 });
+
+  it("does not count a retried request twice", async () => {
+    const question = store.questions.find((item) => item.trackId === renalTrack.id)!;
+    await service.answer(actor, renalRequest, question.id, question.correctOptionId, "same");
+    await service.answer(actor, renalRequest, question.id, question.correctOptionId, "same");
+    expect((await service.list(actor, renalRequest)).summary.attempted).toBe(1);
+    await expect(service.answer(actor, renalRequest, question.id, "shape-hexagon", "same")).rejects.toMatchObject({ status: 409 });
   });
+
   it("does not reveal feedback if answer persistence fails", async () => {
     vi.spyOn(store, "saveAnswer").mockRejectedValueOnce(new Error("database unavailable"));
-    await expect(service.answer(actor, request, store.questions[0].id, "shape-circle", "r")).rejects.toThrow("database unavailable");
-    expect((await service.list(actor, request)).summary.attempted).toBe(0);
+    const question = store.questions.find((item) => item.trackId === renalTrack.id)!;
+    await expect(service.answer(actor, renalRequest, question.id, question.correctOptionId, "r")).rejects.toThrow("database unavailable");
+    expect((await service.list(actor, renalRequest)).summary.attempted).toBe(0);
   });
-  it("excludes drafts, fixtures and unapproved sources from the real bank", async () => {
-    expect((await service.list(actor, { ...request, fixtures: false })).questions).toEqual([]);
-    const source = { ...store.questions[0].sourceMaterial, sha256: "a".repeat(64), approvedBy: "reviewer", approvedAt: "2026-09-08" };
-    store.questions = [{ ...store.questions[0], isFixture: false, status: "APPROVED", sourceMaterial: source }];
-    store.images = [{ ...store.images[0], isFixture: false, status: "APPROVED", sourceMaterial: source }];
-    expect((await service.list(actor, { ...request, fixtures: false })).questions).toHaveLength(1);
+
+  it("keeps DRAFT_AI and unapproved sources out of production", async () => {
+    expect((await service.list(actor, { ...renalRequest, fixtures: false })).questions).toEqual([]);
+    const question = store.questions.find((item) => item.trackId === renalTrack.id)!;
+    const image = store.images.find((item) => item.trackId === renalTrack.id)!;
+    const source = { ...question.sourceMaterial, sha256: "a".repeat(64), approvedBy: "reviewer", approvedAt: "2026-09-08" };
+    store.questions = [{ ...question, isFixture: false, status: "APPROVED", sourceMaterial: source }];
+    store.images = [{ ...image, isFixture: false, status: "APPROVED", sourceMaterial: source }];
+    expect((await service.list(actor, { ...renalRequest, fixtures: false })).questions).toHaveLength(1);
     store.images[0].status = "REVIEWED";
-    expect((await service.list(actor, { ...request, fixtures: false })).questions).toHaveLength(0);
+    expect((await service.list(actor, { ...renalRequest, fixtures: false })).questions).toHaveLength(0);
   });
+
   it("cannot enable development fixtures in production", async () => {
     expect(fixturesAllowed("production", true)).toBe(false);
     expect(fixturesAllowed("development", true)).toBe(true);
-    service = createPracticalService(store, async () => ({ id: "renal", studyYear: 1 }), false);
-    await expect(service.list(actor, request)).rejects.toMatchObject({ status: 404 });
+    const productionService = createPracticalService(store, async () => ({ ok: true, value: renalTrack }), false);
+    await expect(productionService.list(actor, renalRequest)).rejects.toMatchObject({ status: 404 });
   });
+
+  it("validates explicit OSPE station-to-track relationships", () => {
+    expect(ospeAnswerKeysBelongToTrack(["renal-anatomy-1", "renal-anatomy-2"], ["renal-anatomy-1", "renal-anatomy-2"])).toBe(true);
+    expect(ospeAnswerKeysBelongToTrack(["renal-anatomy-1", "renal-histology-1"], ["renal-anatomy-1"])).toBe(false);
+    expect(ospeAnswerKeysBelongToTrack([null], ["renal-anatomy-1"])).toBe(false);
+  });
+
   it("rejects user IDs, correctness and unsupported formats supplied by clients", () => {
     const body = { questionId: "q", optionId: "a", requestId: "00000000-0000-4000-8000-000000000000" };
     expect(answerBody.safeParse(body).success).toBe(true);

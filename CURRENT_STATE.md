@@ -501,3 +501,19 @@ PostgreSQL service is stopped (`npm.cmd run db:status` reported
 `postgres is not running`). The existing read-only lineage manifest still
 contains the expected 248-lecture inventory; the database was not started or
 recovered automatically.
+
+## OSPE HUMAN REVIEW — 2026-09-13 15:34:51 +03:00
+
+- **Total stations:** 759 OSPE answer-key station definitions (plus 50 historical exam instances).
+- **Reviewable with current evidence:** 759. Every definition has answer-key/rubric text; 529 also have an exact readable local image.
+- **Missing-image-path issue:** 0. The workspace audit found no unique alternate path, case-only mismatch, or same-filename relocation for the 230 missing references.
+- **Truly missing image:** 230 references are classified `REFERENCED_FILE_MISSING` by the conservative path/name audit. No file path was rewritten, and no visually similar file was guessed.
+- **Needs human review:** 759. Existing reviewed station-track mappings remain 0; all content-derived subject labels in the review pack are explicitly non-binding suggestions only.
+
+The local static review pack is available at `reports/ospe-human-review.html`, with canonical data in `reports/ospe-human-review.json` and a Markdown audit in `reports/ospe-human-review.md`. It supports an individual subject/verdict/note decision for every station, local browser persistence, filters/counters, and export as `ospe-human-decisions.json`. Exported decisions are not applied automatically.
+
+No database mapping, curriculum row, PDF, OSPE image, answer key, rubric, practical track, entitlement, or OSPE availability setting was changed. OSPE remains disabled for the practical track pending controlled human-reviewed mapping.
+
+### OSPE review continuation dependency
+
+`reports/ospe-human-review-grouped.html` embeds all station, rubric, clustering, and decision-workflow data needed for review. Its 529 available image previews remain local and resolve through relative paths to the sibling content tree at `C:\work\projects\images` (798 files, approximately 238.86 MiB); that large source tree is intentionally not copied into Git. The review and decision export still work without those previews, while the existing 230 missing-image stations remain visibly `IMAGE_MISSING` and cannot become `READY_FOR_OSPE`.

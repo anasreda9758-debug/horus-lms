@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { PracticalError, type RequestScope } from "./service";
 export function requestScope(url: URL): RequestScope {
-  return { moduleSlug: url.searchParams.get("module") ?? "", subject: url.searchParams.get("subject") ?? "", fixtures: url.searchParams.get("fixtures") === "1" };
+  return { moduleSlug: url.searchParams.get("module") ?? "", subjectSlug: url.searchParams.get("subject") ?? "", fixtures: url.searchParams.get("fixtures") === "1" };
 }
 export const answerBody = z.object({ questionId: z.string().min(1).max(160), optionId: z.string().min(1).max(160), requestId: z.string().uuid() }).strict();
 export const flagBody = z.object({ questionId: z.string().min(1).max(160), flag: z.enum(["bookmarked", "difficult"]), value: z.boolean() }).strict();

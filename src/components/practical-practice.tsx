@@ -7,7 +7,13 @@ import { Button } from "@/components/ui/button";
 import { useLocale } from "@/components/locale-provider";
 import type { Feedback, PracticePayload, Progress } from "@/features/practical/model";
 
-export function PracticalPractice({ fixtures, wrongOnly }: { fixtures: boolean; wrongOnly: boolean }) {
+export function PracticalPractice({ moduleSlug, subjectSlug, subjectName, fixtures, wrongOnly }: {
+  moduleSlug: string;
+  subjectSlug: string;
+  subjectName: string;
+  fixtures: boolean;
+  wrongOnly: boolean;
+}) {
   const { t } = useLocale();
   const [data, setData] = useState<PracticePayload | null>(null);
   const [index, setIndex] = useState(0);
@@ -19,9 +25,10 @@ export function PracticalPractice({ fixtures, wrongOnly }: { fixtures: boolean; 
   const [zoom, setZoom] = useState(100);
   const submissionId = useRef<string | null>(null);
   const inFlight = useRef(false);
-  const query = `module=rau-203&subject=Anatomy&fixtures=${fixtures ? "1" : "0"}`;
+  const query = new URLSearchParams({ module: moduleSlug, subject: subjectSlug, fixtures: fixtures ? "1" : "0" }).toString();
   const endpoint = `/api/practical?${query}`;
-  const base = `/curriculum/rau-203/practical/anatomy?fixtures=${fixtures ? "1" : "0"}`;
+  const base = `/curriculum/${encodeURIComponent(moduleSlug)}/practical/${encodeURIComponent(subjectSlug)}`;
+  const fixtureQuery = fixtures ? "?fixtures=1" : "";
 
   const load = useCallback(async (signal?: AbortSignal) => {
     const res = await fetch(`${endpoint}&mode=${wrongOnly ? "wrong" : "practice"}`, { signal, cache: "no-store" });
@@ -82,8 +89,8 @@ export function PracticalPractice({ fixtures, wrongOnly }: { fixtures: boolean; 
       <p className="mt-1 text-sm">10 deliberately repetitive, non-medical exercises. These test the interface and persistence only. They are excluded from production and verified banks.</p>
     </div>}
     <nav className="flex flex-wrap gap-3" aria-label="Practical mode">
-      <Link aria-current={!wrongOnly ? "page" : undefined} href={`${base}&mode=practice`} className={`rounded-lg border px-4 py-2 ${!wrongOnly ? "bg-primary text-primary-foreground" : "bg-card"}`}>{t("Practice", "تدريب")}</Link>
-      <Link aria-current={wrongOnly ? "page" : undefined} href={`${base}&mode=wrong`} className={`rounded-lg border px-4 py-2 ${wrongOnly ? "bg-primary text-primary-foreground" : "bg-card"}`}>{t("Wrong Questions", "الأسئلة الخاطئة")}{data ? ` (${data.summary.wrongRemaining})` : ""}</Link>
+      <Link aria-current={!wrongOnly ? "page" : undefined} href={`${base}/practice${fixtureQuery}`} className={`rounded-lg border px-4 py-2 ${!wrongOnly ? "bg-primary text-primary-foreground" : "bg-card"}`}>{t("Practice", "تدريب")}</Link>
+      <Link aria-current={wrongOnly ? "page" : undefined} href={`${base}/wrong${fixtureQuery}`} className={`rounded-lg border px-4 py-2 ${wrongOnly ? "bg-primary text-primary-foreground" : "bg-card"}`}>{t("Wrong Questions", "الأسئلة الخاطئة")}{data ? ` (${data.summary.wrongRemaining})` : ""}</Link>
     </nav>
     {data && <section aria-label="Practical progress" className="rounded-2xl border bg-card p-5">
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
@@ -94,7 +101,7 @@ export function PracticalPractice({ fixtures, wrongOnly }: { fixtures: boolean; 
     {error && <div role="alert" className="rounded-lg border border-red-600 bg-red-50 p-4 text-red-950 dark:bg-red-950 dark:text-red-100">{error} {!data && <Button variant="outline" className="ms-3" onClick={() => load().then(applyLoadedData).catch((e: Error) => setError(e.message))}>Retry</Button>}</div>}
     {!data && !error && <p role="status">{t("Loading practical…", "جارٍ تحميل التدريب…")}</p>}
     {data && !question && <div className="rounded-2xl border bg-card p-8">
-      <h2 className="text-xl font-semibold">{wrongOnly ? "No wrong questions remaining" : "No approved Renal Anatomy questions available yet"}</h2>
+      <h2 className="text-xl font-semibold">{wrongOnly ? "No wrong questions remaining" : `No approved ${subjectName} practical questions available yet`}</h2>
       <p className="mt-3 text-muted-foreground">{wrongOnly ? "Incorrect answers appear here automatically. A correct retry clears the question from this queue." : "The practical engine is ready for reviewed source material. No unapproved question or random image is shown in this bank."}</p>
     </div>}
     {question && image && <div className="grid min-w-0 items-start gap-6 xl:grid-cols-2" dir="ltr" lang="en">

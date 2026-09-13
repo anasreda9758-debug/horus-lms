@@ -1,11 +1,11 @@
 import { readFile, realpath } from "node:fs/promises";
 import path from "node:path";
 import type { PracticalImage } from "./model";
-import { FIXTURE_IMAGE_ID, fixtureSvg } from "./fixtures";
+import { FIXTURE_STORAGE_KEY, fixtureSvg } from "./fixtures";
 
 export async function readPracticalImage(image: PracticalImage) {
   if (image.isFixture) {
-    if (process.env.NODE_ENV !== "development" || image.id !== FIXTURE_IMAGE_ID) throw new Error("Fixture not available");
+    if (process.env.NODE_ENV !== "development" || image.storageKey !== FIXTURE_STORAGE_KEY) throw new Error("Fixture not available");
     return { bytes: Buffer.from(fixtureSvg), mime: "image/svg+xml" };
   }
   // Trusted, private local assets only. Never fetch a URL supplied in content.

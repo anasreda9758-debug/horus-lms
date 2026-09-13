@@ -1,21 +1,24 @@
 import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 import { db } from "@/shared/db";
-import { getAccessibleModuleBySlug } from "@/features/access/learning-access";
 import { practicalImage, practicalQuestion, practicalProgress, practicalSubmission } from "./schema";
 import { createPracticalService, PracticalError, type PracticalStore } from "./service";
 import { readPracticalImage } from "./images";
-import type { Scope } from "./model";
+import { resolvePracticalTrack } from "./tracks";
+import { imageSchema, type Scope } from "./model";
 
 export const practicalStore: PracticalStore = {
   async catalog(scope: Scope) {
     const rows = await db.select({ question: practicalQuestion, image: practicalImage }).from(practicalQuestion)
       .innerJoin(practicalImage, eq(practicalQuestion.imageId, practicalImage.id))
-      .where(and(eq(practicalQuestion.moduleId, scope.moduleId), eq(practicalQuestion.subject, scope.subject),
+      .where(and(eq(practicalQuestion.trackId, scope.trackId), eq(practicalImage.trackId, scope.trackId), eq(practicalQuestion.moduleId, scope.moduleId),
         eq(practicalQuestion.studyYear, scope.studyYear), eq(practicalQuestion.isFixture, scope.fixtures),
         scope.fixtures ? undefined : eq(practicalQuestion.status, "APPROVED")))
       .orderBy(asc(practicalQuestion.order));
-    const images = [...new Map(rows.map((r) => [r.image.id, r.image])).values()];
+    const images = [...new Map(rows.map((r) => [r.image.id, r.image])).values()].flatMap((image) => {
+      const parsed = imageSchema.safeParse(image);
+      return parsed.success ? [parsed.data] : [];
+    });
     const available = (await Promise.all(images.map(async (i) => {
       try { await readPracticalImage(i); return i; } catch { return null; }
     }))).filter((i) => i !== null);
@@ -47,7 +50,4 @@ export const practicalStore: PracticalStore = {
       .onConflictDoUpdate({ target: [practicalProgress.userId, practicalProgress.questionId], set: { [flag]: value, updatedAt: new Date() } });
   },
 };
-export const practicalService = createPracticalService(practicalStore, async (actor, slug) => {
-  const access = await getAccessibleModuleBySlug(actor, slug);
-  return access.ok ? access.value : null;
-}, process.env.NODE_ENV === "development");
+export const practicalService = createPracticalService(practicalStore, resolvePracticalTrack, process.env.NODE_ENV === "development");

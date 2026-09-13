@@ -1,7 +1,22 @@
 import { z } from "zod";
 
-export const PILOT_MODULE = "rau-203";
-export const PILOT_SUBJECT = "Anatomy";
+export const practicalSubjectSchema = z.enum([
+  "ANATOMY",
+  "HISTOLOGY",
+  "PATHOLOGY",
+  "MICROBIOLOGY",
+  "PHYSIOLOGY",
+  "BIOCHEMISTRY",
+]);
+export const PRACTICAL_SUBJECT_CONFIG = [
+  { subject: "ANATOMY", slug: "anatomy", displayNameEn: "Anatomy", displayNameAr: "التشريح" },
+  { subject: "HISTOLOGY", slug: "histology", displayNameEn: "Histology", displayNameAr: "علم الأنسجة" },
+  { subject: "PATHOLOGY", slug: "pathology", displayNameEn: "Pathology", displayNameAr: "علم الأمراض" },
+  { subject: "MICROBIOLOGY", slug: "microbiology", displayNameEn: "Microbiology", displayNameAr: "الأحياء الدقيقة" },
+  { subject: "PHYSIOLOGY", slug: "physiology", displayNameEn: "Physiology", displayNameAr: "علم وظائف الأعضاء" },
+  { subject: "BIOCHEMISTRY", slug: "biochemistry", displayNameEn: "Biochemistry", displayNameAr: "الكيمياء الحيوية" },
+] as const;
+export const practicalTrackStatusSchema = z.enum(["DRAFT", "PUBLISHED", "ARCHIVED"]);
 export const statusSchema = z.enum(["DRAFT_AI", "REVIEWED", "APPROVED"]);
 const english = z.string().min(1).max(4000).refine((s) => !/[\u0600-\u06ff]/u.test(s), "Learning content must be English");
 export const sourceSchema = z.object({
@@ -16,14 +31,14 @@ export const markerSchema = z.object({
   label: z.string().max(12).optional(),
 });
 export const imageSchema = z.object({
-  id: z.string(), moduleId: z.string(), subject: z.string(), studyYear: z.number().int().positive(),
+  id: z.string(), trackId: z.string(), moduleId: z.string(), subject: z.string(), studyYear: z.number().int().positive(),
   storageKey: z.string(), alt: english, sourceMaterial: sourceSchema,
   sourcePage: z.number().int().positive(), markers: z.array(markerSchema),
   status: statusSchema, isFixture: z.boolean(),
 });
 export const questionSchema = z.object({
   id: z.string(), academicYearId: z.string().nullable(), studyYear: z.number().int().positive(),
-  moduleId: z.string(), subject: z.string(), sourceLectureId: z.string().nullable(),
+  trackId: z.string(), moduleId: z.string(), subject: z.string(), sourceLectureId: z.string().nullable(),
   sourceMaterial: sourceSchema, sourcePage: z.number().int().positive(),
   questionType: z.enum(["LABELED_STRUCTURE", "IMAGE_IDENTIFICATION", "STRUCTURE_RELATION"]),
   answerFormat: z.literal("SINGLE_CHOICE"), imageId: z.string(), markerIds: z.array(z.string()),
@@ -41,7 +56,27 @@ export type PracticalImage = z.infer<typeof imageSchema>;
 export type PracticalQuestion = z.infer<typeof questionSchema>;
 export type SourceMaterial = z.infer<typeof sourceSchema>;
 export type Marker = z.infer<typeof markerSchema>;
-export type Scope = { moduleId: string; subject: string; studyYear: number; fixtures: boolean };
+export type PracticalSubject = z.infer<typeof practicalSubjectSchema>;
+export type PracticalTrackStatus = z.infer<typeof practicalTrackStatusSchema>;
+export type Scope = { trackId: string; moduleId: string; studyYear: number; fixtures: boolean };
+export type ResolvedPracticalTrack = {
+  id: string;
+  moduleId: string;
+  moduleSlug: string;
+  moduleName: string;
+  studyYear: number;
+  subject: PracticalSubject;
+  subjectSlug: string;
+  displayNameEn: string;
+  displayNameAr: string | null;
+  status: PracticalTrackStatus;
+  sortOrder: number;
+  practiceEnabled: boolean;
+  ospeEnabled: boolean;
+};
+export type PracticalTrackResolution =
+  | { ok: true; value: ResolvedPracticalTrack }
+  | { ok: false; reason: "unauthenticated" | "forbidden" | "not_found" };
 export type Progress = { questionId: string; attempts: number; correct: number; wrong: number; wrongRemaining: boolean; bookmarked: boolean; difficult: boolean };
 export type Feedback = Pick<PracticalQuestion, "correctOptionId" | "explanation" | "identifyingClue" | "commonMistake" | "examTip" | "sourceMaterial" | "sourcePage"> & { correct: boolean; correctAnswer: string };
 
@@ -51,8 +86,8 @@ function approvedSource(source: SourceMaterial) {
 
 /** Fail closed: a folder name or an image alone never makes a question eligible. */
 export function eligibleQuestion(q: PracticalQuestion, image: PracticalImage | undefined, scope: Scope) {
-  if (!image || q.moduleId !== scope.moduleId || q.subject !== scope.subject || q.studyYear !== scope.studyYear) return false;
-  if (image.id !== q.imageId || image.moduleId !== q.moduleId || image.subject !== q.subject || image.studyYear !== q.studyYear) return false;
+  if (!image || q.trackId !== scope.trackId || q.moduleId !== scope.moduleId || q.studyYear !== scope.studyYear) return false;
+  if (image.id !== q.imageId || image.trackId !== q.trackId || image.moduleId !== q.moduleId || image.subject !== q.subject || image.studyYear !== q.studyYear) return false;
   if (q.isFixture !== scope.fixtures || image.isFixture !== scope.fixtures) return false;
   if (!scope.fixtures && (q.status !== "APPROVED" || image.status !== "APPROVED" || !approvedSource(q.sourceMaterial) || !approvedSource(image.sourceMaterial))) return false;
   if (q.questionType === "LABELED_STRUCTURE" && q.markerIds.length === 0) return false;
@@ -88,6 +123,7 @@ export type PracticalSummary = ReturnType<typeof summarizeProgress>;
 export type PracticePayload = {
   questions: StudentQuestion[]; images: StudentImage[]; progress: Progress[];
   summary: PracticalSummary; fixtures: boolean; studyYear: number;
+  track: Pick<ResolvedPracticalTrack, "id" | "moduleSlug" | "moduleName" | "subject" | "subjectSlug" | "displayNameEn" | "displayNameAr" | "ospeEnabled">;
 };
 
 export function fixturesAllowed(environment: string | undefined, requested: boolean) {

@@ -4,8 +4,10 @@ import { hasModuleAccess } from "@/features/billing/queries";
 import { curriculumModule, lecture } from "@/features/curriculum/schema";
 import { question, questionBank, questionOption, questionReview, quizAttempt } from "@/features/practice/schema";
 import { clinicalCase, flashcard } from "@/features/review/schema";
-import { ospeExam, ospeExamStation } from "@/features/ospe/schema";
+import { ospeExam, ospeExamStation, practicalTrackOspeStation } from "@/features/ospe/schema";
 import { OSPE_FOLDER_TO_MODULE } from "@/features/ospe/data";
+import { practicalTrack } from "@/features/practical/schema";
+import { ospeAnswerKeysBelongToTrack } from "@/features/practical/ospe";
 
 export type LearningActor = {
   id: string;
@@ -310,6 +312,21 @@ export async function getAccessibleOspeExam(
   });
   if (!exam || !isResourceOwner(actor, exam.userId)) return notFound<AccessibleOspeExam>();
   const accessibleExam = exam as AccessibleOspeExam;
+
+  if (accessibleExam.practicalTrackId) {
+    const [scope] = await db.select({ track: practicalTrack, module: curriculumModule }).from(practicalTrack)
+      .innerJoin(curriculumModule, eq(practicalTrack.moduleId, curriculumModule.id))
+      .where(eq(practicalTrack.id, accessibleExam.practicalTrackId)).limit(1);
+    if (!scope) return notFound<AccessibleOspeExam>();
+    const moduleDecision = await canAccessModule(actor, scope.module);
+    if (!moduleDecision.ok) return moduleDecision;
+    const associations = await db.select({ answerKeyId: practicalTrackOspeStation.answerKeyId }).from(practicalTrackOspeStation)
+      .where(eq(practicalTrackOspeStation.trackId, accessibleExam.practicalTrackId));
+    if (!ospeAnswerKeysBelongToTrack(accessibleExam.stations.map((station) => station.answerKeyId), associations.map((row) => row.answerKeyId))) {
+      return notFound<AccessibleOspeExam>();
+    }
+    return allowed<AccessibleOspeExam>(accessibleExam);
+  }
 
   for (const station of accessibleExam.stations) {
     const decision = await getAccessibleOspeFolder(actor, station.folder);
