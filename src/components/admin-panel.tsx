@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { PromoCodeAdmin } from "@/components/promo-code-admin";
 import {
   Plus,
   Pencil,
@@ -73,7 +74,7 @@ type PlatformStats = {
   topUsers: { name: string; email: string; quizzes: number; accuracy: number }[];
 };
 
-type Tab = "dashboard" | "curriculum" | "users" | "audit";
+type Tab = "dashboard" | "curriculum" | "users" | "promos" | "audit";
 
 // ── Module Form ──
 
@@ -408,6 +409,7 @@ export function AdminPanel() {
           { key: "dashboard", label: "لوحة القيادة", icon: BarChart3 },
           { key: "curriculum", label: "المنهج", icon: BookOpen },
           { key: "users", label: "المستخدمين", icon: Users },
+          { key: "promos", label: "أكواد الخصم", icon: CreditCard },
           { key: "audit", label: "سجل التدقيق", icon: ScrollText },
         ] as const).map((t) => (
           <button
@@ -498,6 +500,9 @@ export function AdminPanel() {
           )}
         </div>
       )}
+
+      {/* ── Curriculum Tab ── */}
+      {tab === "promos" && <PromoCodeAdmin />}
 
       {/* ── Curriculum Tab ── */}
       {tab === "curriculum" && (

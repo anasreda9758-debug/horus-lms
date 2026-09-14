@@ -1,6 +1,7 @@
 import { relations } from "drizzle-orm";
-import { boolean, index, integer, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { boolean, index, integer, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 import { user } from "../auth/schema";
+import { curriculumModule } from "../curriculum/schema";
 
 export const plan = pgTable(
   "plan",
@@ -77,8 +78,79 @@ export const payment = pgTable(
   ],
 );
 
+export const promoCode = pgTable(
+  "promo_code",
+  {
+    id: text("id").primaryKey(),
+    code: text("code").notNull(),
+    description: text("description"),
+    discountType: text("discount_type").notNull(), // PERCENTAGE | FIXED_EGP
+    discountValue: integer("discount_value").notNull(),
+    appliesTo: text("applies_to").notNull().default("ANY"), // ANY | MODULE | SEMESTER
+    moduleId: text("module_id").references(() => curriculumModule.id, { onDelete: "set null" }),
+    active: boolean("active").notNull().default(true),
+    startsAt: timestamp("starts_at"),
+    expiresAt: timestamp("expires_at"),
+    maxUses: integer("max_uses"),
+    usedCount: integer("used_count").notNull().default(0),
+    maxUsesPerUser: integer("max_uses_per_user").notNull().default(1),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    uniqueIndex("promo_code_code_idx").on(table.code),
+    index("promo_code_active_idx").on(table.active, table.startsAt, table.expiresAt),
+  ],
+);
+
+export const promoRedemption = pgTable(
+  "promo_redemption",
+  {
+    id: text("id").primaryKey(),
+    promoCodeId: text("promo_code_id")
+      .notNull()
+      .references(() => promoCode.id, { onDelete: "restrict" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    paymentId: text("payment_id").references(() => payment.id, { onDelete: "set null" }),
+    discountAmountCents: integer("discount_amount_cents").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    index("promo_redemption_code_idx").on(table.promoCodeId),
+    index("promo_redemption_user_idx").on(table.userId, table.promoCodeId),
+  ],
+);
+
 export const planRelations = relations(plan, ({ many }) => ({
   subscriptions: many(subscription),
+}));
+
+export const promoCodeRelations = relations(promoCode, ({ one, many }) => ({
+  module: one(curriculumModule, {
+    fields: [promoCode.moduleId],
+    references: [curriculumModule.id],
+  }),
+  redemptions: many(promoRedemption),
+}));
+
+export const promoRedemptionRelations = relations(promoRedemption, ({ one }) => ({
+  promoCode: one(promoCode, {
+    fields: [promoRedemption.promoCodeId],
+    references: [promoCode.id],
+  }),
+  user: one(user, {
+    fields: [promoRedemption.userId],
+    references: [user.id],
+  }),
+  payment: one(payment, {
+    fields: [promoRedemption.paymentId],
+    references: [payment.id],
+  }),
 }));
 
 export const subscriptionRelations = relations(subscription, ({ one }) => ({

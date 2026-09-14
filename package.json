@@ -20,6 +20,7 @@
     "db:seed:quiz": "tsx scripts/seed-quiz.ts",
     "db:seed:source-quiz": "node --env-file=.env scripts/generate-source-quizzes.mjs",
     "db:seed:plans": "tsx scripts/seed-plans.ts",
+    "db:seed:promos": "tsx scripts/seed-promos.ts",
     "db:seed:testusers": "tsx scripts/seed-test-users.ts",
     "db:backup": "node scripts/backup.mjs backup",
     "db:restore": "node scripts/backup.mjs restore",

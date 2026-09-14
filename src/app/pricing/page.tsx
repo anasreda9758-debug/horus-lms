@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { getLocale, localize } from "@/shared/locale";
 import { moduleDescription } from "@/shared/curriculum-copy";
+import { basePriceForScope } from "@/features/billing/pricing";
 
 function fmtDays(days: number, locale: "en" | "ar") {
   if (days >= 365) return locale === "ar" ? "عام كامل" : "Full year";
@@ -27,6 +28,7 @@ type PlanRow = {
   name: string;
   priceEg: number;
   durationDays: number;
+  scope: string;
 };
 
 function PlanCard({
@@ -126,15 +128,17 @@ export default async function PricingPage() {
   );
   const moduleBySlug = new Map(modules.map((m) => [m.slug, m]));
 
-  const modulePlans = plans.filter((p) => p.scope === "module");
-  const termPlans = plans.filter((p) => p.scope === "term");
-  const yearPlan = plans.find((p) => p.scope === "year");
+  const pricedPlans = plans
+    .filter((p) => p.scope === "module" || p.scope === "term")
+    .map((p) => ({ ...p, priceEg: basePriceForScope(p.scope) ?? p.priceEg }));
 
   const nonCoreSlugs = new Set(["mt-104", "en-105", "uni-205"]);
-  const corePlans = modulePlans.filter(
+  const pricedModulePlans = pricedPlans.filter((p) => p.scope === "module");
+  const pricedTermPlans = pricedPlans.filter((p) => p.scope === "term");
+  const corePlans = pricedModulePlans.filter(
     (p) => !nonCoreSlugs.has(p.scopeRef ?? "")
   );
-  const nonCorePlans = modulePlans.filter((p) =>
+  const nonCorePlans = pricedModulePlans.filter((p) =>
     nonCoreSlugs.has(p.scopeRef ?? "")
   );
 
@@ -159,42 +163,20 @@ export default async function PricingPage() {
               {t("Plans & subscription", "الأسعار والاشتراك")}
             </h1>
             <p className="mx-auto mt-4 max-w-2xl text-muted-foreground">
-              {t("Subscribe to a module, term, or full academic year. A subscription unlocks lectures, quizzes, and the study tutor.", "اشترك في الموديول الذي تحتاجه، أو وفر باختيار الترم أو السنة كاملة. جميع المحتويات مدفوعة، والاشتراك يفتح المحاضرات والاختبارات والمعلم الذكي.")}
+              {t("Choose a module for 149 EGP or unlock the full semester for 449 EGP. Semester access covers every module in that semester.", "اختر موديولًا بسعر 149 جنيه أو افتح الترم كاملًا بسعر 449 جنيه. اشتراك الترم يشمل كل موديولات الترم.")}
             </p>
           </div>
-
-          {/* Year Plan - Featured */}
-          <section className="mb-12">
-            {yearPlan && (
-              <div className="mx-auto max-w-md">
-                <PlanCard
-                  plan={yearPlan}
-                  title={t("Full academic year", "السنة كاملة")}
-                  subtitle={t("Every module in Terms 1 and 2", "كل موديولات الترمين الأول والثاني")}
-                  highlight
-                  owned={owned.has(yearPlan.id)}
-                  userId={userId}
-                  locale={locale}
-                  features={[
-                    t("All modules (10 modules)", "جميع الموديولات (10 موديولات)"),
-                    t("All lectures and seminars", "جميع المحاضرات والسيمينارات"),
-                    t("Source-based question banks", "اختبارات بنوك الأسئلة الحقيقية"),
-                    t("Unlimited study tutor", "المعلم الذكي بدون حد"),
-                    t("Spaced-repetition flashcards", "بطاقات تعليمية SRS"),
-                    t("OSPE simulator", "محاكي OSPE"),
-                  ]}
-                />
-              </div>
-            )}
-          </section>
 
           {/* Term Plans */}
           <section className="mb-12">
             <h2 className="mb-4 text-center text-xl font-bold">
               {t("Term subscriptions", "اشتراك الترم")}
             </h2>
+            <p className="mb-6 text-center text-sm text-emerald-600">
+              {t("Best value: one semester costs 449 EGP instead of 745 EGP when buying five modules separately.", "أفضل قيمة: الترم كاملًا بـ449 جنيه بدلًا من 745 جنيه عند شراء خمسة موديولات منفصلة.")}
+            </p>
             <div className="mx-auto grid max-w-3xl gap-4 sm:grid-cols-2">
-              {termPlans.map((p) => (
+              {pricedTermPlans.map((p) => (
                 <PlanCard
                   key={p.id}
                   plan={p}
@@ -224,7 +206,7 @@ export default async function PricingPage() {
               {t("Core modules", "الموديولات الأساسية")}
             </h2>
             <p className="mb-6 text-center text-sm text-muted-foreground">
-              {t("119 EGP per module — valid for 1.5 to 4 months", "119 ج.م لكل موديول — مدة شهر ونصف إلى 4 شهور")}
+              {t("149 EGP per module", "149 ج.م لكل موديول")}
             </p>
             <ul className="mx-auto grid max-w-4xl gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {corePlans.map((p) => {
@@ -252,7 +234,7 @@ export default async function PricingPage() {
                 {t("Additional modules", "المواد غير الأساسية")}
               </h2>
               <p className="mb-6 text-center text-sm text-muted-foreground">
-                {t("50 EGP per module — valid for the full term", "50 ج.م لكل مادة — صالحة طوال الترم")}
+                {t("149 EGP per module", "149 ج.م لكل موديول")}
               </p>
               <ul className="mx-auto grid max-w-3xl gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {nonCorePlans.map((p) => {
