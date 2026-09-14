@@ -93,7 +93,7 @@ export default async function Home() {
 
       {/* Features */}
       <section className="mx-auto w-full max-w-5xl px-6 py-16 lg:py-24">
-        <h2 className="mb-4 text-center text-3xl font-bold">{t("Built for focused medical study", "لماذا Horus MED؟")}</h2>
+        <h2 className="mb-4 text-center text-3xl font-bold">{t("Built for focused medical study", "لماذا VYLO؟")}</h2>
         <p className="mx-auto mb-12 max-w-2xl text-center text-muted-foreground">
           {t("Everything you need to understand, practise, and retain each lecture.", "صُمّمت لتجربة تعلم أفضل: من المحتوى إلى التقييم، كل شيء في مكان واحد.")}
         </p>
@@ -162,7 +162,7 @@ export default async function Home() {
       {/* Footer */}
       <footer className="border-t border-border py-8">
         <div className="mx-auto flex w-full max-w-5xl items-center justify-between px-6 text-sm text-muted-foreground">
-          <span>Horus University — MED 2026</span>
+          <span>VYLO © 2026</span>
           <Link href="/pricing" className="hover:text-foreground">
             {t("Plans", "الأسعار")}
           </Link>

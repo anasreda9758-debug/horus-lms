@@ -65,7 +65,7 @@ export function Navigation({
               <GraduationCap className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="text-lg font-bold">Horus MED</h1>
+              <h1 className="text-lg font-bold">VYLO</h1>
               <p className="text-xs text-muted-foreground">{t("Medical learning platform", "منصة الطب الذكية")}</p>
             </div>
           </Link>
@@ -138,7 +138,7 @@ export function Navigation({
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
             <GraduationCap className="h-4 w-4" />
           </div>
-          <span className="font-bold">Horus MED</span>
+          <span className="font-bold">VYLO</span>
         </Link>
         <div className="ms-auto">
           <PreferenceControls compact />
@@ -168,7 +168,7 @@ export function Navigation({
                 <GraduationCap className="h-5 w-5" />
               </div>
               <div>
-                <h1 className="text-lg font-bold">Horus MED</h1>
+                <h1 className="text-lg font-bold">VYLO</h1>
                 <p className="text-xs text-muted-foreground">{t("Medical learning platform", "منصة الطب الذكية")}</p>
               </div>
             </Link>

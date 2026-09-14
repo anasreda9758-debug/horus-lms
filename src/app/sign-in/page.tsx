@@ -46,7 +46,7 @@ export default function SignInPage() {
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle>{t("Sign in", "تسجيل الدخول")}</CardTitle>
-          <CardDescription>{t("Welcome back to Horus MED", "أهلاً بعودتك إلى منصة التعلم الذكية")}</CardDescription>
+          <CardDescription>{t("Welcome back to VYLO", "أهلاً بعودتك إلى VYLO")}</CardDescription>
         </CardHeader>
         <form onSubmit={onSubmit}>
           <CardContent className="grid gap-4">
