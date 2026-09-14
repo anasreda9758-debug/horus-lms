@@ -11,6 +11,7 @@ type Promo = {
   discountValue: number;
   appliesTo: "ANY" | "MODULE" | "SEMESTER";
   moduleId: string | null;
+  academicPeriodId: string | null;
   active: boolean;
   startsAt: string | null;
   expiresAt: string | null;
@@ -21,6 +22,7 @@ type Promo = {
 };
 
 type Module = { id: string; name: string };
+type Period = { id: string; academicYear: string; type: string };
 
 const blank = {
   code: "",
@@ -34,11 +36,13 @@ const blank = {
   startsAt: "",
   expiresAt: "",
   active: true,
+  academicPeriodId: "",
 };
 
 export function PromoCodeAdmin() {
   const [codes, setCodes] = useState<Promo[]>([]);
   const [modules, setModules] = useState<Module[]>([]);
+  const [periods, setPeriods] = useState<Period[]>([]);
   const [form, setForm] = useState({ ...blank });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -49,6 +53,7 @@ export function PromoCodeAdmin() {
       const data = await response.json();
       setCodes(data.codes);
       setModules(data.modules);
+      setPeriods(data.periods);
     }
   }
 
@@ -77,6 +82,7 @@ export function PromoCodeAdmin() {
       startsAt: code.startsAt?.slice(0, 16) ?? "",
       expiresAt: code.expiresAt?.slice(0, 16) ?? "",
       active: code.active,
+      academicPeriodId: code.academicPeriodId ?? "",
     });
   }
 
@@ -111,7 +117,7 @@ export function PromoCodeAdmin() {
           <select className="rounded-lg border border-border bg-background px-3 py-2 text-sm" value={form.appliesTo} onChange={(e) => setForm({ ...form, appliesTo: e.target.value })}>
             <option value="ANY">أي منتج</option>
             <option value="MODULE">موديول</option>
-            <option value="SEMESTER">ترم</option>
+            <option value="FULL_TERM">ترم كامل</option>
           </select>
           {form.appliesTo === "MODULE" && (
             <select className="rounded-lg border border-border bg-background px-3 py-2 text-sm" value={form.moduleId} onChange={(e) => setForm({ ...form, moduleId: e.target.value })}>
@@ -119,6 +125,10 @@ export function PromoCodeAdmin() {
               {modules.map((module) => <option key={module.id} value={module.id}>{module.name}</option>)}
             </select>
           )}
+          <select className="rounded-lg border border-border bg-background px-3 py-2 text-sm" value={form.academicPeriodId} onChange={(e) => setForm({ ...form, academicPeriodId: e.target.value })}>
+            <option value="">كل الفترات</option>
+            {periods.map((period) => <option key={period.id} value={period.id}>{period.academicYear} · {period.type}</option>)}
+          </select>
           <input type="number" min={1} className="rounded-lg border border-border bg-background px-3 py-2 text-sm" placeholder="الحد الإجمالي" value={form.maxUses} onChange={(e) => setForm({ ...form, maxUses: e.target.value })} />
           <input type="number" min={1} className="rounded-lg border border-border bg-background px-3 py-2 text-sm" placeholder="لكل مستخدم" value={form.maxUsesPerUser} onChange={(e) => setForm({ ...form, maxUsesPerUser: e.target.value })} />
           <input type="datetime-local" className="rounded-lg border border-border bg-background px-3 py-2 text-sm" value={form.startsAt} onChange={(e) => setForm({ ...form, startsAt: e.target.value })} />

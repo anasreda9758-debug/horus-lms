@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   MODULE_PRICE_EGP,
-  SEMESTER_PRICE_EGP,
+  FULL_TERM_DISCOUNT_PERCENT,
+  calculateFullTermPriceCents,
   calculateDiscountCents,
   basePriceForScope,
   promoAppliesToProduct,
@@ -11,18 +12,24 @@ import {
 describe("VYLO pricing and promo rules", () => {
   it("uses the VYLO module and semester prices", () => {
     expect(MODULE_PRICE_EGP).toBe(149);
-    expect(SEMESTER_PRICE_EGP).toBe(449);
     expect(basePriceForScope("module")).toBe(149);
-    expect(basePriceForScope("term")).toBe(449);
+    expect(basePriceForScope("term")).toBeNull();
   });
 
-  it("calculates VYLOSTART at 20 percent", () => {
-    expect(calculateDiscountCents(44900, "PERCENTAGE", 20)).toBe(8980);
+  it("calculates dynamic full-term prices for any module count", () => {
+    expect(FULL_TERM_DISCOUNT_PERCENT).toBe(20);
+    expect(calculateFullTermPriceCents([14900, 14900, 14900]).finalPriceCents).toBe(35760);
+    expect(calculateFullTermPriceCents([14900, 14900, 14900, 14900]).finalPriceCents).toBe(47680);
+    expect(calculateFullTermPriceCents([14900, 14900, 14900, 14900, 14900]).finalPriceCents).toBe(59600);
+  });
+
+  it("calculates VYLOSTART at 10 percent", () => {
+    expect(calculateDiscountCents(47680, "PERCENTAGE", 10)).toBe(4768);
   });
 
   it("calculates VYLOSEM50 at 50 EGP for a semester", () => {
-    expect(calculateDiscountCents(44900, "FIXED_EGP", 50)).toBe(5000);
-    expect(promoAppliesToProduct("SEMESTER", { id: "term-1", scope: "term", scopeRef: "1" }, null)).toBe(true);
+    expect(calculateDiscountCents(47680, "FIXED_EGP", 50)).toBe(5000);
+    expect(promoAppliesToProduct("FULL_TERM", { id: "term-1", scope: "term", scopeRef: "1" }, null)).toBe(true);
     expect(promoAppliesToProduct("SEMESTER", { id: "module-1", scope: "module", scopeRef: "m1" }, null)).toBe(false);
   });
 

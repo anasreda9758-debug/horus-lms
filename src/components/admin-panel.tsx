@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { PromoCodeAdmin } from "@/components/promo-code-admin";
+import { AcademicPeriodAdmin } from "@/components/academic-period-admin";
 import {
   Plus,
   Pencil,
@@ -21,6 +22,7 @@ import {
   Home,
   BarChart3,
   CreditCard,
+  Calendar,
   GraduationCap,
   Activity,
 } from "lucide-react";
@@ -74,7 +76,7 @@ type PlatformStats = {
   topUsers: { name: string; email: string; quizzes: number; accuracy: number }[];
 };
 
-type Tab = "dashboard" | "curriculum" | "users" | "promos" | "audit";
+type Tab = "dashboard" | "curriculum" | "users" | "promos" | "periods" | "audit";
 
 // ── Module Form ──
 
@@ -410,6 +412,7 @@ export function AdminPanel() {
           { key: "curriculum", label: "المنهج", icon: BookOpen },
           { key: "users", label: "المستخدمين", icon: Users },
           { key: "promos", label: "أكواد الخصم", icon: CreditCard },
+          { key: "periods", label: "الفترات الدراسية", icon: Calendar },
           { key: "audit", label: "سجل التدقيق", icon: ScrollText },
         ] as const).map((t) => (
           <button
@@ -503,6 +506,7 @@ export function AdminPanel() {
 
       {/* ── Curriculum Tab ── */}
       {tab === "promos" && <PromoCodeAdmin />}
+      {tab === "periods" && <AcademicPeriodAdmin />}
 
       {/* ── Curriculum Tab ── */}
       {tab === "curriculum" && (

@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
     if (error instanceof Error && error.message === "PLAN_NOT_FOUND") {
       return NextResponse.json({ error: "Plan not found" }, { status: 404 });
     }
-    if (error instanceof Error && error.message === "PRODUCT_NOT_AVAILABLE") {
+    if (error instanceof Error && (error.message === "PRODUCT_NOT_AVAILABLE" || error.message === "ACADEMIC_PERIOD_NOT_CONFIGURED")) {
       return NextResponse.json({ error: "Product not available" }, { status: 400 });
     }
     console.error("[billing/price-preview]", error);

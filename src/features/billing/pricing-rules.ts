@@ -1,17 +1,27 @@
 export const MODULE_PRICE_EGP = 149;
-export const SEMESTER_PRICE_EGP = 449;
+export const FULL_TERM_DISCOUNT_PERCENT = 20;
 
 export type PricingProduct = {
   id: string;
   scope: string;
   scopeRef: string | null;
   moduleId?: string | null;
+  academicPeriodId?: string | null;
 };
 
 export function basePriceForScope(scope: string): number | null {
   if (scope === "module") return MODULE_PRICE_EGP;
-  if (scope === "term") return SEMESTER_PRICE_EGP;
   return null;
+}
+
+export function calculateFullTermPriceCents(modulePricesCents: number[]) {
+  const originalTotalCents = modulePricesCents.reduce((total, price) => total + price, 0);
+  const discountCents = Math.round((originalTotalCents * FULL_TERM_DISCOUNT_PERCENT) / 100);
+  return {
+    originalTotalCents,
+    automaticDiscountCents: discountCents,
+    finalPriceCents: Math.max(0, originalTotalCents - discountCents),
+  };
 }
 
 export function calculateDiscountCents(basePriceCents: number, discountType: string, discountValue: number) {
@@ -25,10 +35,13 @@ export function promoAppliesToProduct(
   appliesTo: string,
   product: PricingProduct,
   moduleId: string | null,
+  academicPeriodId?: string | null,
 ) {
   return !(
+    appliesTo === "FULL_TERM" && product.scope !== "term" ||
     appliesTo === "SEMESTER" && product.scope !== "term" ||
-    appliesTo === "MODULE" && (product.scope !== "module" || (moduleId && moduleId !== product.moduleId))
+    appliesTo === "MODULE" && (product.scope !== "module" || (moduleId && moduleId !== product.moduleId)) ||
+    academicPeriodId !== null && academicPeriodId !== undefined && academicPeriodId !== product.academicPeriodId
   );
 }
 

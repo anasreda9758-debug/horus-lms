@@ -3,6 +3,8 @@ import { randomUUID } from "node:crypto";
 import { db } from "@/shared/db";
 import { plan, subscription } from "./schema";
 import { user } from "../auth/schema";
+import { academicPeriod } from "../hierarchy/schema";
+import { curriculumModule } from "../curriculum/schema";
 
 export const GRACE_PERIOD_DAYS = 3;
 
@@ -150,6 +152,23 @@ export async function activateSubscription(userId: string, planId: string) {
   if (!planRow) return null;
 
   const now = new Date();
+  let periodEndsAt: Date | null = null;
+  if (planRow.scope === "module" && planRow.scopeRef) {
+    const moduleRow = await db.query.curriculumModule.findFirst({
+      where: eq(curriculumModule.slug, planRow.scopeRef),
+      with: { academicPeriod: true },
+    });
+    periodEndsAt = moduleRow?.academicPeriod?.endsAt ?? null;
+  } else if (planRow.scope === "term") {
+    const periodType = planRow.scopeRef === "1" ? "TERM_1" : planRow.scopeRef === "2" ? "TERM_2" : null;
+    if (periodType) {
+      const period = await db.query.academicPeriod.findFirst({
+        where: and(eq(academicPeriod.type, periodType), eq(academicPeriod.active, true)),
+      });
+      periodEndsAt = period?.endsAt ?? null;
+    }
+  }
+  if (!periodEndsAt) return null;
 
   // Check for existing active subscription to the SAME plan — extend it
   const existing = await db.query.subscription.findFirst({
@@ -164,23 +183,20 @@ export async function activateSubscription(userId: string, planId: string) {
     // Extend from the later of (now, current expiry)
     const baseDate = existing.expiresAt > now ? existing.expiresAt : now;
     const newExpires = new Date(baseDate);
-    newExpires.setDate(newExpires.getDate() + planRow.durationDays);
+    newExpires.setTime(periodEndsAt.getTime());
 
     await db
       .update(subscription)
       .set({ expiresAt: newExpires, updatedAt: now })
       .where(eq(subscription.id, existing.id));
   } else {
-    const expiresAt = new Date(now);
-    expiresAt.setDate(expiresAt.getDate() + planRow.durationDays);
-
     await db.insert(subscription).values({
       id: randomUUID(),
       userId,
       planId,
       status: "active",
       startsAt: now,
-      expiresAt,
+      expiresAt: periodEndsAt,
     });
   }
 

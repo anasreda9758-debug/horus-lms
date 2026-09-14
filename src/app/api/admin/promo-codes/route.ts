@@ -3,6 +3,7 @@ import { asc, eq, sql } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 import { db } from "@/shared/db";
 import { curriculumModule } from "@/features/curriculum/schema";
+import { academicPeriod } from "@/features/hierarchy/schema";
 import { promoCode, promoRedemption } from "@/features/billing/schema";
 import { getSession } from "@/shared/session";
 
@@ -23,7 +24,7 @@ function parseDate(value: unknown) {
 function validateInput(body: Record<string, unknown>) {
   const code = typeof body.code === "string" ? body.code.trim().toUpperCase() : "";
   const discountType = body.discountType === "PERCENTAGE" || body.discountType === "FIXED_EGP" ? body.discountType : null;
-  const appliesTo = body.appliesTo === "ANY" || body.appliesTo === "MODULE" || body.appliesTo === "SEMESTER" ? body.appliesTo : null;
+  const appliesTo = body.appliesTo === "ANY" || body.appliesTo === "MODULE" || body.appliesTo === "FULL_TERM" ? body.appliesTo : null;
   const discountValue = Number(body.discountValue);
   const maxUses = body.maxUses === "" || body.maxUses === null || body.maxUses === undefined ? null : Number(body.maxUses);
   const maxUsesPerUser = body.maxUsesPerUser === "" || body.maxUsesPerUser === null || body.maxUsesPerUser === undefined ? 1 : Number(body.maxUsesPerUser);
@@ -43,6 +44,7 @@ function validateInput(body: Record<string, unknown>) {
       discountValue,
       appliesTo,
       moduleId: appliesTo === "MODULE" && typeof body.moduleId === "string" ? body.moduleId : null,
+      academicPeriodId: typeof body.academicPeriodId === "string" ? body.academicPeriodId : null,
       active: body.active !== false,
       startsAt,
       expiresAt,
@@ -65,7 +67,8 @@ export async function GET() {
     .groupBy(promoRedemption.promoCodeId);
   const counts = new Map(redemptionCounts.map((row) => [row.promoCodeId, row.count]));
   const modules = await db.select({ id: curriculumModule.id, name: curriculumModule.name }).from(curriculumModule).orderBy(asc(curriculumModule.order));
-  return NextResponse.json({ codes: codes.map((code) => ({ ...code, redemptionCount: counts.get(code.id) ?? 0 })), modules });
+  const periods = await db.select({ id: academicPeriod.id, academicYear: academicPeriod.academicYear, type: academicPeriod.type }).from(academicPeriod).orderBy(asc(academicPeriod.academicYear), asc(academicPeriod.type));
+  return NextResponse.json({ codes: codes.map((code) => ({ ...code, redemptionCount: counts.get(code.id) ?? 0 })), modules, periods });
 }
 
 export async function POST(request: NextRequest) {

@@ -2,6 +2,7 @@ import { relations } from "drizzle-orm";
 import { boolean, index, integer, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 import { user } from "../auth/schema";
 import { curriculumModule } from "../curriculum/schema";
+import { academicPeriod } from "../hierarchy/schema";
 
 export const plan = pgTable(
   "plan",
@@ -86,8 +87,9 @@ export const promoCode = pgTable(
     description: text("description"),
     discountType: text("discount_type").notNull(), // PERCENTAGE | FIXED_EGP
     discountValue: integer("discount_value").notNull(),
-    appliesTo: text("applies_to").notNull().default("ANY"), // ANY | MODULE | SEMESTER
+    appliesTo: text("applies_to").notNull().default("ANY"), // ANY | MODULE | FULL_TERM
     moduleId: text("module_id").references(() => curriculumModule.id, { onDelete: "set null" }),
+    academicPeriodId: text("academic_period_id").references(() => academicPeriod.id, { onDelete: "set null" }),
     active: boolean("active").notNull().default(true),
     startsAt: timestamp("starts_at"),
     expiresAt: timestamp("expires_at"),
@@ -134,6 +136,10 @@ export const promoCodeRelations = relations(promoCode, ({ one, many }) => ({
   module: one(curriculumModule, {
     fields: [promoCode.moduleId],
     references: [curriculumModule.id],
+  }),
+  academicPeriod: one(academicPeriod, {
+    fields: [promoCode.academicPeriodId],
+    references: [academicPeriod.id],
   }),
   redemptions: many(promoRedemption),
 }));

@@ -12,7 +12,8 @@ import {
 } from "lucide-react";
 import { getLocale, localize } from "@/shared/locale";
 import { moduleDescription } from "@/shared/curriculum-copy";
-import { basePriceForScope } from "@/features/billing/pricing";
+import { MODULE_PRICE_EGP, calculateFullTermPriceCents } from "@/features/billing/pricing";
+import { academicPeriod } from "@/features/hierarchy/schema";
 
 function fmtDays(days: number, locale: "en" | "ar") {
   if (days >= 365) return locale === "ar" ? "عام كامل" : "Full year";
@@ -29,6 +30,8 @@ type PlanRow = {
   priceEg: number;
   durationDays: number;
   scope: string;
+  originalPrice?: number;
+  automaticDiscount?: number;
 };
 
 function PlanCard({
@@ -79,6 +82,12 @@ function PlanCard({
           EGP
         </span>
       </div>
+      {plan.automaticDiscount ? (
+        <p className="mb-3 text-sm text-emerald-600">
+          Save 20%: -{plan.automaticDiscount.toFixed(2)} EGP
+          <span className="ms-1 text-muted-foreground">(original {plan.originalPrice?.toFixed(2)} EGP)</span>
+        </p>
+      ) : null}
       <p className="mb-4 text-sm text-muted-foreground">
         <Calendar className="me-1 inline h-3.5 w-3.5" />
         {t("Valid for", "مدة الصلاحية")}: {fmtDays(plan.durationDays, locale)}
@@ -115,11 +124,12 @@ export default async function PricingPage() {
   const t = (english: string, arabic: string) => localize(locale, english, arabic);
   const userId = session?.user.id;
 
-  const [plans, modules, subs] = await Promise.all([
+  const [plans, modules, periods, subs] = await Promise.all([
     getPlans(),
     db.query.curriculumModule.findMany({
       orderBy: (m, { asc }) => [asc(m.order)],
     }),
+    db.query.academicPeriod.findMany({ where: (period, { eq }) => eq(period.active, true) }),
     userId ? getActiveSubscriptions(userId) : Promise.resolve([]),
   ]);
 
@@ -128,9 +138,22 @@ export default async function PricingPage() {
   );
   const moduleBySlug = new Map(modules.map((m) => [m.slug, m]));
 
+  const periodByType = new Map(periods.map((period) => [period.type, period]));
   const pricedPlans = plans
     .filter((p) => p.scope === "module" || p.scope === "term")
-    .map((p) => ({ ...p, priceEg: basePriceForScope(p.scope) ?? p.priceEg }));
+    .map((p) => {
+      if (p.scope === "module") return { ...p, priceEg: MODULE_PRICE_EGP };
+      const type = p.scopeRef === "1" ? "TERM_1" : "TERM_2";
+      const period = periodByType.get(type);
+      const moduleCount = period ? modules.filter((module) => module.academicPeriodId === period.id).length : 0;
+      const term = calculateFullTermPriceCents(Array.from({ length: moduleCount }, () => MODULE_PRICE_EGP * 100));
+      return {
+        ...p,
+        priceEg: term.finalPriceCents / 100,
+        originalPrice: term.originalTotalCents / 100,
+        automaticDiscount: term.automaticDiscountCents / 100,
+      };
+    });
 
   const nonCoreSlugs = new Set(["mt-104", "en-105", "uni-205"]);
   const pricedModulePlans = pricedPlans.filter((p) => p.scope === "module");
@@ -173,7 +196,7 @@ export default async function PricingPage() {
               {t("Term subscriptions", "اشتراك الترم")}
             </h2>
             <p className="mb-6 text-center text-sm text-emerald-600">
-              {t("Best value: one semester costs 449 EGP instead of 745 EGP when buying five modules separately.", "أفضل قيمة: الترم كاملًا بـ449 جنيه بدلًا من 745 جنيه عند شراء خمسة موديولات منفصلة.")}
+              {t("Save 20% when you subscribe to the full term. Module count and price are calculated from the academic period.", "وفر 20% عند الاشتراك في الترم كاملًا. عدد الموديولات والسعر محسوبان من الفترة الدراسية.")}
             </p>
             <div className="mx-auto grid max-w-3xl gap-4 sm:grid-cols-2">
               {pricedTermPlans.map((p) => (
@@ -190,7 +213,7 @@ export default async function PricingPage() {
                   userId={userId}
                   locale={locale}
                   features={[
-                    t("5 modules in the term", "5 موديولات في الترم"),
+                    t("All modules in this academic period", "كل موديولات الفترة الدراسية"),
                     t("All lectures and practice", "جميع المحاضرات والتمارين"),
                     t("Question-bank quizzes", "اختبارات الأسئلة"),
                     t("Study tutor", "المعلم الذكي"),
