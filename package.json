@@ -28,7 +28,6 @@
     "perf": "node scripts/perf.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
-    "ospe:mapping:dry-run": "node --env-file=.env --import ./scripts/tsx-process-user-shim.mjs --import tsx scripts/ospe-mapping-dry-run.ts",
     "audit:content-mapping": "tsx scripts/content-mapping-audit.ts",
     "apply:pdf-mappings": "tsx scripts/apply-pdf-mappings.ts",
     "extract:pdf-content": "tsx scripts/extract-pdf-content.ts"
