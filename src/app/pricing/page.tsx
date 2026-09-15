@@ -111,8 +111,6 @@ function PlanCard({
           <PurchaseButton
             planId={plan.id}
             priceEg={plan.priceEg}
-            originalPrice={plan.originalPrice ?? plan.priceEg}
-            automaticDiscount={plan.automaticDiscount ?? 0}
             owned={owned}
           />
         ) : (

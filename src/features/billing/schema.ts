@@ -84,6 +84,8 @@ export const promoCode = pgTable(
   {
     id: text("id").primaryKey(),
     code: text("code").notNull(),
+    internalLabel: text("internal_label"),
+    rewardType: text("reward_type").notNull().default("PERCENTAGE_DISCOUNT"),
     description: text("description"),
     discountType: text("discount_type").notNull(), // PERCENTAGE | FIXED_EGP
     discountValue: integer("discount_value").notNull(),
@@ -125,6 +127,7 @@ export const promoRedemption = pgTable(
   (table) => [
     index("promo_redemption_code_idx").on(table.promoCodeId),
     index("promo_redemption_user_idx").on(table.userId, table.promoCodeId),
+    uniqueIndex("promo_redemption_code_user_unique").on(table.promoCodeId, table.userId),
   ],
 );
 
