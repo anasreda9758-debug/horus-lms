@@ -34,8 +34,7 @@ export default function SignUpPage() {
       setLoading(false);
       return;
     }
-    router.push("/dashboard");
-    router.refresh();
+    router.push(`/verify-email?email=${encodeURIComponent(email.trim().toLowerCase())}`);
   }
 
   return (

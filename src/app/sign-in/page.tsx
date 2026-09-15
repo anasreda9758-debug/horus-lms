@@ -74,6 +74,9 @@ export default function SignInPage() {
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? "جارٍ الدخول..." : "تسجيل الدخول"}
             </Button>
+            <Link href={`/verify-email?email=${encodeURIComponent(email.trim().toLowerCase())}`} className="text-sm text-muted-foreground underline">
+              تحقق من بريدك الإلكتروني
+            </Link>
             <p className="text-sm text-muted-foreground">
               ليس لديك حساب؟{" "}
               <Link href="/sign-up" className="underline">
