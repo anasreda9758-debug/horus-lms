@@ -65,3 +65,18 @@ export async function POST(request: NextRequest) {
   const created = await db.insert(promoCode).values(codes).returning({ code: promoCode.code, id: promoCode.id });
   return NextResponse.json({ codes: created }, { status: 201 });
 }
+
+export async function PATCH(request: NextRequest) {
+  const error = await admin();
+  if (error) return error;
+  const body = await request.json() as { id?: unknown; active?: unknown };
+  if (typeof body.id !== "string" || typeof body.active !== "boolean") {
+    return NextResponse.json({ error: "Invalid code status update" }, { status: 400 });
+  }
+  const [updated] = await db.update(promoCode)
+    .set({ active: body.active, updatedAt: new Date() })
+    .where(eq(promoCode.id, body.id))
+    .returning({ id: promoCode.id, active: promoCode.active });
+  if (!updated) return NextResponse.json({ error: "Code not found" }, { status: 404 });
+  return NextResponse.json({ code: updated });
+}

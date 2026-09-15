@@ -35,6 +35,11 @@ export function RedeemCodeAdmin() {
     await load();
   }
 
+  async function toggle(code: Code) {
+    await fetch("/api/admin/redeem-codes", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: code.id, active: !code.active }) });
+    await load();
+  }
+
   return (
     <div className="space-y-6">
       <div className="rounded-xl border border-border bg-card p-4">
@@ -55,7 +60,7 @@ export function RedeemCodeAdmin() {
         {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
         {generated.length > 0 && <pre className="mt-4 max-h-48 overflow-auto rounded bg-muted p-3 text-xs">{generated.join("\n")}</pre>}
       </div>
-      <div className="overflow-x-auto rounded-xl border border-border bg-card"><table className="w-full text-sm"><thead><tr className="border-b border-border text-right"><th className="p-3">Code</th><th className="p-3">Label</th><th className="p-3">Reward</th><th className="p-3">Used / Limit</th><th className="p-3">Status</th><th className="p-3">Expiry</th></tr></thead><tbody>{codes.map((code) => <tr key={code.id} className="border-b border-border"><td className="p-3 font-mono">{code.code}</td><td className="p-3">{code.internalLabel ?? "—"}</td><td className="p-3">{code.rewardType}</td><td className="p-3">{code.usedCount} / {code.maxUses ?? "∞"}</td><td className="p-3">{code.active ? "Active" : "Inactive"}</td><td className="p-3">{code.expiresAt ?? "—"}</td></tr>)}</tbody></table></div>
+      <div className="overflow-x-auto rounded-xl border border-border bg-card"><table className="w-full text-sm"><thead><tr className="border-b border-border text-right"><th className="p-3">Code</th><th className="p-3">Label</th><th className="p-3">Reward</th><th className="p-3">Used / Limit</th><th className="p-3">Status</th><th className="p-3">Expiry</th><th className="p-3" /></tr></thead><tbody>{codes.map((code) => <tr key={code.id} className="border-b border-border"><td className="p-3 font-mono">{code.code}</td><td className="p-3">{code.internalLabel ?? "—"}</td><td className="p-3">{code.rewardType}</td><td className="p-3">{code.usedCount} / {code.maxUses ?? "∞"}</td><td className="p-3">{code.active ? "Active" : "Inactive"}</td><td className="p-3">{code.expiresAt ?? "—"}</td><td className="p-3"><Button size="sm" variant="outline" onClick={() => void toggle(code)}>{code.active ? "Deactivate" : "Activate"}</Button></td></tr>)}</tbody></table></div>
     </div>
   );
 }
