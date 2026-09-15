@@ -7,10 +7,14 @@ import { Button } from "@/components/ui/button";
 export function PurchaseButton({
   planId,
   priceEg,
+  originalPrice,
+  automaticDiscount,
   owned,
 }: {
   planId: string;
   priceEg: number;
+  originalPrice: number;
+  automaticDiscount: number;
   owned: boolean;
 }) {
   const router = useRouter();
@@ -81,8 +85,9 @@ export function PurchaseButton({
       </div>
       {preview ? (
         <div className="rounded-lg bg-muted/50 p-2 text-xs">
-          <div className="flex justify-between"><span>Original price</span><span>{priceEg.toFixed(2)} EGP</span></div>
-          <div className="flex justify-between text-emerald-600"><span>Discount</span><span>-{preview.discountAmount.toFixed(2)} EGP</span></div>
+          <div className="flex justify-between"><span>Original price</span><span>{originalPrice.toFixed(2)} EGP</span></div>
+          {automaticDiscount > 0 ? <div className="flex justify-between text-emerald-600"><span>Term discount</span><span>-{automaticDiscount.toFixed(2)} EGP</span></div> : null}
+          <div className="flex justify-between text-emerald-600"><span>Promo discount</span><span>-{preview.discountAmount.toFixed(2)} EGP</span></div>
           <div className="flex justify-between font-semibold"><span>Final price</span><span>{preview.finalPrice.toFixed(2)} EGP</span></div>
         </div>
       ) : null}

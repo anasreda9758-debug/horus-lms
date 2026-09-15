@@ -13,26 +13,27 @@ import {
 import { getLocale, localize } from "@/shared/locale";
 import { moduleDescription } from "@/shared/curriculum-copy";
 import { MODULE_PRICE_EGP, calculateFullTermPriceCents } from "@/features/billing/pricing";
-import { academicPeriod } from "@/features/hierarchy/schema";
-
-function fmtDays(days: number, locale: "en" | "ar") {
-  if (days >= 365) return locale === "ar" ? "عام كامل" : "Full year";
-  if (days >= 30) {
-    const months = Math.round((days / 30) * 2) / 2;
-    return locale === "ar" ? `${months} شهر` : `${months} months`;
-  }
-  return locale === "ar" ? `${days} يوم` : `${days} days`;
-}
-
 type PlanRow = {
   id: string;
   name: string;
   priceEg: number;
   durationDays: number;
   scope: string;
+  scopeRef: string | null;
   originalPrice?: number;
   automaticDiscount?: number;
+  expiresAt?: Date;
+  moduleCount?: number;
 };
+
+function formatExpiry(date: Date, locale: "en" | "ar") {
+  return new Intl.DateTimeFormat(locale === "ar" ? "ar-EG" : "en-GB", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(date);
+}
 
 function PlanCard({
   plan,
@@ -90,7 +91,9 @@ function PlanCard({
       ) : null}
       <p className="mb-4 text-sm text-muted-foreground">
         <Calendar className="me-1 inline h-3.5 w-3.5" />
-        {t("Valid for", "مدة الصلاحية")}: {fmtDays(plan.durationDays, locale)}
+        {plan.expiresAt
+          ? t(`Access until ${formatExpiry(plan.expiresAt, "en")}`, `متاح حتى ${formatExpiry(plan.expiresAt, "ar")}`)
+          : t("Access period configured by admin", "مدة الوصول محددة من الإدارة")}
       </p>
       {features && features.length > 0 && (
         <ul className="mb-6 space-y-2">
@@ -104,7 +107,13 @@ function PlanCard({
       )}
       <div className="mt-auto">
         {userId ? (
-          <PurchaseButton planId={plan.id} priceEg={plan.priceEg} owned={owned} />
+          <PurchaseButton
+            planId={plan.id}
+            priceEg={plan.priceEg}
+            originalPrice={plan.originalPrice ?? plan.priceEg}
+            automaticDiscount={plan.automaticDiscount ?? 0}
+            owned={owned}
+          />
         ) : (
           <Link
             href="/sign-in"
@@ -128,6 +137,7 @@ export default async function PricingPage() {
     getPlans(),
     db.query.curriculumModule.findMany({
       orderBy: (m, { asc }) => [asc(m.order)],
+      with: { academicPeriod: true },
     }),
     db.query.academicPeriod.findMany({ where: (period, { eq }) => eq(period.active, true) }),
     userId ? getActiveSubscriptions(userId) : Promise.resolve([]),
@@ -139,10 +149,13 @@ export default async function PricingPage() {
   const moduleBySlug = new Map(modules.map((m) => [m.slug, m]));
 
   const periodByType = new Map(periods.map((period) => [period.type, period]));
-  const pricedPlans = plans
+  const pricedPlans: PlanRow[] = plans
     .filter((p) => p.scope === "module" || p.scope === "term")
     .map((p) => {
-      if (p.scope === "module") return { ...p, priceEg: MODULE_PRICE_EGP };
+      if (p.scope === "module") {
+        const moduleRow = modules.find((item) => item.slug === p.scopeRef);
+        return { ...p, priceEg: MODULE_PRICE_EGP, expiresAt: moduleRow?.academicPeriod?.endsAt };
+      }
       const type = p.scopeRef === "1" ? "TERM_1" : "TERM_2";
       const period = periodByType.get(type);
       const moduleCount = period ? modules.filter((module) => module.academicPeriodId === period.id).length : 0;
@@ -152,11 +165,13 @@ export default async function PricingPage() {
         priceEg: term.finalPriceCents / 100,
         originalPrice: term.originalTotalCents / 100,
         automaticDiscount: term.automaticDiscountCents / 100,
+        expiresAt: period?.endsAt,
+        moduleCount,
       };
     });
 
   const nonCoreSlugs = new Set(["mt-104", "en-105", "uni-205"]);
-  const pricedModulePlans = pricedPlans.filter((p) => p.scope === "module");
+  const pricedModulePlans = pricedPlans.filter((p) => p.scope === "module" && p.expiresAt);
   const pricedTermPlans = pricedPlans.filter((p) => p.scope === "term");
   const corePlans = pricedModulePlans.filter(
     (p) => !nonCoreSlugs.has(p.scopeRef ?? "")
@@ -186,7 +201,7 @@ export default async function PricingPage() {
               {t("Plans & subscription", "الأسعار والاشتراك")}
             </h1>
             <p className="mx-auto mt-4 max-w-2xl text-muted-foreground">
-              {t("Choose a module for 149 EGP or unlock the full semester for 449 EGP. Semester access covers every module in that semester.", "اختر موديولًا بسعر 149 جنيه أو افتح الترم كاملًا بسعر 449 جنيه. اشتراك الترم يشمل كل موديولات الترم.")}
+              {t("Choose a module for 149 EGP or unlock the full term with an automatic 20% saving. Term access covers every module in that academic period.", "اختر موديولًا بسعر 149 جنيه أو افتح الترم كاملًا مع خصم تلقائي 20٪. اشتراك الترم يشمل كل موديولات الفترة الدراسية.")}
             </p>
           </div>
 
@@ -199,16 +214,15 @@ export default async function PricingPage() {
               {t("Save 20% when you subscribe to the full term. Module count and price are calculated from the academic period.", "وفر 20% عند الاشتراك في الترم كاملًا. عدد الموديولات والسعر محسوبان من الفترة الدراسية.")}
             </p>
             <div className="mx-auto grid max-w-3xl gap-4 sm:grid-cols-2">
-              {pricedTermPlans.map((p) => (
+              {pricedTermPlans.filter((p) => (p.moduleCount ?? 0) > 0).map((p) => (
                 <PlanCard
                   key={p.id}
                   plan={p}
                   title={p.name}
-                  subtitle={
-                    p.scopeRef === "1"
-                      ? "AEH · PPG · PMB · MT · EN"
-                      : "RS · CVS · RAU · IBL · UNI"
-                  }
+                  subtitle={modules
+                    .filter((module) => module.academicPeriodId === periodByType.get(p.scopeRef === "1" ? "TERM_1" : "TERM_2")?.id)
+                    .map((module) => module.name)
+                    .join(" · ")}
                   owned={owned.has(p.id)}
                   userId={userId}
                   locale={locale}
@@ -221,6 +235,11 @@ export default async function PricingPage() {
                 />
               ))}
             </div>
+            {periodByType.get("SUMMER") && modules.filter((module) => module.academicPeriodId === periodByType.get("SUMMER")?.id).length === 0 ? (
+              <p className="mt-6 text-center text-sm text-muted-foreground">
+                {t("No Summer modules available yet.", "لا توجد موديولات صيفية متاحة حاليًا.")}
+              </p>
+            ) : null}
           </section>
 
           {/* Core Module Plans */}
