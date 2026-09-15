@@ -78,6 +78,9 @@ export default function SignInPage() {
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? t("Signing in…", "جارٍ الدخول...") : t("Sign in", "تسجيل الدخول")}
             </Button>
+            <Link href="/forgot-password" className="text-sm text-muted-foreground underline">
+              {t("Forgot password?", "نسيت كلمة المرور؟")}
+            </Link>
             <p className="text-sm text-muted-foreground">
               {t("Don't have an account?", "ليس لديك حساب؟")}{" "}
               <Link href="/sign-up" className="underline">

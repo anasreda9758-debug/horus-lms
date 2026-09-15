@@ -5,7 +5,15 @@ import * as schema from "../db/schema";
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, { provider: "pg", schema }),
-  emailAndPassword: { enabled: true },
+  emailAndPassword: {
+    enabled: true,
+    revokeSessionsOnPasswordReset: true,
+    onPasswordReset: async ({ user }) => {
+      // Do not include the email, password, or reset token in audit logs.
+      const { logger } = await import("./logger");
+      logger.info({ event: "PASSWORD_RESET_COMPLETED", userId: user.id }, "Better Auth password reset completed");
+    },
+  },
   user: {
     additionalFields: {
       role: {
