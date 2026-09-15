@@ -54,6 +54,13 @@ export default async function LecturePage({
     ? await getBankForModule(lectureRow.moduleId)
     : null;
   const quizBank = lectureBank ?? moduleBank;
+  const structuredSummary = lectureRow.summaryJson;
+  const summarySections = structuredSummary && Array.isArray(structuredSummary.sections)
+    ? structuredSummary.sections
+    : [];
+  const highYieldPoints = structuredSummary?.highYieldPoints ?? structuredSummary?.keyPoints ?? [];
+  const mustRemember = structuredSummary?.mustRemember ?? [];
+  const legacyKeyPoints = summarySections.length === 0 ? (structuredSummary?.keyPoints ?? []) : [];
 
   return (
     <div className="flex flex-1">
@@ -62,7 +69,7 @@ export default async function LecturePage({
         isAdmin={session.user.role === "admin"}
       />
 
-      <main className="flex-1 p-6 lg:p-8">
+      <main className="min-w-0 flex-1 overflow-x-hidden p-6 lg:p-8">
         <div className="mx-auto max-w-4xl">
           {/* Breadcrumb */}
           <div className="mb-6 flex items-center gap-2 text-sm text-muted-foreground">
@@ -217,15 +224,45 @@ export default async function LecturePage({
                   <p className="mb-4 text-sm leading-relaxed text-foreground">
                     {lectureRow.summaryJson.overview}
                   </p>
-                  {lectureRow.summaryJson.keyPoints.length > 0 && (
+                  {summarySections.map((section) => (
+                    <div key={section.title} className="mb-4 last:mb-0">
+                      <h3 className="mb-2 text-sm font-semibold text-foreground">{section.title}</h3>
+                      <ul className="space-y-2">
+                        {section.points.map((point) => (
+                          <li key={point} className="flex items-start gap-2 text-sm leading-relaxed text-muted-foreground">
+                            <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
+                            <span>{point}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                  {legacyKeyPoints.length > 0 && (
                     <div className="mb-4">
                       <h3 className="mb-2 text-sm font-semibold text-foreground">النقاط الرئيسية</h3>
-                      <ul className="space-y-1.5">
-                        {lectureRow.summaryJson.keyPoints.map((point, i) => (
-                          <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
-                            <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
-                            {point}
-                          </li>
+                      <ul className="space-y-2">
+                        {legacyKeyPoints.map((point) => (
+                          <li key={point} className="text-sm leading-relaxed text-muted-foreground">{point}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {highYieldPoints.length > 0 && summarySections.length > 0 && (
+                    <div className="mb-4 rounded-xl bg-background/60 p-4">
+                      <h3 className="mb-2 text-sm font-semibold text-foreground">نقاط عالية الأهمية</h3>
+                      <ul className="space-y-2">
+                        {highYieldPoints.slice(0, 8).map((point) => (
+                          <li key={point} className="text-sm leading-relaxed text-muted-foreground">{point}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {mustRemember.length > 0 && (
+                    <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
+                      <h3 className="mb-2 text-sm font-semibold text-amber-700 dark:text-amber-300">يجب تذكره</h3>
+                      <ul className="space-y-2">
+                        {mustRemember.map((point) => (
+                          <li key={point} className="text-sm leading-relaxed text-muted-foreground">{point}</li>
                         ))}
                       </ul>
                     </div>

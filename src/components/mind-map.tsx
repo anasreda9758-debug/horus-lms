@@ -36,31 +36,28 @@ function MindmapTree({
   const color = COLORS[colorIndex % COLORS.length];
 
   return (
-    <div className={isRoot ? "" : "ms-3"}>
+    <div className={isRoot ? "" : "border-s-2 border-border/60 ps-4"}>
       <button
         onClick={() => hasChildren && setExpanded((e) => !e)}
-        className={`group flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-start transition-all hover:bg-muted/50 ${
+        className={`group flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-start transition-all hover:bg-muted/50 ${
           isRoot
-            ? "bg-primary text-primary-foreground font-bold text-base px-4 py-3 rounded-xl shadow-sm"
-            : ""
+            ? "mx-auto max-w-xl justify-center bg-primary text-primary-foreground font-bold text-base px-4 py-3 shadow-sm"
+            : "bg-card border border-border/70"
         }`}
       >
-        {!isRoot && (
-          <span
-            className="h-2 w-2 shrink-0 rounded-full transition-transform group-hover:scale-150"
-            style={{ backgroundColor: color }}
-          />
-        )}
         {hasChildren && !isRoot && (
           <span
-            className={`ms-auto shrink-0 text-[10px] text-muted-foreground transition-transform duration-200 ${
+            className={`shrink-0 text-[10px] text-muted-foreground transition-transform duration-200 ${
               expanded ? "rotate-90" : ""
             }`}
           >
             ▶
           </span>
         )}
-        <span className={isRoot ? "" : "text-sm font-medium"}>
+        {!isRoot && (
+          <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: color }} />
+        )}
+        <span className={isRoot ? "" : "text-sm font-medium leading-relaxed"}>
           {node.label}
         </span>
       </button>
@@ -71,7 +68,7 @@ function MindmapTree({
         }`}
       >
         {hasChildren && (
-          <div className="relative ms-[14px] border-s-2 border-border/50">
+          <div className={`mt-3 grid gap-3 ${depth === 0 ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1"}`}>
             {node.children!.map((child, i) => (
               <MindmapTree
                 key={i}

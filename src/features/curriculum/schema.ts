@@ -2,6 +2,7 @@ import { relations } from "drizzle-orm";
 import { boolean, index, integer, jsonb, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 import { user } from "../auth/schema";
 import { subject } from "../hierarchy/schema";
+import type { StructuredSummary, StudyMindmapNode } from "../study-assets/structured-assets";
 
 export const curriculumModule = pgTable("module", {
   id: text("id").primaryKey(),
@@ -35,16 +36,8 @@ export const lecture = pgTable(
     pdfFile: text("pdf_file"),
     pdfPageStart: integer("pdf_page_start"),
     pdfPageEnd: integer("pdf_page_end"),
-    summaryJson: jsonb("summary_json").$type<{
-      overview: string;
-      keyPoints: string[];
-      clinicalPearls: string[];
-      references: string[];
-    }>(),
-    mindmapJson: jsonb("mindmap_json").$type<{
-      label: string;
-      children: { label: string; children?: { label: string }[] }[];
-    }>(),
+    summaryJson: jsonb("summary_json").$type<StructuredSummary>(),
+    mindmapJson: jsonb("mindmap_json").$type<StudyMindmapNode>(),
     order: integer("order").notNull().default(0),
     durationMin: integer("duration_min"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
