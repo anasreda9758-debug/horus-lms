@@ -27,7 +27,8 @@
     "test:watch": "vitest",
     "audit:content-mapping": "tsx scripts/content-mapping-audit.ts",
     "apply:pdf-mappings": "tsx scripts/apply-pdf-mappings.ts",
-    "extract:pdf-content": "tsx scripts/extract-pdf-content.ts"
+    "extract:pdf-content": "tsx scripts/extract-pdf-content.ts",
+    "study-assets:v3:pilot": "tsx scripts/generate-study-assets-v3-pilot.ts"
   },
   "dependencies": {
     "@ai-sdk/openai-compatible": "^3.0.30",

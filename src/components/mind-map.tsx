@@ -36,13 +36,15 @@ function MindmapTree({
   const color = COLORS[colorIndex % COLORS.length];
 
   return (
-    <div className={isRoot ? "" : "border-s-2 border-border/60 ps-4"}>
+    <div className={isRoot ? "" : "relative border-s-2 border-border/60 ps-4"}>
       <button
         onClick={() => hasChildren && setExpanded((e) => !e)}
-        className={`group flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-start transition-all hover:bg-muted/50 ${
+        className={`group flex w-full items-start gap-2.5 rounded-xl px-3 py-2.5 text-start transition-all hover:bg-muted/50 ${
           isRoot
             ? "mx-auto max-w-xl justify-center bg-primary text-primary-foreground font-bold text-base px-4 py-3 shadow-sm"
-            : "bg-card border border-border/70"
+            : depth === 1
+              ? "bg-primary/10 border border-primary/25 font-semibold"
+              : "bg-card border border-border/70"
         }`}
       >
         {hasChildren && !isRoot && (
@@ -54,17 +56,17 @@ function MindmapTree({
             ▶
           </span>
         )}
-        {!isRoot && (
+        {!isRoot && depth === 1 && (
           <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: color }} />
         )}
-        <span className={isRoot ? "" : "text-sm font-medium leading-relaxed"}>
+        <span className={isRoot ? "" : depth === 1 ? "text-sm font-semibold leading-relaxed" : "text-sm leading-relaxed text-muted-foreground"}>
           {node.label}
         </span>
       </button>
 
       <div
         className={`overflow-hidden transition-all duration-300 ease-in-out ${
-          expanded && hasChildren ? "max-h-[2000px] opacity-100" : "max-h-0 opacity-0"
+          expanded && hasChildren ? "max-h-[10000px] opacity-100" : "max-h-0 opacity-0"
         }`}
       >
         {hasChildren && (
@@ -86,7 +88,7 @@ function MindmapTree({
 
 export function MindMap({ data }: Props) {
   return (
-    <div className="select-none">
+    <div className="select-none rounded-2xl bg-muted/20 p-3 sm:p-5">
       <MindmapTree node={data} depth={0} colorIndex={0} isRoot />
     </div>
   );

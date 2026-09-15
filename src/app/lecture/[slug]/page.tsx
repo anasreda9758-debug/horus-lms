@@ -60,6 +60,7 @@ export default async function LecturePage({
     : [];
   const highYieldPoints = structuredSummary?.highYieldPoints ?? structuredSummary?.keyPoints ?? [];
   const mustRemember = structuredSummary?.mustRemember ?? [];
+  const reviewStatus = structuredSummary?.reviewStatus;
   const legacyKeyPoints = summarySections.length === 0 ? (structuredSummary?.keyPoints ?? []) : [];
 
   return (
@@ -220,6 +221,11 @@ export default async function LecturePage({
                   <div className="mb-4 flex items-center gap-2">
                     <Lightbulb className="h-5 w-5 text-primary" />
                     <h2 className="font-bold text-primary">ملخص المحاضرة</h2>
+                    {reviewStatus === "NEEDS_REVIEW" ? (
+                      <span className="rounded-full bg-amber-500/10 px-2 py-1 text-xs font-medium text-amber-700 dark:text-amber-300">
+                        قيد المراجعة
+                      </span>
+                    ) : null}
                   </div>
                   <p className="mb-4 text-sm leading-relaxed text-foreground">
                     {lectureRow.summaryJson.overview}
@@ -227,8 +233,21 @@ export default async function LecturePage({
                   {summarySections.map((section) => (
                     <div key={section.title} className="mb-4 last:mb-0">
                       <h3 className="mb-2 text-sm font-semibold text-foreground">{section.title}</h3>
+                      {Array.isArray(section.concepts) ? section.concepts.map((concept) => (
+                        <div key={concept.title} className="mb-3 last:mb-0">
+                          <h4 className="mb-1 text-sm font-medium text-foreground/90">{concept.title}</h4>
+                          <ul className="space-y-2">
+                            {concept.points.map((point) => (
+                              <li key={point} className="flex items-start gap-2 text-sm leading-relaxed text-muted-foreground">
+                                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary/70" />
+                                <span>{point}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )) : null}
                       <ul className="space-y-2">
-                        {section.points.map((point) => (
+                        {(Array.isArray(section.concepts) ? [] : section.points).map((point) => (
                           <li key={point} className="flex items-start gap-2 text-sm leading-relaxed text-muted-foreground">
                             <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
                             <span>{point}</span>
