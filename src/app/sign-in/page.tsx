@@ -21,15 +21,22 @@ export default function SignInPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [needsVerification, setNeedsVerification] = useState(false);
   const [loading, setLoading] = useState(false);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
+    setNeedsVerification(false);
     setLoading(true);
     const res = await authClient.signIn.email({ email, password });
     if (res.error) {
-      setError(res.error.message ?? "بيانات الدخول غير صحيحة");
+      if (res.error.code === "EMAIL_NOT_VERIFIED") {
+        setError("بريدك الإلكتروني لم يتم تأكيده بعد");
+        setNeedsVerification(true);
+      } else {
+        setError(res.error.message ?? "بيانات الدخول غير صحيحة");
+      }
       setLoading(false);
       return;
     }
@@ -74,9 +81,20 @@ export default function SignInPage() {
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? "جارٍ الدخول..." : "تسجيل الدخول"}
             </Button>
-            <Link href={`/verify-email?email=${encodeURIComponent(email.trim().toLowerCase())}`} className="text-sm text-muted-foreground underline">
-              تحقق من بريدك الإلكتروني
-            </Link>
+            {needsVerification ? (
+              <Button
+                type="button"
+                variant="link"
+                className="text-sm text-amber-700 dark:text-amber-300"
+                onClick={() =>
+                  router.push(
+                    `/verify-email?email=${encodeURIComponent(email.trim().toLowerCase())}&sent=1`,
+                  )
+                }
+              >
+                إرسال كود جديد
+              </Button>
+            ) : null}
             <p className="text-sm text-muted-foreground">
               ليس لديك حساب؟{" "}
               <Link href="/sign-up" className="underline">

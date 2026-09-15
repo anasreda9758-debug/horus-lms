@@ -4,6 +4,31 @@ import { emailOTP } from "better-auth/plugins";
 import { db } from "./db";
 import * as schema from "../db/schema";
 
+function exactOrigin(value: string | undefined) {
+  if (!value || value.includes("*")) return null;
+  try {
+    const origin = new URL(value).origin;
+    return /^https?:\/\//.test(origin) ? origin : null;
+  } catch {
+    return null;
+  }
+}
+
+const baseURL = exactOrigin(process.env.BETTER_AUTH_URL) ?? "http://localhost:3000";
+const configuredTrustedOrigins = (process.env.BETTER_AUTH_TRUSTED_ORIGINS ?? "")
+  .split(",")
+  .map((origin) => exactOrigin(origin.trim()))
+  .filter((origin): origin is string => Boolean(origin));
+const trustedOrigins = [
+  baseURL,
+  "http://localhost:3000",
+  "http://localhost:3001",
+  "http://127.0.0.1:3000",
+  "http://127.0.0.1:3001",
+  "https://vylo.win",
+  ...configuredTrustedOrigins,
+].filter((origin, index, origins) => origins.indexOf(origin) === index);
+
 async function sendVerificationOTP(data: {
   email: string;
   otp: string;
@@ -53,6 +78,8 @@ async function sendVerificationOTP(data: {
 }
 
 export const auth = betterAuth({
+  baseURL,
+  trustedOrigins,
   database: drizzleAdapter(db, { provider: "pg", schema }),
   emailAndPassword: {
     enabled: true,

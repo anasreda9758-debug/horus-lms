@@ -24,17 +24,13 @@ function maskEmail(email: string) {
 
 function VerifyEmailContent() {
   const searchParams = useSearchParams();
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(() => searchParams.get("email") ?? "");
   const [otp, setOtp] = useState("");
-  const [sent, setSent] = useState(false);
+  const [sent, setSent] = useState(() => searchParams.get("sent") === "1");
   const [verified, setVerified] = useState(false);
-  const [resendIn, setResendIn] = useState(0);
+  const [resendIn, setResendIn] = useState(() => (searchParams.get("sent") === "1" ? 60 : 0));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    setEmail(searchParams.get("email") ?? "");
-  }, [searchParams]);
 
   useEffect(() => {
     if (resendIn <= 0) return;
