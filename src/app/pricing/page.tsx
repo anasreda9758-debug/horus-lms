@@ -13,6 +13,7 @@ import {
 import { getLocale, localize } from "@/shared/locale";
 import { moduleDescription } from "@/shared/curriculum-copy";
 import { MODULE_PRICE_EGP, calculateFullTermPriceCents } from "@/features/billing/pricing";
+import { SummerRetakePicker } from "@/components/summer-retake-picker";
 type PlanRow = {
   id: string;
   name: string;
@@ -137,7 +138,10 @@ export default async function PricingPage() {
     getPlans(),
     db.query.curriculumModule.findMany({
       orderBy: (m, { asc }) => [asc(m.order)],
-      with: { academicPeriod: true },
+      with: {
+        academicPeriod: true,
+        lectures: { columns: { id: true }, limit: 1 },
+      },
     }),
     db.query.academicPeriod.findMany({ where: (period, { eq }) => eq(period.active, true) }),
     userId ? getActiveSubscriptions(userId) : Promise.resolve([]),
@@ -149,6 +153,8 @@ export default async function PricingPage() {
   const moduleBySlug = new Map(modules.map((m) => [m.slug, m]));
 
   const periodByType = new Map(periods.map((period) => [period.type, period]));
+  const summerPeriod = periodByType.get("SUMMER");
+  const summerModules = modules.filter((module) => module.lectures.length > 0);
   const pricedPlans: PlanRow[] = plans
     .filter((p) => p.scope === "module" || p.scope === "term")
     .map((p) => {
@@ -241,6 +247,18 @@ export default async function PricingPage() {
               </p>
             ) : null}
           </section>
+
+          {summerPeriod && summerPeriod.startsAt <= new Date() && summerPeriod.endsAt > new Date() ? (
+            <SummerRetakePicker
+              modules={summerModules.map((module) => ({
+                id: module.id,
+                name: module.name,
+                studyYear: module.studyYear,
+                term: module.term,
+              }))}
+              endsAt={summerPeriod.endsAt}
+            />
+          ) : null}
 
           {/* Core Module Plans */}
           <section className="mb-12">

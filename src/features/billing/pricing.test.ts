@@ -3,6 +3,7 @@ import {
   MODULE_PRICE_EGP,
   FULL_TERM_DISCOUNT_PERCENT,
   calculateFullTermPriceCents,
+  calculateSummerPriceCents,
   calculateDiscountCents,
   basePriceForScope,
   promoAppliesToProduct,
@@ -21,6 +22,24 @@ describe("VYLO pricing and promo rules", () => {
     expect(calculateFullTermPriceCents([14900, 14900, 14900]).finalPriceCents).toBe(35760);
     expect(calculateFullTermPriceCents([14900, 14900, 14900, 14900]).finalPriceCents).toBe(47680);
     expect(calculateFullTermPriceCents([14900, 14900, 14900, 14900, 14900]).finalPriceCents).toBe(59600);
+  });
+
+  it("prices Summer retakes module-by-module without a term discount", () => {
+    expect(calculateSummerPriceCents(1)).toBe(14900);
+    expect(calculateSummerPriceCents(2)).toBe(29800);
+    expect(calculateSummerPriceCents(3)).toBe(44700);
+    expect(promoAppliesToProduct("FULL_TERM", {
+      id: "summer:session",
+      scope: "module",
+      scopeRef: null,
+      academicPeriodId: "summer-session",
+    }, null)).toBe(false);
+    expect(promoAppliesToProduct("ANY", {
+      id: "summer:session",
+      scope: "module",
+      scopeRef: null,
+      academicPeriodId: "summer-session",
+    }, null)).toBe(true);
   });
 
   it("calculates VYLOSTART at 10 percent", () => {

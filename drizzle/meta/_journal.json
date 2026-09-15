@@ -127,6 +127,13 @@
       "when": 1789420000000,
       "tag": "0017_vylo_academic_periods",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1789421000000,
+      "tag": "0018_vylo_summer_access",
+      "breakpoints": true
     }
   ]
 }

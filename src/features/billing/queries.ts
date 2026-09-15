@@ -1,7 +1,7 @@
-import { and, asc, desc, eq, lte, isNull, or } from "drizzle-orm";
+import { and, asc, desc, eq, gt, lte, isNull, or } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 import { db } from "@/shared/db";
-import { plan, subscription } from "./schema";
+import { plan, subscription, summerAccess } from "./schema";
 import { user } from "../auth/schema";
 import { academicPeriod } from "../hierarchy/schema";
 import { curriculumModule } from "../curriculum/schema";
@@ -82,6 +82,11 @@ export async function hasModuleAccess(
   if (module.isFree) return true;
   const subs = await getActiveSubscriptions(userId);
   const now = new Date();
+  const summerRows = await db.query.summerAccess.findMany({
+    where: and(eq(summerAccess.userId, userId), eq(summerAccess.moduleId, module.id)),
+    columns: { expiresAt: true },
+  });
+  if (summerRows.some((row) => row.expiresAt > now)) return true;
   for (const s of subs) {
     // Skip expired (non-grace) subs
     if (s.status === "active") {
@@ -121,6 +126,11 @@ export async function withModuleAccess<T extends { id: string; slug: string; isF
 ): Promise<(T & { access: boolean })[]> {
   const subs = await getActiveSubscriptions(userId);
   const now = new Date();
+  const summerRows = await db.query.summerAccess.findMany({
+    where: and(eq(summerAccess.userId, userId), gt(summerAccess.expiresAt, now)),
+    columns: { moduleId: true },
+  });
+  const summerModuleSet = new Set(summerRows.map((row) => row.moduleId));
 
   const isCovered = (s: ActiveSubscription) => {
     if (s.status === "active" && s.expiresAt > now) return true;
@@ -137,7 +147,7 @@ export async function withModuleAccess<T extends { id: string; slug: string; isF
   );
   return modules.map((m) => ({
     ...m,
-    access: m.isFree || hasYear || termSet.has(String(m.term)) || moduleSet.has(m.slug),
+    access: m.isFree || hasYear || termSet.has(String(m.term)) || moduleSet.has(m.slug) || summerModuleSet.has(m.id),
   }));
 }
 

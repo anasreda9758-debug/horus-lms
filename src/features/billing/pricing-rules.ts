@@ -24,6 +24,13 @@ export function calculateFullTermPriceCents(modulePricesCents: number[]) {
   };
 }
 
+export function calculateSummerPriceCents(moduleCount: number) {
+  if (!Number.isInteger(moduleCount) || moduleCount < 0) {
+    throw new Error("INVALID_SUMMER_MODULE_COUNT");
+  }
+  return moduleCount * MODULE_PRICE_EGP * 100;
+}
+
 export function calculateDiscountCents(basePriceCents: number, discountType: string, discountValue: number) {
   if (discountType === "PERCENTAGE") {
     return Math.min(basePriceCents, Math.round((basePriceCents * discountValue) / 100));

@@ -128,6 +128,23 @@ export const promoRedemption = pgTable(
   ],
 );
 
+export const summerAccess = pgTable(
+  "summer_access",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+    moduleId: text("module_id").notNull().references(() => curriculumModule.id, { onDelete: "restrict" }),
+    summerSessionId: text("summer_session_id").notNull().references(() => academicPeriod.id, { onDelete: "restrict" }),
+    startsAt: timestamp("starts_at").notNull(),
+    expiresAt: timestamp("expires_at").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex("summer_access_user_module_session_idx").on(table.userId, table.moduleId, table.summerSessionId),
+    index("summer_access_user_expiry_idx").on(table.userId, table.expiresAt),
+  ],
+);
+
 export const planRelations = relations(plan, ({ many }) => ({
   subscriptions: many(subscription),
 }));
@@ -157,6 +174,12 @@ export const promoRedemptionRelations = relations(promoRedemption, ({ one }) => 
     fields: [promoRedemption.paymentId],
     references: [payment.id],
   }),
+}));
+
+export const summerAccessRelations = relations(summerAccess, ({ one }) => ({
+  user: one(user, { fields: [summerAccess.userId], references: [user.id] }),
+  module: one(curriculumModule, { fields: [summerAccess.moduleId], references: [curriculumModule.id] }),
+  summerSession: one(academicPeriod, { fields: [summerAccess.summerSessionId], references: [academicPeriod.id] }),
 }));
 
 export const subscriptionRelations = relations(subscription, ({ one }) => ({
