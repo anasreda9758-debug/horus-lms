@@ -1,9 +1,9 @@
 import { randomBytes } from "node:crypto";
-import { eq, and, desc, gt, isNull, sql } from "drizzle-orm";
-import { db } from "@/shared/db";
+import { and, desc, eq, gt, isNull, sql } from "drizzle-orm";
 import { auth } from "@/shared/auth";
-import { verification, passwordResetChallenge, user } from "./schema";
+import { db } from "@/shared/db";
 import { logger } from "@/shared/logger";
+import { passwordResetChallenge, user, verification } from "./schema";
 import {
   PASSWORD_RESET_CODE_TTL_MS,
   PASSWORD_RESET_MAX_ATTEMPTS,
@@ -17,7 +17,7 @@ import {
 } from "./password-recovery-rules";
 
 export const PASSWORD_RESET_MESSAGE =
-  "If an account exists for this email, we've sent a verification code.";
+  "إذا كان هناك حساب مرتبط بهذا البريد، فقد تم إرسال رمز التحقق.";
 
 function clientKey(email: string, ip: string) {
   return hashRecoveryValue(`${normalizeRecoveryEmail(email)}:${ip}`);
@@ -26,36 +26,38 @@ function clientKey(email: string, ip: string) {
 async function sendResetCode(email: string, code: string) {
   const subject = "VYLO password reset code";
   const text = [
-    "Your VYLO verification code is:",
+    "VYLO",
+    "",
+    "رمز التحقق لتغيير كلمة المرور:",
     "",
     code,
     "",
-    "This code expires in 10 minutes.",
+    "هذا الرمز صالح لمدة 10 دقائق.",
     "",
-    "If you didn't request a password reset, you can ignore this email.",
+    "إذا لم تطلب تغيير كلمة المرور، يمكنك تجاهل هذه الرسالة.",
   ].join("\n");
+  const html = `
+    <div style="font-family:Arial,sans-serif;line-height:1.7;max-width:520px;margin:auto">
+      <h1 style="color:#0f766e">VYLO</h1>
+      <p>رمز التحقق لتغيير كلمة المرور:</p>
+      <p style="font-size:32px;font-weight:700;letter-spacing:8px;color:#0f766e">${code}</p>
+      <p>هذا الرمز صالح لمدة 10 دقائق.</p>
+      <p>إذا لم تطلب تغيير كلمة المرور، يمكنك تجاهل هذه الرسالة.</p>
+    </div>
+  `;
   const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.RESEND_FROM_EMAIL;
+  const from = process.env.EMAIL_FROM;
+  if (!apiKey || !from) throw new Error("Password reset email provider is not configured");
 
-  if (apiKey && from) {
-    const response = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ from, to: [email], subject, text }),
-    });
-    if (!response.ok) throw new Error(`Password reset email failed (${response.status})`);
-    return;
-  }
-
-  if (process.env.NODE_ENV === "production") {
-    logger.warn({ event: "PASSWORD_RESET_EMAIL_NOT_CONFIGURED" }, "Password reset email provider is not configured");
-    return;
-  }
-
-  logger.info({ passwordResetCode: code }, "Development password reset code");
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ from, to: [email], subject, text, html }),
+  });
+  if (!response.ok) throw new Error(`Password reset email failed (${response.status})`);
 }
 
 export async function createPasswordResetChallenge(email: string, ip: string) {
@@ -63,7 +65,13 @@ export async function createPasswordResetChallenge(email: string, ip: string) {
   const key = clientKey(normalizedEmail, ip);
   const now = new Date();
   const recent = await db.query.passwordResetChallenge.findFirst({
-    where: and(eq(passwordResetChallenge.requestKeyHash, key), gt(passwordResetChallenge.createdAt, new Date(now.getTime() - PASSWORD_RESET_RESEND_COOLDOWN_MS))),
+    where: and(
+      eq(passwordResetChallenge.requestKeyHash, key),
+      gt(
+        passwordResetChallenge.createdAt,
+        new Date(now.getTime() - PASSWORD_RESET_RESEND_COOLDOWN_MS),
+      ),
+    ),
     orderBy: [desc(passwordResetChallenge.createdAt)],
   });
   if (recent) return { limited: true as const, challengeId: recent.id };
@@ -74,9 +82,16 @@ export async function createPasswordResetChallenge(email: string, ip: string) {
   });
   const code = formatVerificationCode(generateVerificationCode());
   const challengeId = randomBytes(18).toString("hex");
-  await db.update(passwordResetChallenge)
+  await db
+    .update(passwordResetChallenge)
     .set({ invalidatedAt: now })
-    .where(and(eq(passwordResetChallenge.email, normalizedEmail), isNull(passwordResetChallenge.invalidatedAt), isNull(passwordResetChallenge.consumedAt)));
+    .where(
+      and(
+        eq(passwordResetChallenge.email, normalizedEmail),
+        isNull(passwordResetChallenge.invalidatedAt),
+        isNull(passwordResetChallenge.consumedAt),
+      ),
+    );
   await db.insert(passwordResetChallenge).values({
     id: challengeId,
     email: normalizedEmail,
@@ -102,12 +117,15 @@ export async function resendPasswordResetChallenge(challengeId: string) {
     return { ok: false as const, reason: "COOLDOWN" as const };
   }
   const code = formatVerificationCode(generateVerificationCode());
-  await db.update(passwordResetChallenge).set({
-    codeHash: secureCodeHash(code),
-    attempts: 0,
-    lastSentAt: now,
-    expiresAt: new Date(now.getTime() + PASSWORD_RESET_CODE_TTL_MS),
-  }).where(eq(passwordResetChallenge.id, challengeId));
+  await db
+    .update(passwordResetChallenge)
+    .set({
+      codeHash: secureCodeHash(code),
+      attempts: 0,
+      lastSentAt: now,
+      expiresAt: new Date(now.getTime() + PASSWORD_RESET_CODE_TTL_MS),
+    })
+    .where(eq(passwordResetChallenge.id, challengeId));
   if (challenge.userId) await sendResetCode(challenge.email, code);
   return { ok: true as const };
 }
@@ -121,21 +139,47 @@ export async function verifyPasswordResetCode(challengeId: string, code: string)
     return { ok: false as const, reason: "INVALID_CODE" as const };
   }
   if (challenge.expiresAt <= now) return { ok: false as const, reason: "EXPIRED" as const };
-  if (challenge.attempts >= PASSWORD_RESET_MAX_ATTEMPTS) return { ok: false as const, reason: "TOO_MANY_ATTEMPTS" as const };
+  if (challenge.attempts >= PASSWORD_RESET_MAX_ATTEMPTS) {
+    return { ok: false as const, reason: "TOO_MANY_ATTEMPTS" as const };
+  }
 
-  const updated = await db.update(passwordResetChallenge)
+  const updated = await db
+    .update(passwordResetChallenge)
     .set({ attempts: sql`${passwordResetChallenge.attempts} + 1` })
-    .where(and(eq(passwordResetChallenge.id, challengeId), sql`${passwordResetChallenge.attempts} < ${PASSWORD_RESET_MAX_ATTEMPTS}`, isNull(passwordResetChallenge.invalidatedAt), isNull(passwordResetChallenge.verifiedAt)))
+    .where(
+      and(
+        eq(passwordResetChallenge.id, challengeId),
+        sql`${passwordResetChallenge.attempts} < ${PASSWORD_RESET_MAX_ATTEMPTS}`,
+        isNull(passwordResetChallenge.invalidatedAt),
+        isNull(passwordResetChallenge.verifiedAt),
+      ),
+    )
     .returning({ id: passwordResetChallenge.id });
-  if (updated.length === 0) return { ok: false as const, reason: "TOO_MANY_ATTEMPTS" as const };
-  if (!codesMatch(challenge.codeHash, code.replace(/\D/g, ""))) return { ok: false as const, reason: "INVALID_CODE" as const };
+  if (updated.length === 0) {
+    return { ok: false as const, reason: "TOO_MANY_ATTEMPTS" as const };
+  }
+  if (!codesMatch(challenge.codeHash, code.replace(/\D/g, ""))) {
+    return { ok: false as const, reason: "INVALID_CODE" as const };
+  }
 
   const resetToken = randomBytes(32).toString("hex");
   await db.transaction(async (tx) => {
-    await tx.update(passwordResetChallenge).set({
-      verifiedAt: now,
-      resetTokenHash: hashRecoveryValue(resetToken),
-    }).where(eq(passwordResetChallenge.id, challengeId));
+    const claimed = await tx
+      .update(passwordResetChallenge)
+      .set({
+        verifiedAt: now,
+        resetTokenHash: hashRecoveryValue(resetToken),
+      })
+      .where(
+        and(
+          eq(passwordResetChallenge.id, challengeId),
+          isNull(passwordResetChallenge.invalidatedAt),
+          isNull(passwordResetChallenge.verifiedAt),
+          isNull(passwordResetChallenge.consumedAt),
+        ),
+      )
+      .returning({ id: passwordResetChallenge.id });
+    if (claimed.length === 0) return;
     if (challenge.userId) {
       await tx.insert(verification).values({
         id: randomBytes(18).toString("hex"),
@@ -150,9 +194,11 @@ export async function verifyPasswordResetCode(challengeId: string, code: string)
 }
 
 export async function completePasswordReset(resetToken: string, newPassword: string) {
-  const tokenHash = hashRecoveryValue(resetToken);
   const challenge = await db.query.passwordResetChallenge.findFirst({
-    where: and(eq(passwordResetChallenge.resetTokenHash, tokenHash), isNull(passwordResetChallenge.consumedAt)),
+    where: and(
+      eq(passwordResetChallenge.resetTokenHash, hashRecoveryValue(resetToken)),
+      isNull(passwordResetChallenge.consumedAt),
+    ),
   });
   if (!challenge || !challenge.userId || !challenge.verifiedAt || challenge.expiresAt <= new Date()) {
     return { ok: false as const, reason: "INVALID_RESET" as const };
@@ -162,7 +208,13 @@ export async function completePasswordReset(resetToken: string, newPassword: str
   } catch {
     return { ok: false as const, reason: "INVALID_RESET" as const };
   }
-  await db.update(passwordResetChallenge).set({ consumedAt: new Date() }).where(eq(passwordResetChallenge.id, challenge.id));
-  logger.info({ event: "PASSWORD_RESET_COMPLETED", userId: challenge.userId }, "Password reset completed");
+  await db
+    .update(passwordResetChallenge)
+    .set({ consumedAt: new Date() })
+    .where(and(eq(passwordResetChallenge.id, challenge.id), isNull(passwordResetChallenge.consumedAt)));
+  logger.info(
+    { event: "PASSWORD_RESET_COMPLETED", userId: challenge.userId },
+    "Password reset completed",
+  );
   return { ok: true as const };
 }
